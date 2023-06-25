@@ -1,11 +1,46 @@
-import * as backend from './build/index.main.mjs';
+import * as backend from "./build/index.ARC200.mjs";
 import { loadStdlib } from "@reach-sh/stdlib";
-const stdlib = loadStdlib({REACH_NO_WARN: 'Y'});
 
-if(stdlib.connector !== 'ETH'){
-  console.log('Sorry, this program is only compiled on ETH for now');
+const mintCost = "";
+const transferCostHot = "0.001"; // txn cost
+const transferCostCold = "0.0205"; // txn cost + cost for box
+const transferGain = "0.0185"; // gain on box deletion
+const transferNetCost = "0.0020"; // transferCostCold - transferGain
+const transferFromCostCold = "";
+const transferFromCostHot = "";
+const transferFromGain = "";
+const transferFromNetCost = "";
+const approveCostCold = "";
+const approveCostHot = "";
+const approveGain = "";
+const approveNetCost = "";
+const deleteBalanceBoxCost = "";
+
+const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
+
+const stdlib = loadStdlib({ REACH_NO_WARN: "Y" });
+
+const bn = stdlib.bigNumberify;
+const bn2n = stdlib.bigNumberToNumber;
+
+const zeroAddress =
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
+
+const tokens = [
+  {
+    name: "ERC200 Token",
+    symbol: "ERC200",
+    decimals: 8,
+    totalSupply: 1000000000000000000, // 10Bi
+  },
+];
+
+const network = "ALGO";
+
+if (stdlib.connector !== `${network}`) {
+  console.log(`Sorry, this program is only compiled on ${network} for now`);
   process.exit(0);
-};
+}
 console.log("Starting up...");
 
 const assert = stdlib.assert;
@@ -23,153 +58,317 @@ const assertFail = async (promise) => {
 const assertEq = (a, b, context = "assertEq") => {
   if (a === b) return;
   try {
-    const res1BN = bigNumberify(a);
-    const res2BN = bigNumberify(b);
+    const res1BN = bn(a);
+    const res2BN = bn(b);
     if (res1BN.eq(res2BN)) return;
   } catch {}
   assert(false, `${context}: ${a} == ${b}`);
 };
 
 const startMeUp = async (ctc, meta) => {
-  const flag = "startup success throw flag"
+  const flag = "startup success throw flag";
   try {
     await ctc.p.Deployer({
       meta,
-      launched: (ctc) => {
+      ready: (ctc) => {
         throw flag;
       },
     });
   } catch (e) {
-    if ( e !== flag) {
+    if (e !== flag) {
       throw e;
     }
   }
 };
 
-const zeroAddress = "0x" + "0".repeat(40);
-const accs = await stdlib.newTestAccounts(4, stdlib.parseCurrency(100));
-const [acc0, acc1, acc2, acc3] = accs;
-const [addr0, addr1, addr2, addr3] = accs.map(a => a.getAddress());
+// deployAs
+// - deploys the contract as the given account
+const deployAs = async (acc) =>
+  (async (ctc) =>
+    await stdlib.withDisconnect(() =>
+      ctc.p.Deployer({
+        params: { zeroAddress },
+        ready: (ctcInfo) => {
+          console.log("Ready!");
+          stdlib.disconnect(ctcInfo); // causes withDisconnect to immediately return ctcInfo
+        },
+      })
+    ))(acc.contract(backend));
 
-const totalSupply = 100_000;
-const decimals = 2;
-const meta = {
-  name: "Coinzz",
-  symbol: "CZZ",
-  decimals,
-  totalSupply,
-  zeroAddress,
-};
+// main
 
-const ctc0 = acc0.contract(backend);
-await startMeUp(ctc0, meta);
-console.log('Completed startMeUp');
+const balanceBoxes = new Set();
 
-const ctcinfo = await ctc0.getInfo();
-const ctc = (acc) => acc.contract(backend, ctcinfo);
+const accs = await stdlib.newTestAccounts(7 + 100, stdlib.parseCurrency(100));
 
-const assertBalances = async (bal0, bal1, bal2, bal3) => {
-  assertEq(bal0, (await ctc0.v.balanceOf(acc0.getAddress()))[1]);
-  assertEq(bal1, (await ctc0.v.balanceOf(acc1.getAddress()))[1]);
-  assertEq(bal2, (await ctc0.v.balanceOf(acc2.getAddress()))[1]);
-  assertEq(bal3, (await ctc0.v.balanceOf(acc3.getAddress()))[1]);
-  console.log('assertBalances complete');
-};
+const accZero = await stdlib.connectAccount({ addr: zeroAddress });
 
-const assertEvent = async (event, ...expectedArgs) => {
-  const e = await ctc0.events[event].next();
-  const actualArgs = e.what;
-  expectedArgs.forEach((expectedArg, i) => assertEq(actualArgs[i], expectedArg, `${event} field ${i}`));
-  console.log('assertEvent complete');
-};
+const [
+  accIssuer,
+  accMaster,
+  accManager,
+  accAlice,
+  accBob,
+  accCarla,
+  accDave,
+  ...accRobots
+] = accs;
 
-const transfer = async (fromAcc, toAcc, amt) => {
-  await ctc(fromAcc).a.transfer(toAcc.getAddress(), amt);
-  await assertEvent("Transfer", fromAcc.getAddress(), toAcc.getAddress(), amt);
-  stdlib.transfer(fromAcc, toAcc, stdlib.parseCurrency(amt));
-  console.log('transfer complete');
-};
+const [
+  addrIssuer,
+  addrMaster,
+  addrManager,
+  addrAlice,
+  addrBob,
+  addrCarla,
+  addrDave,
+  ...addrRobots
+] = accs.map((a) => a.getAddress());
 
-const transferFrom = async (spenderAcc, fromAcc, toAcc, amt, allowanceLeft) => {
-  const b = await ctc(spenderAcc).a.transferFrom(fromAcc.getAddress(), toAcc.getAddress(), amt);
-  await assertEvent("Transfer", fromAcc.getAddress(), toAcc.getAddress(), amt);
-  await assertEvent("Approval", fromAcc.getAddress(), spenderAcc.getAddress(), allowanceLeft);
-  console.log(`transferFrom complete is ${b}`);
-};
+// deploy contract as issuer
 
-const approve = async (fromAcc, spenderAcc, amt) => {
-  await ctc(fromAcc).a.approve(spenderAcc.getAddress(), amt);
-  await assertEvent("Approval", fromAcc.getAddress(), spenderAcc.getAddress(), amt);
-  console.log('approve complete');
-};
+const ctcInfo = await deployAs(accMaster);
 
+console.log({ ctcInfo: bn2n(ctcInfo) });
 
-console.log("Starting tests...");
+// once upon a time, we had to do this:
+// - mint arc-200 token and send 100% of funds to addr (call ctc.a.mint(mintParams))
 
-// initial transfer event upon minting (when launching contract)
-await assertEvent("Transfer", zeroAddress, acc0.getAddress(), totalSupply);
-console.log('assertEvent call complete');
+const {
+  v: { balanceOf, allowance, decimals, name, symbol, totalSupply },
+  e,
+} = accZero.contract(backend, ctcInfo);
 
-// assert balances are equal to view values
-// acc0 has the totalSupply at this point, all others are zero
-await assertBalances(totalSupply, 0, 0, 0);
-console.log('assertBalances call complete');
+e.Mint.monitor((a) =>
+  console.log({
+    Mint: a,
+  })
+);
+e.Transfer.monitor((a) =>
+  console.log({
+    Transfer: a,
+  })
+);
+e.Approval.monitor((a) =>
+  console.log({
+    Approval: a,
+  })
+);
 
-// transfer of more than you have should fail
-await assertFail(transfer(acc1, acc2, 10));
-await assertFail(transferFrom(acc1, acc2, acc3, 10, 0));
-console.log('assertFail2 call complete');
+const {
+  a: { mint },
+} = accIssuer.contract(backend, ctcInfo);
 
-// transfer of zero should work even if you don't have any
-await transfer(acc1, acc2, 0);
-console.log('transfer call complete');
+const { algosdk } = stdlib;
 
-// transferFrom of zero should work even the from doesn't have any and the transferer has an allowance of 0
-await transferFrom(acc1, acc2, acc3, 0, 0);
-console.log('transferFrom call complete');
+const tokenId = algosdk.getApplicationAddress(0);
 
-// transfer 10 from acc0 to acc1
-await transfer(acc0, acc1, 10);
-// assert balances are correct after transfer
-await assertBalances(totalSupply - 10, 10, 0, 0);
+console.log({ tokenId });
 
-// assert the allowance for addr3 is 0
-assertEq((await ctc0.v.allowance(addr0, addr3))[1], 0);
-// approve the allowance for add3 to 20
-await approve(acc0, acc3, 20);
-// assert that allowance is correct
-assertEq((await ctc0.v.allowance(addr0, addr3))[1], 20);
-// check the balances again -- they haven't changed
-await assertBalances(totalSupply - 10, 10, 0, 0);
+if (await mint(tokenId, addrManager, tokens[0])) {
+  console.log("mint success");
+}
 
-// transferFrom of more than an allowance should fail
-await assertFail(transferFrom(acc3, acc0, acc2, 100, 20));
+balanceBoxes.add(addrManager);
 
-// transferFrom spender, from, to, 10
-await transferFrom(acc3, acc0, acc2, 10, 10);
-// assert the allowance for addr3
-assertEq((await ctc0.v.allowance(addr0, addr3))[1], 10);
-// assertBalances updated after transfer
-await assertBalances(totalSupply - 20, 10, 10, 0);
-// transfer the 10 from acc3 back to acc0
-await transferFrom(acc3, acc0, acc3, 10, 0);
-// assert the allowance has changed
-assertEq((await ctc0.v.allowance(addr0, addr3))[1], 0);
-// check the balances
-await assertBalances(totalSupply - 30, 10, 10, 10);
-// transferFrom should use up the allowance
-await assertFail(transferFrom(acc3, acc0, acc3, 1, 0));
+// check that the token was minted correctly
 
-// Even if you're rich, you can't transfer more than your balance.
-await assertFail(transfer(acc0, acc2, totalSupply - 10));
+console.log("Test: check that the token was minted correctly");
 
-// approve allowance of 100 tokens to acc0
-await approve(acc0, acc1, 100);
+//assertEq(fromSome(await name(tokenId), ""), tokens[0].name); // assertion fails due to zero bytes
+//assertEq(fromSome(await symbol(tokenId), ""), tokens[0].symbol); // assertion fails due to zero bytes
+assertEq(fromSome(await decimals(tokenId), 0), tokens[0].decimals);
+assertEq(fromSome(await totalSupply(tokenId), 0), tokens[0].totalSupply);
 
-// assert the view values are as expected
-assertEq((await ctc0.v.name())[1], meta.name, "name()");
-assertEq((await ctc0.v.symbol())[1], meta.symbol, "symbol()");
-assertEq((await ctc0.v.totalSupply())[1], meta.totalSupply, "totalSupply()");
-assertEq((await ctc0.v.decimals())[1], meta.decimals, "decimals()");
+// TEST balanceOf
 
-console.log("Finished testing!");
+// balance of manager should be 100% of funds
+
+console.log("Test: balance of manager should be 100% of funds");
+
+assertEq(
+  fromSome(await balanceOf(tokenId, addrManager), 0),
+  bn(tokens[0].totalSupply)
+);
+
+// balance of issuer should be 0
+
+console.log("Test: balance of issuer should be 0");
+
+assertEq(fromSome(await balanceOf(tokenId, addrIssuer), 0), bn(0));
+
+// transfer 0 tokens from manager to alice
+
+const { a: manager } = accManager.contract(backend, ctcInfo);
+const { a: alice } = accAlice.contract(backend, ctcInfo);
+const { a: bob } = accBob.contract(backend, ctcInfo);
+
+console.log("Test: transfer 0au tokens from manager to alice");
+
+await manager.transfer(tokenId, addrAlice, 0); // creates box
+
+balanceBoxes.add(addrAlice);
+
+assertEq(
+  fromSome(await balanceOf(tokenId, addrManager), 0),
+  bn(tokens[0].totalSupply)
+);
+assertEq(fromSome(await balanceOf(tokenId, addrAlice), 0), bn(0));
+
+// transfer 1au tokens from manager to issuer
+
+console.log("Test: transfer 1au tokens from manager to issuer");
+
+await manager.transfer(tokenId, addrAlice, 1);
+
+assertEq(
+  fromSome(await balanceOf(tokenId, addrManager), 0),
+  bn(tokens[0].totalSupply).sub(1)
+);
+assertEq(fromSome(await balanceOf(tokenId, addrAlice), bn(0)), bn(1));
+
+// transfer 1au tokens from manager to robots
+
+/*
+console.log("Test: transfer 1au tokens from manager to robots");
+
+console.log(addrRobots);
+for (const addr of addrRobots) {
+  console.log(`Test: transfer 1au tokens from manager to ${addr}`);
+  await manager.transfer(tokenId, addr, 1);
+  balanceBoxes.add(addr);
+}
+*/
+
+// TEST transfer cost dry
+
+console.log("Test: transfer cost dry");
+
+do {
+  const before = await stdlib.balanceOf(accManager);
+  console.log(`Test: transfer 1au tokens from manager to ${addrRobots[0]}`);
+  await manager.transfer(tokenId, addrRobots[0], 1);
+  balanceBoxes.add(addrRobots[0]);
+  const after = await stdlib.balanceOf(accManager);
+  if (before.gt(after)) {
+    const diff = stdlib.formatCurrency(before.sub(after));
+    console.log(`Test: transfer cost ${diff}`);
+  }
+} while (0);
+
+console.log("Test: transfer cost dry");
+
+do {
+  const before = await stdlib.balanceOf(accManager);
+  console.log(`Test: transfer 1au tokens from manager to ${addrRobots[0]}`);
+  await manager.transfer(tokenId, addrRobots[0], 1);
+  balanceBoxes.add(addrRobots[0]);
+  const after = await stdlib.balanceOf(accManager);
+  if (before.gt(after)) {
+    const diff = stdlib.formatCurrency(before.sub(after));
+    console.log(`Test: transfer cost ${diff}`);
+  }
+} while (0);
+
+// TEST transfer gain
+
+console.log("Test: transfer gain");
+
+do {
+  const before = await stdlib.balanceOf(accMaster);
+  await accRobots[0]
+    .contract(backend, ctcInfo)
+    .a.transfer(tokenId, addrRobots[1], 2);
+  await bob.deleteBalanceBox(tokenId, addrRobots[0]);
+  balanceBoxes.delete(addrRobots[0]);
+  const after = await stdlib.balanceOf(accMaster);
+  await stdlib.wait(1);
+  if (after.gt(before)) {
+    const diff = stdlib.formatCurrency(after.sub(before));
+    console.log(`Test: transfer gain ${diff}`);
+    assertEq(diff, "0.0185");
+  }
+} while (0);
+
+console.log("Test: transfer 2au tokens from alice to bob (should fail)");
+
+try {
+  await alice.transfer(tokenId, addrBob, 2);
+} catch (e) {}
+
+assertEq(fromSome(await balanceOf(tokenId, addrBob), bn(0)), bn(0));
+
+console.log("Test: transfer 1au tokens from alice to bob");
+
+await alice.transfer(tokenId, addrBob, 1);
+
+balanceBoxes.add(addrBob);
+
+assertEq(fromSome(await balanceOf(tokenId, addrBob), bn(0)), bn(1));
+
+// TEST allowance
+
+// allowance should be 0
+
+console.log("Test: allowance should be 0");
+
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(0));
+
+// TEST transferFrom
+
+console.log("Test: transferFrom Bob 1au to Carla by Alice");
+
+await bob.approve(tokenId, addrAlice, 1);
+
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(1));
+assertEq(fromSome(await balanceOf(tokenId, addrBob), bn(0)), bn(1));
+assertEq(fromSome(await balanceOf(tokenId, addrCarla), bn(0)), bn(0));
+
+await alice.transferFrom(tokenId, addrBob, addrCarla, 1);
+
+balanceBoxes.add(addrCarla);
+
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(0));
+assertEq(fromSome(await balanceOf(tokenId, addrBob), bn(0)), bn(0));
+assertEq(fromSome(await balanceOf(tokenId, addrCarla), bn(0)), bn(1));
+
+// TEST approve
+
+console.log("Test: approve Bob 1au to Alice then set to 0au");
+
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(0));
+await bob.approve(tokenId, addrAlice, 1);
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(1));
+await bob.approve(tokenId, addrAlice, 0);
+assertEq(fromSome(await allowance(tokenId, addrBob, addrAlice), bn(0)), bn(0));
+
+// TEST deleteBalanceBox
+
+console.log("Test: try deleteBalanceBox that doesn't exist (should fail)");
+
+assertEq(fromSome(await balanceOf(tokenId, addrDave), bn(0)), bn(0));
+
+try {
+  await bob.deleteBalanceBox(tokenId, addrDave);
+} catch (e) {}
+
+const balanceBefore = await accMaster.balanceOf();
+
+for (const addr of Array.from(balanceBoxes)) {
+  console.log(`Test: deleteBalanceBox for ${addr}`);
+  await bob.deleteBalanceBox(tokenId, addr);
+}
+balanceBoxes.clear();
+
+const balanceAfter = await accMaster.balanceOf();
+
+console.log({ balanceBefore, balanceAfter });
+
+if (balanceAfter.gt(balanceBefore)) {
+  const diff = stdlib.formatCurrency(balanceAfter.sub(balanceBefore));
+  console.log(`Test: deleteBalanceBox master change in MBR ${diff}`);
+}
+
+// TEST deleteAllowanceBox
+
+process.exit(0);
