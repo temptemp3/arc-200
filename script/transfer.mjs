@@ -38,39 +38,47 @@ const main = async () => {
   */
 
   console.log("Deploy!");
-  const [, , inputJson] = process.argv;
-  if (!inputJson) {
-    console.log("No input json provided");
-    process.exit(1);
-  }
-  const payload = JSON.parse(
-    Buffer.from(fs.readFileSync(inputJson)).toString("utf-8")
-  );
-  const acc = await getAccount();
-
-  const balance = await balanceOf(acc, 249906631, acc.networkAccount.addr);
-
-  console.log(balance);
-
-  console.log(`payload size: ${payload.length}`);
-
-  // REM transfer include same address in payload with same amount and token may result in TransactionPool.Remember error
-
-  const results = [];
-  const promises = [];
-  let i = 0;
-  for (const p of payload) {
-    //console.log("Transfering...");
-    //console.log({ p });
-    const promise = transfer(acc, 249906631, p.recipientAddress, p.amount);
-    promises.push(promise);
-    i++;
-    if (i >= batchSize) {
-      results.push(...(await Promise.all(promises)));
-      i = 0;
+  const [, , appIdStr, inputJson] = process.argv;
+  const appId = parseInt(appIdStr);
+  try {
+    if (!inputJson) {
+      console.log("No input json provided");
+      process.exit(1);
     }
+    const payload = JSON.parse(
+      Buffer.from(fs.readFileSync(inputJson)).toString("utf-8")
+    );
+    const acc = await getAccount();
+
+    const balance = await balanceOf(acc, appId, acc.networkAccount.addr);
+
+    console.log(balance);
+
+    console.log(`payload size: ${payload.length}`);
+
+    // REM transfer include same address in payload with same amount and token may result in TransactionPool.Remember error
+
+    const results = [];
+    const promises = [];
+    let i = 0;
+    for (const p of payload) {
+      //console.log("Transfering...");
+      //console.log({ p });
+      const promise = transfer(acc, appId, p.recipientAddress, p.amount);
+      promises.push(promise);
+      i++;
+      if (i >= batchSize) {
+        results.push(...(await Promise.all(promises)));
+        i = 0;
+      }
+    }
+    if (i <= batchSize) {
+      results.push(...(await Promise.all(promises)));
+    }
+    console.log({ results });
+  } catch (e) {
+    console.log({ e });
   }
-  console.log({ results });
 };
 
 main();
