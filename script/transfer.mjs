@@ -10,6 +10,51 @@ const balanceOf = balanceOfHelper(stdlib);
 const batchSize = 35;
 
 const main = async () => {
+
+  // TODO move these somewhere else
+
+  // util: generate tokens between decimals 0 and 19
+  /*
+  const n = 19;
+  const addrs = [];
+  for (let i = 0; i <= n; i++) {
+    addrs.push(i);
+  }
+  console.log(
+    addrs.map((i) => ({
+      managerAddress:
+        "OJUQOEPFOEZUP3JJIF6OAV4RZQL6HQMBDIXODGSXNEIH7TTR353IMJEL24",
+      zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+      enableZeroAddressBurn: true,
+      meta: {
+        name: `DEC${i} Token`,
+        symbol: `DEC${i}`,
+        decimals: i,
+        totalSupply: 1000000000000000000,
+      },
+    }))
+  );
+  fs.writeFileSync(
+    "payload.json",
+    JSON.stringify(
+      addrs.map((i) => ({
+        managerAddress:
+          "OJUQOEPFOEZUP3JJIF6OAV4RZQL6HQMBDIXODGSXNEIH7TTR353IMJEL24",
+        zeroAddress:
+          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+        enableZeroAddressBurn: true,
+        meta: {
+          name: `DEC${i} Token`,
+          symbol: `DEC${i}`,
+          decimals: i,
+          totalSupply: 1000000000000000000,
+        },
+      }))
+    )
+  );
+  return;
+  */
+
   // util: generate m addresses for payload
   /*
   const n = 1000;

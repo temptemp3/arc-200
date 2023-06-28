@@ -17,6 +17,7 @@ const main = async () => {
     Buffer.from(fs.readFileSync(inputJson)).toString("utf-8")
   );
   const acc = await getAccount();
+  const minted = [];
   for (const token of tokens) {
     console.log("Minting...");
     console.log({ token });
@@ -28,7 +29,12 @@ const main = async () => {
     const ctcInfo = await deployAs(acc, token);
     console.log(`Minted token ${bn2n(ctcInfo)} to ${token.managerAddress}`);
     console.log({ ctcInfo: bn2n(ctcInfo) });
+    minted.push({
+      appId: bn2n(ctcInfo),
+      ...token
+    });
   }
+  fs.writeFileSync("minted.json", JSON.stringify(minted));
 };
 
 main();
