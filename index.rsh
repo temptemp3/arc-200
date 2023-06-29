@@ -1,215 +1,260 @@
 "reach 0.1";
 
-const MAX_DECIMALS = 256;
-
-const TokenId = Address;
+const MAX_DECIMALS = 256; // fits in UInt8
 
 const TokenMeta = Struct([
-  ["name", Bytes(32)],
-  ["symbol", Bytes(8)],
-  ["decimals", UInt],
-  ["totalSupply", UInt],
+  ["name", Bytes(32)], // name
+  ["symbol", Bytes(8)], // symbol
+  ["decimals", UInt], // number of decimals
+  ["totalSupply", UInt], // total supply
 ]);
 
-const emptyToken = TokenMeta.fromObject({
-  name: Bytes(32).pad(" "),
-  symbol: Bytes(8).pad(" "),
-  decimals: 0,
-  totalSupply: 0,
+const State = Struct([
+  ...Struct.fields(TokenMeta), // token meta
+  ["zeroAddress", Address], // zero address
+  ["managerAddress", Address], // manager address
+  ["enableZeroAddressBurn", Bool], // allow zero address to burn tokens
+  ["closed", Bool], // closed
+]);
+
+const MintParams = Object({
+  name: Bytes(32), // name
+  symbol: Bytes(8), // symbol
+  decimals: UInt, // number of decimals
+  totalSupply: UInt, // total supply
 });
 
 const Params = Object({
-  zeroAddress: Address,
+  zeroAddress: Address, // zero address
+  managerAddress: Address, // manager address
+  enableZeroAddressBurn: Bool, // allow zero address to burn tokens
+  meta: MintParams, // token meta
 });
-
-const MintParams = Object({
-  name: Bytes(32),
-  symbol: Bytes(8),
-  decimals: UInt,
-  totalSupply: UInt,
-});
-
-const DeleteParams = Data({
-  Balance: Tuple(TokenId, Address),
-  Allowance: Tuple(TokenId, Address, Address),
-})
 
 export const ARC200 = Reach.App(() => {
   setOptions({ connectors: [ALGO] });
 
   const D = Participant("Deployer", {
-    params: Params,
-    ready: Fun([Contract], Null),
+    params: Params, // deployer params
+    ready: Fun([Contract], Null), // token ready
   });
 
   const A = API({
-    mint: Fun([TokenId, Address, TokenMeta], Bool),
-    transfer: Fun([TokenId, Address, UInt], Bool),
-    transferFrom: Fun([TokenId, Address, Address, UInt], Bool),
-    approve: Fun([TokenId, Address, UInt], Bool),
-    deleteBalanceBox: Fun([TokenId, Address], Bool),
-    deleteAllowanceBox: Fun([TokenId, Address, Address], Bool),
+    transfer: Fun([Address, UInt], Bool), // tranfer from this to address
+    transferFrom: Fun([Address, Address, UInt], Bool), // transfer from address to address
+    approve: Fun([Address, UInt], Bool), // approve address to spend this
+    deleteBalanceBox: Fun([Address], Bool), // delete balance box if zero
+    deleteAllowanceBox: Fun([Address, Address], Bool), // delete allowance box if zero
+    destroy: Fun([], Null), // destroy this contract
   });
 
   const V = View({
-    name: Fun([TokenId], Bytes(32)),
-    symbol: Fun([TokenId], Bytes(8)),
-    decimals: Fun([TokenId], UInt),
-    totalSupply: Fun([TokenId], UInt),
-    balanceOf: Fun([TokenId, Address], UInt),
-    allowance: Fun([TokenId, Address, Address], UInt),
+    name: Fun([], Bytes(32)), // get name
+    symbol: Fun([], Bytes(8)), // get symbol
+    decimals: Fun([], UInt), // get decimals
+    totalSupply: Fun([], UInt), // get total supply
+    balanceOf: Fun([Address], UInt), // get balance of address
+    allowance: Fun([Address, Address], UInt), // get allowance of address to spend this
+    state: Fun([], State), // get state
   });
 
   const E = Events({
-    Transfer: [TokenId, Address, Address, UInt],
-    Approval: [TokenId, Address, Address, UInt],
-    Mint: [TokenId],
+    Transfer: [Address, Address, UInt],
+    Approval: [Address, Address, UInt],
   });
 
   init();
 
   D.only(() => {
-    const { zeroAddress } = declassify(interact.params);
+    const { zeroAddress, managerAddress, enableZeroAddressBurn, meta } =
+      declassify(interact.params);
   });
-  D.publish(zeroAddress);
-  D.interact.ready(getContract());
-
-  const tokens = new Map(TokenId, TokenMeta);
-  const balances = new Map(Tuple(TokenId, Address), UInt);
-  const allowances = new Map(Tuple(TokenId, Address, Address), UInt);
-
-  V.name.set((tokenId) => fromSome(tokens[tokenId], emptyToken).name);
-  V.symbol.set((tokenId) => fromSome(tokens[tokenId], emptyToken).symbol);
-  V.decimals.set((tokenId) => fromSome(tokens[tokenId], emptyToken).decimals);
-  V.totalSupply.set(
-    (tokenId) => fromSome(tokens[tokenId], emptyToken).totalSupply
+  D.publish(zeroAddress, managerAddress, enableZeroAddressBurn, meta).check(
+    () => {
+      check(
+        zeroAddress != managerAddress,
+        "ARC200: Zero address must not equal manager address"
+      );
+      check(meta.totalSupply > 0, "ARC200: Total supply must be greater than zero");
+      check(
+        meta.decimals < MAX_DECIMALS,
+        "ARC200: Decimals must be less than 256 (fits in UInt8)"
+      );
+    }
   );
 
-  const [] = parallelReduce([])
+  const balances = new Map(UInt);
+  const allowances = new Map(Tuple(Address, Address), UInt);
+
+  balances[managerAddress] = meta.totalSupply; // D creates manager and zero addres balance boxes
+  balances[zeroAddress] = 0;
+
+  E.Transfer(zeroAddress, managerAddress, meta.totalSupply);
+  D.interact.ready(getContract());
+
+  V.name.set(() => meta.name);
+  V.symbol.set(() => meta.symbol);
+  V.decimals.set(() => meta.decimals);
+  V.totalSupply.set(() => meta.totalSupply);
+
+  const initialState = {
+    ...meta,
+    zeroAddress,
+    managerAddress,
+    enableZeroAddressBurn,
+    closed: false,
+  };
+
+  const [s] = parallelReduce([initialState])
     .define(() => {
-      const balanceOf = (tokenId, owner) => {
-        const m_bal = balances[[tokenId, owner]];
+      const balanceOf = (owner) => {
+        const m_bal = balances[owner];
         return fromSome(m_bal, 0);
       };
       V.balanceOf.set(balanceOf);
-      const allowance = (tokenId, owner, spender) => {
-        const m_bal = allowances[[tokenId, owner, spender]];
+      const allowance = (owner, spender) => {
+        const m_bal = allowances[[owner, spender]];
         return fromSome(m_bal, 0);
       };
       V.allowance.set(allowance);
+      const state = () => State.fromObject(s);
+      V.state.set(state);
     })
     .invariant(balance() == 0)
-    .while(true)
-    .api_(A.mint, (tokenId, addr, meta) => {
-      check(meta.totalSupply > 0, "totalSupply must be greater than zero");
-      check(
-        meta.decimals < MAX_DECIMALS,
-        "decimals must be less than 256 (fits in UInt8)"
-      );
-      return [
-        (k) => {
-          tokens[tokenId] = TokenMeta.fromObject(meta);
-          balances[[tokenId, addr]] = meta.totalSupply;
-          E.Mint(tokenId);
-          E.Transfer(tokenId, zeroAddress, addr, meta.totalSupply);
-          k(true);
-          return [];
-        },
-      ];
-    })
+    .while(!s.closed)
     .define(() => {
-      const transfer_ = (tokenId, from_, to, amount) => {
-        balances[[tokenId, from_]] = balanceOf(tokenId, from_) - amount;
-        balances[[tokenId, to]] = balanceOf(tokenId, to) + amount;
-        E.Transfer(tokenId, from_, to, amount);
+      const transfer_ = (from_, to, amount) => {
+        balances[from_] = balanceOf(from_) - amount;
+        balances[to] = balanceOf(to) + amount;
+        E.Transfer(from_, to, amount);
       };
     })
-    .api_(A.transfer, (tokenId, to, amount) => {
-      check(to != zeroAddress, "ARC200: Transfer to zero address");
+    // api: transfer
+    // - transfer from this to address
+    // + may transfer to zero address (burn) if zero address burn enabled
+    .api_(A.transfer, (to, amount) => {
       check(
-        balanceOf(tokenId, this) >= amount,
-        "amount must not be greater than balance"
+        enableZeroAddressBurn || to != zeroAddress,
+        "ARC200: Transfer to zero address"
+      );
+      check(
+        balanceOf(this) >= amount,
+        "ARC200: Transfer amount must not be greater than balance"
       );
       return [
         (k) => {
-          transfer_(tokenId, this, to, amount);
+          transfer_(this, to, amount);
           k(true);
-          return [];
+          return [s];
         },
       ];
     })
-    .api_(A.transferFrom, (tokenId, from_, to, amount) => {
+    // api: transferFrom
+    // - transfer from address to address
+    // + may not transfer to and from zero address
+    // + requires allowance from spender to this
+    .api_(A.transferFrom, (from_, to, amount) => {
       check(from_ != zeroAddress, "ARC200: Transfer from zero address");
       check(to != zeroAddress, "ARC200: Transfer to zero address");
       check(
-        balanceOf(tokenId, from_) >= amount,
-        "amount must not be greater than balance"
+        balanceOf(from_) >= amount,
+        "ARC200: Amount must not be greater than balance"
       );
       check(
-        allowance(tokenId, from_, this) >= amount,
-        "amount must not be greater than allowance"
+        allowance(from_, this) >= amount,
+        "ARC200: Amount must not be greater than allowance"
       );
       return [
         (k) => {
-          transfer_(tokenId, from_, to, amount);
-          const newAllowance = allowance(tokenId, from_, this) - amount;
-          allowances[[tokenId, from_, this]] = newAllowance;
-          E.Approval(tokenId, from_, this, newAllowance);
+          transfer_(from_, to, amount);
+          const newAllowance = allowance(from_, this) - amount;
+          allowances[[from_, this]] = newAllowance;
+          E.Approval(from_, this, newAllowance);
           k(true);
-          return [];
+          return [s];
         },
       ];
     })
-    .api_(A.approve, (tokenId, spender, amount) => {
+    // api: approve
+    // - approve address to spend this
+    // + may not approve zero address
+    // + may not approve this if zero address
+    .api_(A.approve, (spender, amount) => {
+      check(this != zeroAddress, "ARC200: Approve this to zero address");
       check(spender != zeroAddress, "ARC200: Approve to zero address");
       return [
         (k) => {
-          allowances[[tokenId, this, spender]] = amount;
-          E.Approval(tokenId, this, spender, amount);
+          allowances[[this, spender]] = amount;
+          E.Approval(this, spender, amount);
           k(true);
-          return [];
+          return [s];
         },
       ];
     })
-    .api_(A.deleteBalanceBox, (tokenId, addr) => {
-      check(addr != zeroAddress, "ARC200: Delete balance box of zero address");
-      check(isSome(balances[[tokenId, addr]]), "ARC200: Balance box not found");
+    // api: deleteBalanceBox
+    // - delete balance box if zero
+    // + requires address not zero address
+    // + requires balance box to exist
+    // + requires balance box to be zero or zero address balance box to be total supply
+    .api_(A.deleteBalanceBox, (addr) => {
+      check(addr != zeroAddress, "ARC200: Delete balance box to zero address");
+      check(isSome(balances[addr]), "ARC200: Balance box not found");
+      check(
+        balanceOf(addr) == 0 || balanceOf(zeroAddress) == meta.totalSupply,
+        "ARC200: Balance box not empty or zero address balance box not total supply"
+      );
       return [
         (k) => {
-          const currentBalance = balanceOf(tokenId, addr);
-          if(currentBalance === 0) {
-            delete balances[[tokenId, addr]];
-          }
+          delete balances[addr];
           k(true);
-          return [];
+          return [s];
         },
       ];
     })
-    .api_(A.deleteAllowanceBox, (tokenId, owner, spender) => {
+    // api: deleteAllowanceBox
+    // - delete allowance box if zero
+    // + requires allowance box to exist
+    // + requires allowance box to be zero or zero address balance box to be total supply
+    .api_(A.deleteAllowanceBox, (owner, spender) => {
       check(
-        owner != zeroAddress,
-        "ARC200: Delete allowance box of zero address"
-      );
-      check(
-        spender != zeroAddress,
-        "ARC200: Delete allowance box to zero address"
-      );
-      check(
-        isSome(allowances[[tokenId, owner, spender]]),
+        isSome(allowances[[owner, spender]]),
         "ARC200: Allowance box not found"
       );
+      check(
+        allowance(owner, spender) == 0 ||
+          balanceOf(zeroAddress) == meta.totalSupply,
+        "ARC200: Allowance box not empty or zero address balance box not total supply"
+      );
       return [
         (k) => {
-          const currentAllowance = allowance(tokenId, owner, spender);
-          if (currentAllowance === 0) {
-            delete allowances[[tokenId, owner, spender]];
-          }
+          delete allowances[[owner, spender]];
           k(true);
-          return [];
+          return [s];
+        },
+      ];
+    })
+    // api: destroy
+    // - destroy this contract
+    // + requires zero address balance box to be total supply
+    // + deletes last balance box, zero address balance box
+    // + exits loop and closes contract
+    .api_(A.destroy, () => {
+      check(
+        isSome(balances[zeroAddress]),
+        "ARC200: Zero address balance box not found"
+      );
+      check(
+        balanceOf(zeroAddress) == meta.totalSupply,
+        "ARC200: Zero address balance box not total supply"
+      );
+      return [
+        (k) => {
+          delete balances[zeroAddress]; // delete last balance box
+          k(null);
+          return [{ ...s, closed: true }];
         },
       ];
     });
-  // unreachable
   commit();
   exit();
 });

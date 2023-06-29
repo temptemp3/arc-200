@@ -1,5 +1,5 @@
 .env
-script
 build
 .reach
 reach
+.DS_Store

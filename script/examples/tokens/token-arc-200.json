@@ -1,0 +1,13 @@
+[
+  {
+		"zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "managerAddress": "OJUQOEPFOEZUP3JJIF6OAV4RZQL6HQMBDIXODGSXNEIH7TTR353IMJEL24",
+    "enableZeroAddressBurn": true,
+		"meta": {
+    	"name": "ARC200 Token",
+    	"symbol": "ARC200",
+    	"decimals": 8,
+    	"totalSupply": 1000000000000000000
+		}
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+		"zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "managerAddress": "MANAGER_ADDRESS",
+    "enableZeroAddressBurn": true,
+		"meta": {
+    	"name": "META_NAME",
+    	"symbol": "META_SYMBOL",
+    	"decimals": META_DECIMALS,
+    	"totalSupply": META_TOTAL_SUPPLY
+		}
+  }
+]
