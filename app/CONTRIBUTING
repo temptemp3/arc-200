@@ -1,0 +1,40 @@
+Contribution Guidelines
+
+Thank you for your interest in contributing to the TEPE project! We welcome contributions from the community as they help improve the quality and functionality of our project. To ensure a smooth and collaborative experience, please review the following guidelines before making your contribution:
+
+Familiarize Yourself with the Project:
+
+Take the time to understand the TEPE project's goals, objectives, and overall structure. Review the existing documentation, codebase, and any available resources to gain a comprehensive understanding.
+Selecting a Contribution:
+
+Determine the type of contribution you would like to make. It can include bug fixes, feature additions, documentation improvements, code optimizations, or any other relevant enhancements.
+Create an Issue:
+
+Before starting any significant contribution, create a new issue in the TEPE project's repository to discuss your proposal with the maintainers. Describe the problem you want to solve or the feature you want to add. This will help ensure that your work aligns with the TEPE project's objectives and avoid duplicate efforts.
+Set Up Your Development Environment:
+
+Set up your local development environment by following the instructions provided in the TEPE project's documentation. This usually involves installing any dependencies, libraries, or frameworks required for development.
+Create a New Branch:
+
+Create a new branch in the TEPE project's repository from the latest release branch. For example, if the current release branch is "release/v1," create a branch from "release/v1." This ensures that your changes are based on the latest stable version.
+Make Your Changes:
+
+Implement your proposed changes or additions in the new branch. Ensure that your code follows the TEPE project's coding style and conventions. Write clear and concise commit messages for each logical change you make.
+Test Your Changes:
+
+Thoroughly test your modifications to ensure they work as intended. If applicable, write unit tests and ensure they pass successfully. Testing helps maintain the stability and reliability of the TEPE project.
+Submitting a Pull Request:
+
+Once you are confident in your changes, submit a pull request (PR) to the TEPE project's repository. Include a clear and detailed description of your changes, explaining why they are valuable to the TEPE project.
+Respond to Feedback:
+
+Be responsive to feedback from the TEPE project maintainers. They may request modifications, suggest improvements, or ask for further explanations. Engage in constructive discussions and update your code accordingly.
+Continuous Integration and Code Review:
+
+The TEPE project may have automated tests and continuous integration set up. Be sure to address any failing tests or build issues promptly. Additionally, be open to receiving feedback during the code review process.
+Maintain Open Communication:
+
+Throughout the contribution process, maintain open and respectful communication with the TEPE project maintainers and other contributors. Respond to inquiries, provide clarifications, and be collaborative.
+Please note that these contribution guidelines may vary depending on the TEPE project. Always refer to the TEPE project's specific documentation or guidelines for any project-specific instructions.
+
+Thank you for your interest and valuable contribution to the TEPE project. Your efforts are greatly appreciated!
