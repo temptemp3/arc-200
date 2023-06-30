@@ -21,6 +21,115 @@ import SendDialog from "../SendDialog/index.js";
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
 
+function AccountBalance(props) {
+  const { activeAccount } = useWallet();
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [token, setToken] = useState(props.token);
+  const reloadToken = useCallback(async () => {
+    if (!activeAccount) return;
+    const meta = await ARC200Service.getTokenMetadata(token.appId);
+    const amount = fawd(
+      await ARC200Service.balanceOf(token.appId, activeAccount.address),
+      meta.decimals
+    );
+    setToken({
+      appId: token.appId,
+      amount,
+      ...meta,
+    });
+  }, [activeAccount, token]);
+  useEffect(() => {
+    if (!activeAccount) return;
+    // realtime
+    /*
+    ARC200Service.nextTransferEvent(token.appId)
+      .then(reloadToken())
+      .catch(console.error);
+    */
+   // every 30 seconds
+    const interval = setInterval(reloadToken, 30_000);
+    return () => clearInterval(interval);
+  }, [activeAccount, token]);
+  return (
+    activeAccount &&
+    token && (
+      <>
+        <SendDialog
+          open={sendDialogOpen}
+          setOpen={setSendDialogOpen}
+          token={token}
+        />
+        <TableRow key={token.appId}>
+          <TableCell>{token.appId}</TableCell>
+          <TableCell>
+            {token.name} <br />
+            <a
+              href={`/#/token/${token.appId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Token Info
+            </a>{" "}
+            <br />
+            <a
+              href={`/#/transaction/${token.appId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Transactions for {activeAccount.address.slice(0, 4)}...
+              {activeAccount.address.slice(-4)}
+            </a>
+          </TableCell>
+          <TableCell>{displayToken(token)}</TableCell>
+          <TableCell>
+            <ButtonGroup variant="text">
+              {/* TODO convert to dropdown with default send */}
+              {(props.manage
+                ? [
+                    {
+                      label: "R",
+                      desciption: "Remove",
+                      icon: <DeleteIcon color="warning" />,
+                      onClick: () => {
+                        const tokens = JSON.parse(
+                          localStorage.getItem("tokens") || "[249906631]"
+                        );
+                        const newTokens = tokens.filter(
+                          (el) => el != token.appId
+                        );
+                        localStorage.setItem(
+                          "tokens",
+                          JSON.stringify(newTokens)
+                        );
+                        //setTokens(newTokens);
+                        setToken(null);
+                      },
+                    },
+                  ]
+                : [
+                    {
+                      label: "S",
+                      desciption: "Send",
+                      icon: <SendIcon />,
+                      onClick: () => {
+                        setToken(token);
+                        setSendDialogOpen(true);
+                      },
+                    },
+                  ]
+              ).map((el) => (
+                <Tooltip key={el.label} placement="top" title={el.desciption}>
+                  <Button onClick={el.onClick}>{el.icon || el.label}</Button>
+                </Tooltip>
+              ))}
+            </ButtonGroup>
+          </TableCell>
+        </TableRow>
+      </>
+    )
+  );
+}
+
 // TODO add interface for props
 
 function AccountBalances(props) {
@@ -117,69 +226,11 @@ function AccountBalances(props) {
             </TableHead>
             <TableBody>
               {tokens?.map((token) => (
-                <TableRow key={token.appId}>
-                  <TableCell>{token.appId}</TableCell>
-                  <TableCell>
-                    {token.name} <br />
-                    <a href={`/#/token/${token.appId}`} target="_blank">
-                      Token Info
-                    </a>{" "}
-                    <br />
-                    <a href={`/#/transaction/${token.appId}`} target="_blank">
-                      Transactions for {activeAccount.address.slice(0, 4)}...
-                      {activeAccount.address.slice(-4)}
-                    </a>
-                  </TableCell>
-                  <TableCell>{displayToken(token)}</TableCell>
-                  <TableCell>
-                    <ButtonGroup variant="text">
-                      {/* TODO convert to dropdown with default send */}
-                      {(props.manage
-                        ? [
-                            {
-                              label: "R",
-                              desciption: "Remove",
-                              icon: <DeleteIcon color="warning" />,
-                              onClick: () => {
-                                const newTokens = tokens.filter(
-                                  (el) => el.appId != token.appId
-                                );
-                                console.log({ newTokens });
-                                localStorage.setItem(
-                                  "tokens",
-                                  JSON.stringify(
-                                    newTokens.map((el) => el.appId)
-                                  )
-                                );
-                                setTokens(newTokens);
-                              },
-                            },
-                          ]
-                        : [
-                            {
-                              label: "S",
-                              desciption: "Send",
-                              icon: <SendIcon />,
-                              onClick: () => {
-                                setToken(token);
-                                setSendDialogOpen(true);
-                              },
-                            },
-                          ]
-                      ).map((el) => (
-                        <Tooltip
-                          key={el.label}
-                          placement="top"
-                          title={el.desciption}
-                        >
-                          <Button onClick={el.onClick}>
-                            {el.icon || el.label}
-                          </Button>
-                        </Tooltip>
-                      ))}
-                    </ButtonGroup>
-                  </TableCell>
-                </TableRow>
+                <AccountBalance
+                  key={token.appId}
+                  token={token}
+                  manage={props.manage}
+                />
               ))}
             </TableBody>
           </>

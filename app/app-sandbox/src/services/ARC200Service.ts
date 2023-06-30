@@ -14,6 +14,21 @@ const ctcInfo = 249072786;
 // deprecated
 const getCTCInfo = () => ctcInfo;
 
+const nextEvent = (eventName: string) => async (ctcInfo: number) => {
+  const {
+    e: { [eventName]: evt },
+  } = (
+    await stdlib.connectAccount({
+      addr: zeroAddress,
+    })
+  ).contract(backend, ctcInfo);
+  const t = await stdlib.getNetworkTime();
+  await evt.seek(t);
+  return await evt.next();
+}
+
+const nextTransferEvent = nextEvent("Transfer");
+
 const getEvents =
   (eventName: string) => async (ctcInfo: number, time?: any) => {
     const {
@@ -231,4 +246,5 @@ export default {
   getApproveEvents,
   getTokenMetadata,
   getCTCInfo,
+  nextTransferEvent
 };
