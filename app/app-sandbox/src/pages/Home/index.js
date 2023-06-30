@@ -4,6 +4,8 @@ import * as React from "react";
 import Blink from "react-blink-text";
 import AccountBalances from "../../components/AccountBalances";
 import Connect from "../../components/Connect";
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 
 function Balances(props) {
   const [tokens, setTokens] = React.useState(props.tokens);
@@ -13,7 +15,8 @@ function Balances(props) {
     <>
       <div>
         <Typography variant="h6">Balances</Typography>
-        <button
+        <Button
+          variant="outlined"
           onClick={() => {
             try {
               const token = parseInt(window.prompt("Enter appId"));
@@ -28,19 +31,22 @@ function Balances(props) {
           }}
         >
           +
-        </button>
-        <button
+        </Button>
+        <Button variant="outlined"
+          sx={{margin: 1}}
           onClick={() => {
             setManage(!manage);
           }}
         >
           Manage
-        </button>
+        </Button>
+        <Box sx={{margin: 1}}>
         <AccountBalances
           manage={manage}
           tokens={tokens}
           onSetAppId={setAppId}
         />
+        </Box>
       </div>
     </>
   );

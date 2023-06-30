@@ -5,7 +5,6 @@ import {
   ButtonGroup,
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableRow,
   Tooltip,
@@ -17,6 +16,10 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { displayToken } from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
+import Paper from '@mui/material/Paper';
+import TableContainer from '@mui/material/TableContainer';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import { styled } from '@mui/material/styles';
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
@@ -137,6 +140,19 @@ function AccountBalances(props) {
   const [token, setToken] = useState({});
   const [tokens, setTokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: theme.palette.common.black,
+      color: theme.palette.common.white,
+      padding: 8,
+    },
+    [`&.${tableCellClasses.body}`]: {
+      fontSize: 14,
+      padding: 8,
+    },
+  }));
+
   const reloadTokens = useCallback(async () => {
     if (!activeAccount) return;
     const tokens = [];
@@ -167,7 +183,8 @@ function AccountBalances(props) {
   // -------------------------------------------
   return (
     <div className="AccountBalances">
-      <Table>
+      <TableContainer component={Paper}>
+      <Table aria-label="customized pagination table">
         {!tokens ? (
           props.tokens && (
             <>
@@ -190,18 +207,18 @@ function AccountBalances(props) {
               <TableBody>
                 {props?.tokens?.map((appId, index) => (
                   <TableRow key={appId}>
-                    <TableCell>
+                    <StyledTableCell>
                       <Skeleton variant="text" />
-                    </TableCell>
-                    <TableCell>
+                    </StyledTableCell>
+                    <StyledTableCell>
                       <Skeleton variant="text" />
-                    </TableCell>
-                    <TableCell>
+                    </StyledTableCell>
+                    <StyledTableCell>
                       <Skeleton variant="text" />
-                    </TableCell>
-                    <TableCell>
+                    </StyledTableCell>
+                    <StyledTableCell>
                       <Skeleton variant="text" />
-                    </TableCell>
+                    </StyledTableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -218,10 +235,10 @@ function AccountBalances(props) {
             />
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Balance</TableCell>
-                <TableCell>Action</TableCell>
+                <StyledTableCell>ID</StyledTableCell>
+                <StyledTableCell>Name</StyledTableCell>
+                <StyledTableCell>Balance</StyledTableCell>
+                <StyledTableCell>Action</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -236,6 +253,7 @@ function AccountBalances(props) {
           </>
         )}
       </Table>
+      </TableContainer>
     </div>
   );
 }
