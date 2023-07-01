@@ -20,6 +20,7 @@ import Paper from "@mui/material/Paper";
 import TableContainer from "@mui/material/TableContainer";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
+import { Link } from "react-router-dom";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
@@ -66,22 +67,12 @@ function AccountBalance(props) {
           <TableCell>{token.appId}</TableCell>
           <TableCell>
             {token.name} <br />
-            <a
-              href={`/#/token/${token.appId}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Token Info
-            </a>{" "}
+            <Link to={`/token/${token.appId}`}>Token Info</Link>
             <br />
-            <a
-              href={`/#/token/${token.appId}/address/${activeAccount.address}`}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <Link to={`/token/${token.appId}/address/${activeAccount.address}`}>
               Transactions for {activeAccount.address.slice(0, 4)}...
               {activeAccount.address.slice(-4)}
-            </a>
+            </Link>
           </TableCell>
           <TableCell>{displayToken(token)}</TableCell>
           <TableCell>

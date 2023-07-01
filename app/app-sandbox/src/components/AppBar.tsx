@@ -9,11 +9,14 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useWallet } from "@txnlab/use-wallet";
-import { Button } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { makeStdLib } from "../utils/reach.js";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import * as Copy from "react-copy-to-clipboard";
 import { toast } from "react-toastify";
+import HomeIcon from "@mui/icons-material/Home";
+import { useNavigate } from "react-router-dom";
+import NFDService from "../services/NFDService";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -59,6 +62,7 @@ const stdlib = makeStdLib();
 
 export default function PrimarySearchAppBar() {
   const { CopyToClipboard } = Copy;
+  const navigate = useNavigate();
 
   const { providers, activeAccount } = useWallet();
   const notify = (msg: string) => toast(msg);
@@ -117,6 +121,16 @@ export default function PrimarySearchAppBar() {
         sx={{ top: "auto", bottom: 0 }}
       >
         <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="home"
+            sx={{ mr: 2 }}
+            onClick={() => navigate("/")}
+          >
+            <HomeIcon />
+          </IconButton>
           {false && (
             <IconButton
               size="large"
@@ -168,8 +182,11 @@ export default function PrimarySearchAppBar() {
                   },
                 }}
               >
-                {activeAccount.address.slice(0, 4)}...
-                {activeAccount.address.slice(-4)}
+                <strong>
+                  {((address) =>
+                    NFDService.getNFDByAddress(address)?.[address]?.name ||
+                    address.slice(0, 8) + "...")(activeAccount.address)}
+                </strong>
                 <CopyToClipboard
                   text={activeAccount.address}
                   onCopy={() => {

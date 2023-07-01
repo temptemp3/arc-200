@@ -20,8 +20,9 @@ import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import { makeStdLib } from "../../utils/reach";
 import ARC200Service from "../../services/ARC200Service";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { displayTokenValue, zeroAddress } from "../../utils/algorand";
+import NFDService from "../../services/NFDService";
 
 const stdlib = makeStdLib();
 const fa = stdlib.formatAddress;
@@ -135,7 +136,7 @@ const TokenHolders = ({ token, holders }) => {
   };
   return (
     token && (
-      <Box sx={{ margin: 1 }}>
+      <Box sx={{ textAlign: "left", margin: 1 }}>
         <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
         {true || holders?.length > 0 ? (
           <TableContainer component={Paper}>
@@ -161,7 +162,13 @@ const TokenHolders = ({ token, holders }) => {
                     : holders
                   ).map((row) => (
                     <StyledTableRow key={row[0]}>
-                      <StyledTableCell>{row[0]}</StyledTableCell>
+                      <StyledTableCell>
+                        <Link to={`/token/${token.appId}/address/${row[0]}`}>
+                          {((address) =>
+                            NFDService.getNFDByAddress(address)?.[address]
+                              ?.name || address)(row[0])}
+                        </Link>
+                      </StyledTableCell>
                       <StyledTableCell align="right">
                         {displayTokenValue({
                           ...token,
@@ -227,7 +234,7 @@ const TokenTransactions = ({ token, transactions }) => {
   };
   return (
     token && (
-      <Box sx={{ margin: 1 }}>
+      <Box sx={{ textAlign: "left", margin: 1 }}>
         <h2>
           Transactions [
           {transactions?.length > 0 ? transactions?.length : "..."}]
@@ -257,8 +264,20 @@ const TokenTransactions = ({ token, transactions }) => {
                     <StyledTableCell component="th" scope="row">
                       {row[0]}
                     </StyledTableCell>
-                    <StyledTableCell align="right">{row[1]}</StyledTableCell>
-                    <StyledTableCell align="right">{row[2]}</StyledTableCell>
+                    <StyledTableCell align="right">
+                      <Link to={`/token/${token.appId}/address/${row[1]}`}>
+                        {((address) =>
+                          NFDService.getNFDByAddress(address)?.[address]
+                            ?.name || address)(row[1])}
+                      </Link>
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      <Link to={`/token/${token.appId}/address/${row[2]}`}>
+                        {((address) =>
+                          NFDService.getNFDByAddress(address)?.[address]
+                            ?.name || address)(row[2])}
+                      </Link>
+                    </StyledTableCell>
                     <StyledTableCell align="right">
                       {displayTokenValue({
                         ...token,
@@ -313,6 +332,8 @@ const Token = ({ token, transactions, holders }) => {
           </Stack>
           <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
             <code style={{ display: "inline-block" }}>
+              {token.appId && <span>Id: {token.appId}</span>}
+              <br />
               {token.name && `Name: ${token.name}`}
               <br />
               {token.symbol && `Symbol: ${token.symbol}`}
@@ -374,9 +395,20 @@ function Page() {
     })();
   }, [token]);
   React.useEffect(() => {
+    if (!transactions) return;
+    (async () => {
+      const addresses = Array.from(
+        new Set(transactions.map(([, from, to]) => [from, to]).flat())
+      );
+      for (const address of addresses) {
+        await NFDService.fetchNFDByAddress(address);
+      }
+    })();
+  }, [transactions]);
+  React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
-      const token = { ...tokenMetadata };
+      const token = { ...tokenMetadata, appId };
       setToken(token);
     })();
   }, []);

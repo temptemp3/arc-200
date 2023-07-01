@@ -12,8 +12,9 @@ import Paper from "@mui/material/Paper";
 import { useWallet } from "@txnlab/use-wallet";
 import { makeStdLib } from "../../utils/reach";
 import ARC200Service from "../../services/ARC200Service";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { displayTokenValue } from "../../utils/algorand";
+import NFDService from "../../services/NFDService";
 
 const stdlib = makeStdLib();
 const fa = stdlib.formatAddress;
@@ -52,6 +53,12 @@ const Token = ({ address, token, transactions }) => {
         </Stack>
         <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
           <code style={{ display: "inline-block" }}>
+            {token.appId && (
+              <span>
+                Id: <Link to={`/token/${token.appId}`}>{token.appId}</Link>
+              </span>
+            )}
+            <br />
             {token.name && `Name: ${token.name}`}
             <br />
             {token.symbol && `Symbol: ${token.symbol}`}
@@ -68,39 +75,59 @@ const Token = ({ address, token, transactions }) => {
           </code>
         </Stack>
       </Stack>
-      <h2>Transactions</h2>
-      <h3>For: {address}</h3>
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized table">
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>Block</StyledTableCell>
-              <StyledTableCell align="right">From</StyledTableCell>
-              <StyledTableCell align="right">To</StyledTableCell>
-              <StyledTableCell align="right">
-                Amount ({token.symbol})
-              </StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {transactions?.map((row) => (
-              <StyledTableRow key={row.name}>
-                <StyledTableCell component="th" scope="row">
-                  {row[0]}
-                </StyledTableCell>
-                <StyledTableCell align="right">{row[1]}</StyledTableCell>
-                <StyledTableCell align="right">{row[2]}</StyledTableCell>
+      <Box sx={{ textAlign: "left" }}>
+        <h2>Transactions</h2>
+        <h3>
+          For: {NFDService.getNFDByAddress(address)?.[address]?.name || address}
+        </h3>
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>Block</StyledTableCell>
+                <StyledTableCell align="right">From</StyledTableCell>
+                <StyledTableCell align="right">To</StyledTableCell>
                 <StyledTableCell align="right">
-                  {displayTokenValue({
-                    ...token,
-                    amount: fawd(row[3], token.decimals),
-                  })}
+                  Amount ({token.symbol})
                 </StyledTableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {transactions?.length > 0 ? (
+                transactions?.map((row) => (
+                  <StyledTableRow key={row.name}>
+                    <StyledTableCell component="th" scope="row">
+                      {row[0]}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {((address) =>
+                        NFDService.getNFDByAddress(address)?.[address]?.name ||
+                        address)(row[1])}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {((address) =>
+                        NFDService.getNFDByAddress(address)?.[address]?.name ||
+                        address)(row[2])}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {displayTokenValue({
+                        ...token,
+                        amount: fawd(row[3], token.decimals),
+                      })}
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))
+              ) : (
+                <StyledTableRow>
+                  <StyledTableCell colSpan={4} align="center" height={184}>
+                    Loading...
+                  </StyledTableCell>
+                </StyledTableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     </Box>
   );
 };
@@ -109,7 +136,6 @@ function Page() {
   const { id: appId, addr: address } = useParams();
   const [token, setToken] = React.useState(null);
   const [transactions, setTransactions] = React.useState([]);
-  //const [holders, setHolders] = React.useState([]);
   React.useEffect(() => {
     if (!token) return;
     (async () => {
@@ -128,9 +154,20 @@ function Page() {
     })();
   }, [token]);
   React.useEffect(() => {
+    if (!transactions) return;
+    (async () => {
+      const addresses = Array.from(
+        new Set(transactions.map(([, from, to]) => [from, to]).flat())
+      );
+      for (const address of addresses) {
+        await NFDService.fetchNFDByAddress(address);
+      }
+    })();
+  }, [transactions]);
+  React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
-      const token = { ...tokenMetadata };
+      const token = { ...tokenMetadata, appId };
       setToken(token);
     })();
   }, []);
