@@ -1,34 +1,33 @@
 import * as React from "react";
-import PropTypes from 'prop-types';
-import { Stack, Typography } from "@mui/material";
-import { styled } from '@mui/material/styles';
-import { useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableFooter from '@mui/material/TableFooter';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TablePagination from '@mui/material/TablePagination';
-import Paper from '@mui/material/Paper';
-import IconButton from '@mui/material/IconButton';
-import FirstPageIcon from '@mui/icons-material/FirstPage';
-import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
-import LastPageIcon from '@mui/icons-material/LastPage';
-import { useWallet } from "@txnlab/use-wallet";
+import PropTypes from "prop-types";
+import { Skeleton, Stack, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableFooter from "@mui/material/TableFooter";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TablePagination from "@mui/material/TablePagination";
+import Paper from "@mui/material/Paper";
+import IconButton from "@mui/material/IconButton";
+import FirstPageIcon from "@mui/icons-material/FirstPage";
+import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import LastPageIcon from "@mui/icons-material/LastPage";
 import { makeStdLib } from "../../utils/reach";
 import ARC200Service from "../../services/ARC200Service";
 import { useParams } from "react-router-dom";
-import { zeroAddress } from "../../utils/algorand";
+import { displayTokenValue, zeroAddress } from "../../utils/algorand";
 
 const stdlib = makeStdLib();
 const fa = stdlib.formatAddress;
+const fawd = stdlib.formatWithDecimals;
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
-
 
 function TablePaginationActions(props) {
   const theme = useTheme();
@@ -57,28 +56,36 @@ function TablePaginationActions(props) {
         disabled={page === 0}
         aria-label="first page"
       >
-        {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
+        {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
       </IconButton>
       <IconButton
         onClick={handleBackButtonClick}
         disabled={page === 0}
         aria-label="previous page"
       >
-        {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowRight />
+        ) : (
+          <KeyboardArrowLeft />
+        )}
       </IconButton>
       <IconButton
         onClick={handleNextButtonClick}
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
         aria-label="next page"
       >
-        {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
+        {theme.direction === "rtl" ? (
+          <KeyboardArrowLeft />
+        ) : (
+          <KeyboardArrowRight />
+        )}
       </IconButton>
       <IconButton
         onClick={handleLastPageButtonClick}
         disabled={page >= Math.ceil(count / rowsPerPage) - 1}
         aria-label="last page"
       >
-        {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
+        {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
       </IconButton>
     </Box>
   );
@@ -104,167 +111,237 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
+  "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
   // hide last border
-  '&:last-child td, &:last-child th': {
+  "&:last-child td, &:last-child th": {
     border: 0,
   },
 }));
 
-const User = (props) => {
-  const { activeAccount } = useWallet();
+const TokenHolders = ({ token, holders }) => {
   const [page, setPage] = React.useState(0);
-  const [pageTx, setTxPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
-
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - props?.holders?.length) : 0;
-
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - holders?.length) : 0;
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
-
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  
+  return (
+    token && (
+      <Box sx={{ margin: 1 }}>
+        <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
+        {true || holders?.length > 0 ? (
+          <TableContainer component={Paper}>
+            <Table
+              sx={{ minWidth: 700 }}
+              aria-label="customized pagination table"
+            >
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>Address</StyledTableCell>
+                  <StyledTableCell align="right">
+                    Balance ({token.symbol})
+                  </StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {holders?.length > 0 ? (
+                  (rowsPerPage > 0
+                    ? holders?.slice(
+                        page * rowsPerPage,
+                        page * rowsPerPage + rowsPerPage
+                      )
+                    : holders
+                  ).map((row) => (
+                    <StyledTableRow key={row[0]}>
+                      <StyledTableCell>{row[0]}</StyledTableCell>
+                      <StyledTableCell align="right">
+                        {displayTokenValue({
+                          ...token,
+                          amount: fawd(row[1], token.decimals),
+                        })}
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  ))
+                ) : (
+                  <StyledTableRow style={{ height: 184 }}>
+                    <StyledTableCell colSpan={2} align="center">
+                      Loading...
+                    </StyledTableCell>
+                  </StyledTableRow>
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[
+                      5,
+                      10,
+                      25,
+                      { label: "All", value: -1 },
+                    ]}
+                    colSpan={3}
+                    count={holders?.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    SelectProps={{
+                      inputProps: {
+                        "aria-label": "rows per page",
+                      },
+                      native: true,
+                    }}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    ActionsComponent={TablePaginationActions}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Paper sx={{ width: "100%", overflow: "hidden" }}>
+            <Skeleton variant="rounded" width="100%" height={278} />
+          </Paper>
+        )}
+      </Box>
+    )
+  );
+};
+
+const TokenTransactions = ({ token, transactions }) => {
+  const [pageTx, setTxPage] = React.useState(0);
+  const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
   const handleTxChangePage = (event, newPage) => {
     setTxPage(newPage);
   };
-
   const handleTxChangeRowsPerPage = (event) => {
     setTxRowsPerPage(parseInt(event.target.value, 10));
     setTxPage(0);
   };
   return (
-    <Box sx={{margin: 1}}>
-      <Stack>
-        <Stack direction="row" style={{ alignItems: "baseline" }}>
-          <Typography variant="h1">{props.symbol}</Typography>
+    token && (
+      <Box sx={{ margin: 1 }}>
+        <h2>
+          Transactions [
+          {transactions?.length > 0 ? transactions?.length : "..."}]
+        </h2>
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 700 }} aria-label="customized table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>block</StyledTableCell>
+                <StyledTableCell align="right">From</StyledTableCell>
+                <StyledTableCell align="right">To</StyledTableCell>
+                <StyledTableCell align="right">
+                  Amount ({token.symbol})
+                </StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {transactions?.length > 0 ? (
+                (rowsTxPerPage > 0
+                  ? transactions?.slice(
+                      pageTx * rowsTxPerPage,
+                      pageTx * rowsTxPerPage + rowsTxPerPage
+                    )
+                  : transactions
+                ).map((row) => (
+                  <StyledTableRow key={row.name}>
+                    <StyledTableCell component="th" scope="row">
+                      {row[0]}
+                    </StyledTableCell>
+                    <StyledTableCell align="right">{row[1]}</StyledTableCell>
+                    <StyledTableCell align="right">{row[2]}</StyledTableCell>
+                    <StyledTableCell align="right">
+                      {displayTokenValue({
+                        ...token,
+                        amount: fawd(row[3], token.decimals),
+                      })}
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ))
+              ) : (
+                <StyledTableRow style={{ height: 184 }}>
+                  <StyledTableCell colSpan={4} align="center">
+                    Loading...
+                  </StyledTableCell>
+                </StyledTableRow>
+              )}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
+                  colSpan={3}
+                  count={transactions?.length}
+                  rowsPerPage={rowsTxPerPage}
+                  page={pageTx}
+                  SelectProps={{
+                    inputProps: {
+                      "aria-label": "rows per page",
+                    },
+                    native: true,
+                  }}
+                  onPageChange={handleTxChangePage}
+                  onRowsPerPageChange={handleTxChangeRowsPerPage}
+                  ActionsComponent={TablePaginationActions}
+                />
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </TableContainer>
+      </Box>
+    )
+  );
+};
+
+const Token = ({ token, transactions, holders }) => {
+  return (
+    // Token Info
+    <Stack sx={{ margin: 1 }}>
+      {token && (
+        <Stack>
+          <Stack direction="row" style={{ alignItems: "baseline" }}>
+            <Typography variant="h1">{token.symbol}</Typography>
+          </Stack>
+          <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
+            <code style={{ display: "inline-block" }}>
+              {token.name && `Name: ${token.name}`}
+              <br />
+              {token.symbol && `Symbol: ${token.symbol}`}
+              <br />
+              {typeof token.decimals === "number" &&
+                `Decimals: ${token.decimals}`}
+              <br />
+              {token.totalSupply &&
+                `Total Supply: ${displayTokenValue({
+                  ...token,
+                  amount: fawd(token.totalSupply, token.decimals),
+                })}`}
+              <br />
+            </code>
+          </Stack>
         </Stack>
-        <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
-          <code style={{ display: "inline-block" }}>
-            {props.name && `Name: ${props.name}`}
-            <br />
-            {props.symbol && `Symbol: ${props.symbol}`}
-            <br />
-            {typeof props.decimals === "number" &&
-              `Decimals: ${props.decimals}`}
-            <br />
-            {props.totalSupply && `Total Supply: ${props.totalSupply}`}
-            <br />
-          </code>
-          {props.balance &&
-            props.symbol &&
-            `Balance: ${props.balance} ${props.symbol}`}
-        </Stack>
-      </Stack>
-      <h2>Holders [{props?.holders?.length > 0 ? props?.holders?.length : "..."}]</h2>
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized pagination table">
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>address</StyledTableCell>
-              <StyledTableCell align="right">balance</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(rowsPerPage > 0
-            ? props?.holders?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            : props?.holders).map((row) => (
-              <StyledTableRow key={row[0]}>
-                <StyledTableCell component="th" scope="row">{row[0]}</StyledTableCell>
-                <StyledTableCell align="right">{Number(row[1] / props.totalSupply).toFixed(2)}</StyledTableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                colSpan={3}
-                count={props?.holders?.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                SelectProps={{
-                  inputProps: {
-                    'aria-label': 'rows per page',
-                  },
-                  native: true,
-                }}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                ActionsComponent={TablePaginationActions}
-              />
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
-      <h2>
-        Transactions{" "}
-        [{props?.transactions?.length > 0 ? props?.transactions?.length : "..."}]
-      </h2>
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 700 }} aria-label="customized table">
-          <TableHead>
-            <TableRow>
-              <StyledTableCell>block</StyledTableCell>
-              <StyledTableCell align="right">from</StyledTableCell>
-              <StyledTableCell align="right">to</StyledTableCell>
-              <StyledTableCell align="right">amount</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(rowsTxPerPage > 0
-            ? props?.transactions?.slice(pageTx * rowsTxPerPage, pageTx * rowsTxPerPage + rowsTxPerPage)
-            : props?.transactions).map((row) => (
-              <StyledTableRow key={row.name}>
-                <StyledTableCell component="th" scope="row">{row[0]}</StyledTableCell>
-                <StyledTableCell align="right">{row[1]}</StyledTableCell>
-                <StyledTableCell align="right">{row[2]}</StyledTableCell>
-                <StyledTableCell align="right">{row[3]}</StyledTableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                colSpan={3}
-                count={props?.transactions?.length}
-                rowsPerPage={rowsTxPerPage}
-                page={pageTx}
-                SelectProps={{
-                  inputProps: {
-                    'aria-label': 'rows per page',
-                  },
-                  native: true,
-                }}
-                onPageChange={handleTxChangePage}
-                onRowsPerPageChange={handleTxChangeRowsPerPage}
-                ActionsComponent={TablePaginationActions}
-              />
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
-    </Box>
+      )}
+      <TokenHolders token={token} holders={holders} />
+      <TokenTransactions token={token} transactions={transactions} />
+    </Stack>
   );
 };
 
 function Page() {
   const { id: appId } = useParams();
-  const { activeAccount } = useWallet();
   const [token, setToken] = React.useState(null);
   const [transactions, setTransactions] = React.useState([]);
   const [holders, setHolders] = React.useState([]);
   React.useEffect(() => {
-    if (!activeAccount) return;
     if (!token) return;
     (async () => {
       const ret = (await ARC200Service.getTransferEvents(appId))
@@ -295,15 +372,15 @@ function Page() {
       setHolders(balances);
       setTransactions(ret);
     })();
-  }, [activeAccount, token]);
+  }, [token]);
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
       const token = { ...tokenMetadata };
       setToken(token);
     })();
-  }, [activeAccount]);
-  return <User {...token} transactions={transactions} holders={holders} />;
+  }, []);
+  return <Token token={token} transactions={transactions} holders={holders} />;
 }
 
 export default Page;

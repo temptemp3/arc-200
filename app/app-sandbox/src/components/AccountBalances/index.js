@@ -16,10 +16,10 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { displayToken } from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
-import Paper from '@mui/material/Paper';
-import TableContainer from '@mui/material/TableContainer';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import { styled } from '@mui/material/styles';
+import Paper from "@mui/material/Paper";
+import TableContainer from "@mui/material/TableContainer";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import { styled } from "@mui/material/styles";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
@@ -49,7 +49,7 @@ function AccountBalance(props) {
       .then(reloadToken())
       .catch(console.error);
     */
-   // every 30 seconds
+    // every 30 seconds
     const interval = setInterval(reloadToken, 30_000);
     return () => clearInterval(interval);
   }, [activeAccount, token]);
@@ -75,7 +75,7 @@ function AccountBalance(props) {
             </a>{" "}
             <br />
             <a
-              href={`/#/transaction/${token.appId}`}
+              href={`/#/token/${token.appId}/address/${activeAccount.address}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -140,7 +140,7 @@ function AccountBalances(props) {
   const [token, setToken] = useState({});
   const [tokens, setTokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  
+
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: theme.palette.common.black,
@@ -184,9 +184,8 @@ function AccountBalances(props) {
   return (
     <div className="AccountBalances">
       <TableContainer component={Paper}>
-      <Table aria-label="customized pagination table">
-        {!tokens ? (
-          props.tokens && (
+        <Table aria-label="customized pagination table">
+          {!tokens ? (
             <>
               <TableHead>
                 <TableRow>
@@ -205,7 +204,7 @@ function AccountBalances(props) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {props?.tokens?.map((appId, index) => (
+                {tokens?.map((appId, index) => (
                   <TableRow key={appId}>
                     <StyledTableCell>
                       <Skeleton variant="text" />
@@ -223,36 +222,35 @@ function AccountBalances(props) {
                 ))}
               </TableBody>
             </>
-          )
-        ) : (
-          <>
-            <SendDialog
-              open={sendDialogOpen}
-              setOpen={setSendDialogOpen}
-              token={token}
-              setTokens={setTokens}
-              tokens={tokens}
-            />
-            <TableHead>
-              <TableRow>
-                <StyledTableCell>ID</StyledTableCell>
-                <StyledTableCell>Name</StyledTableCell>
-                <StyledTableCell>Balance</StyledTableCell>
-                <StyledTableCell>Action</StyledTableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tokens?.map((token) => (
-                <AccountBalance
-                  key={token.appId}
-                  token={token}
-                  manage={props.manage}
-                />
-              ))}
-            </TableBody>
-          </>
-        )}
-      </Table>
+          ) : (
+            <>
+              <SendDialog
+                open={sendDialogOpen}
+                setOpen={setSendDialogOpen}
+                token={token}
+                setTokens={setTokens}
+                tokens={tokens}
+              />
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>ID</StyledTableCell>
+                  <StyledTableCell>Name</StyledTableCell>
+                  <StyledTableCell>Balance</StyledTableCell>
+                  <StyledTableCell>Action</StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {tokens?.map((token) => (
+                  <AccountBalance
+                    key={token.appId}
+                    token={token}
+                    manage={props.manage}
+                  />
+                ))}
+              </TableBody>
+            </>
+          )}
+        </Table>
       </TableContainer>
     </div>
   );

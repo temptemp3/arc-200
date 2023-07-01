@@ -3,10 +3,8 @@ import ReactDOM from "react-dom/client";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import Mint from "./pages/Mint";
-import Address from "./pages/Address";
 import Token from "./pages/Token";
-import Transaction from "./pages/Transaction";
+import TokenAddress from "./pages/TokenAddress";
 import reportWebVitals from "./reportWebVitals";
 
 import { ToastContainer } from "react-toastify";
@@ -17,9 +15,6 @@ root.render(
   <React.StrictMode>
     <HashRouter>
       <Routes>
-        <Route path="/token/:id" element={<Token />} />
-        <Route path="/address/:id" element={<Address />} />
-        <Route path="/transaction/:id" element={<Transaction />} />
         <Route path="/*" element={<App />} />
       </Routes>
     </HashRouter>

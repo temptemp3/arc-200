@@ -19,6 +19,8 @@ import { WalletConnectModalSign } from "@walletconnect/modal-sign-html";
 
 import Home from "./pages/Home";
 import Mint from "./pages/Mint";
+import Token from "./pages/Token";
+import TokenAddress from "./pages/TokenAddress";
 import AppBar from "./components/AppBar.tsx";
 
 function App() {
@@ -60,6 +62,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/mint" element={<Mint />} />
+          <Route path="/token/:id" element={<Token />} />
+          <Route path="/token/:id/address/:addr" element={<TokenAddress />} />
         </Routes>
       </div>
       <AppBar />
