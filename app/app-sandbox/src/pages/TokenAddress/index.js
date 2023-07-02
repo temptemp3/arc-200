@@ -72,6 +72,11 @@ const Token = ({ address, token, transactions }) => {
                 amount: fawd(token.totalSupply, token.decimals),
               })}`}
             <br />
+            Circulating Supply: 1234
+            <br />
+            Date of creation: 07/01/2023
+            <br />
+            Created at round: 31020682
           </code>
         </Stack>
       </Stack>
@@ -85,6 +90,7 @@ const Token = ({ address, token, transactions }) => {
             <TableHead>
               <TableRow>
                 <StyledTableCell>Block</StyledTableCell>
+                <StyledTableCell>Timestamp</StyledTableCell>
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
                 <StyledTableCell align="right">Amount</StyledTableCell>
@@ -96,6 +102,9 @@ const Token = ({ address, token, transactions }) => {
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
                       {row[0]}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {row[4]}
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       {((address) =>
@@ -117,7 +126,7 @@ const Token = ({ address, token, transactions }) => {
                 ))
               ) : (
                 <StyledTableRow>
-                  <StyledTableCell colSpan={4} align="center" height={184}>
+                  <StyledTableCell colSpan={5} align="center" height={184}>
                     Loading...
                   </StyledTableCell>
                 </StyledTableRow>
@@ -145,6 +154,7 @@ function Page() {
             fa(what[0]),
             fa(what[1]),
             bn2bi(what[2]).toString(),
+            bn2n(what[3]),
           ];
         })
         .filter(([_, from, to, __]) => from === address || to === address) // !!!

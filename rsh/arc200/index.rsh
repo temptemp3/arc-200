@@ -91,7 +91,7 @@ export const ARC200 = Reach.App(() => {
   balances[manager] = meta.totalSupply; // D creates manager and zero addres balance boxes
   balances[zeroAddress] = 0;
 
-  E.Transfer(zeroAddress, manager, meta.totalSupply, thisConsensusTime());
+  E.Transfer(zeroAddress, manager, meta.totalSupply, thisConsensusSecs());
   D.interact.ready(getContract());
 
   V.name.set(() => meta.name);
@@ -128,7 +128,7 @@ export const ARC200 = Reach.App(() => {
       const transfer_ = (from_, to, amount) => {
         balances[from_] = balanceOf(from_) - amount;
         balances[to] = balanceOf(to) + amount;
-        E.Transfer(from_, to, amount, thisConsensusTime());
+        E.Transfer(from_, to, amount, thisConsensusSecs());
       };
     })
     // api: transfer
@@ -171,7 +171,7 @@ export const ARC200 = Reach.App(() => {
           transfer_(from_, to, amount);
           const newAllowance = allowance(from_, this) - amount;
           allowances[[from_, this]] = newAllowance;
-          E.Approval(from_, this, newAllowance, thisConsensusTime());
+          E.Approval(from_, this, newAllowance, thisConsensusSecs());
           k(true);
           return [s];
         },
@@ -187,7 +187,7 @@ export const ARC200 = Reach.App(() => {
       return [
         (k) => {
           allowances[[this, spender]] = amount;
-          E.Approval(this, spender, amount, thisConsensusTime());
+          E.Approval(this, spender, amount, thisConsensusSecs());
           k(true);
           return [s];
         },

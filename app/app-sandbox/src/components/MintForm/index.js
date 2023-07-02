@@ -92,7 +92,7 @@ function MintForm({
         );
         //setCtcInfo(ctcInfo);
         const tokens = JSON.parse(
-          localStorage.getItem("tokens") ?? "[253370163]" // TODO centralize arc200 token id
+          localStorage.getItem("tokens") ?? "[253377546]" // TODO centralize arc200 token id
         );
         localStorage.setItem(
           "tokens",

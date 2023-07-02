@@ -327,7 +327,7 @@ export async function Deployer(ctcTop, interact) {
       ;
       await stdlib.simMapSet(sim_r, 0, ctc4, v1550, ctc1, v1558);
       await stdlib.simMapSet(sim_r, 0, ctc4, v1549, ctc1, stdlib.checkedBigNumberify('./index.rsh:92:27:decimal', stdlib.UInt_max, '0'));
-      const v1566 = v1553;
+      const v1566 = v1554;
       null;
       const v1567 = await ctc.getContractInfo();
       
@@ -395,7 +395,7 @@ export async function Deployer(ctcTop, interact) {
   ;
   await stdlib.mapSet(map0, ctc4, v1550, ctc1, v1558);
   await stdlib.mapSet(map0, ctc4, v1549, ctc1, stdlib.checkedBigNumberify('./index.rsh:92:27:decimal', stdlib.UInt_max, '0'));
-  const v1566 = v1553;
+  const v1566 = v1554;
   null;
   const v1567 = await ctc.getContractInfo();
   stdlib.protect(ctc0, await interact.ready(v1567), {
@@ -460,7 +460,7 @@ export async function Deployer(ctcTop, interact) {
           });
         const v1793 = [v1768, v1783];
         await stdlib.mapSet(map1, ctc10, v1793, ctc1, v1784);
-        const v1794 = v1770;
+        const v1794 = v1771;
         null;
         const v1795 = true;
         await txn3.getOutput('approve', 'v1795', ctc3, v1795);
@@ -647,7 +647,7 @@ export async function Deployer(ctcTop, interact) {
         const v2673 = stdlib.fromSome(v2672, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
         const v2674 = stdlib.safeAdd(v2673, v2658);
         await stdlib.mapSet(map0, ctc4, v2657, ctc1, v2674);
-        const v2675 = v1770;
+        const v2675 = v1771;
         null;
         const v2677 = true;
         await txn3.getOutput('transfer', 'v2677', ctc3, v2677);
@@ -709,11 +709,11 @@ export async function Deployer(ctcTop, interact) {
         const v2904 = stdlib.fromSome(v2903, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
         const v2905 = stdlib.safeAdd(v2904, v2881);
         await stdlib.mapSet(map0, ctc4, v2880, ctc1, v2905);
-        const v2906 = v1770;
+        const v2906 = v1771;
         null;
         const v2911 = stdlib.safeSub(v2894, v2881);
         await stdlib.mapSet(map1, ctc10, v2892, ctc1, v2911);
-        const v2913 = v1770;
+        const v2913 = v1771;
         null;
         const v2914 = true;
         await txn3.getOutput('transferFrom', 'v2914', ctc3, v2914);
@@ -853,7 +853,7 @@ export async function _approve3(ctcTop, interact) {
           const v1784 = v1772[stdlib.checkedBigNumberify('./index.rsh:184:10:spread', stdlib.UInt_max, '1')];
           const v1793 = [v1768, v1783];
           await stdlib.simMapSet(sim_r, 1, ctc10, v1793, ctc1, v1784);
-          const v1794 = v1770;
+          const v1794 = v1771;
           null;
           const v1795 = true;
           const v1796 = await txn1.getOutput('approve', 'v1795', ctc4, v1795);
@@ -931,7 +931,7 @@ export async function _approve3(ctcTop, interact) {
         });
       const v1793 = [v1768, v1783];
       await stdlib.mapSet(map1, ctc10, v1793, ctc1, v1784);
-      const v1794 = v1770;
+      const v1794 = v1771;
       null;
       const v1795 = true;
       const v1796 = await txn1.getOutput('approve', 'v1795', ctc4, v1795);
@@ -1944,7 +1944,7 @@ export async function _transfer3(ctcTop, interact) {
           const v2673 = stdlib.fromSome(v2672, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
           const v2674 = stdlib.safeAdd(v2673, v2658);
           await stdlib.simMapSet(sim_r, 0, ctc3, v2657, ctc1, v2674);
-          const v2675 = v1770;
+          const v2675 = v1771;
           null;
           const v2677 = true;
           const v2678 = await txn1.getOutput('transfer', 'v2677', ctc4, v2677);
@@ -2028,7 +2028,7 @@ export async function _transfer3(ctcTop, interact) {
       const v2673 = stdlib.fromSome(v2672, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
       const v2674 = stdlib.safeAdd(v2673, v2658);
       await stdlib.mapSet(map0, ctc3, v2657, ctc1, v2674);
-      const v2675 = v1770;
+      const v2675 = v1771;
       null;
       const v2677 = true;
       const v2678 = await txn1.getOutput('transfer', 'v2677', ctc4, v2677);
@@ -2237,11 +2237,11 @@ export async function _transferFrom3(ctcTop, interact) {
           const v2904 = stdlib.fromSome(v2903, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
           const v2905 = stdlib.safeAdd(v2904, v2881);
           await stdlib.simMapSet(sim_r, 0, ctc3, v2880, ctc1, v2905);
-          const v2906 = v1770;
+          const v2906 = v1771;
           null;
           const v2911 = stdlib.safeSub(v2894, v2881);
           await stdlib.simMapSet(sim_r, 1, ctc10, v2892, ctc1, v2911);
-          const v2913 = v1770;
+          const v2913 = v1771;
           null;
           const v2914 = true;
           const v2915 = await txn1.getOutput('transferFrom', 'v2914', ctc4, v2914);
@@ -2343,11 +2343,11 @@ export async function _transferFrom3(ctcTop, interact) {
       const v2904 = stdlib.fromSome(v2903, stdlib.checkedBigNumberify('./index.rsh:114:32:decimal', stdlib.UInt_max, '0'));
       const v2905 = stdlib.safeAdd(v2904, v2881);
       await stdlib.mapSet(map0, ctc3, v2880, ctc1, v2905);
-      const v2906 = v1770;
+      const v2906 = v1771;
       null;
       const v2911 = stdlib.safeSub(v2894, v2881);
       await stdlib.mapSet(map1, ctc10, v2892, ctc1, v2911);
-      const v2913 = v1770;
+      const v2913 = v1771;
       null;
       const v2914 = true;
       const v2915 = await txn1.getOutput('transferFrom', 'v2914', ctc4, v2914);
@@ -2452,7 +2452,7 @@ const _ALGO = {
   GlobalNumUint: 0,
   LocalNumByteSlice: 0,
   LocalNumUint: 0,
-  appApproval: `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`,
+  appApproval: `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`,
   appApprovalMap: {
     0: `2`,
     1: `2`,

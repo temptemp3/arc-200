@@ -254,7 +254,8 @@ const TokenTransactions = ({ token, transactions }) => {
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
-                <StyledTableCell>block</StyledTableCell>
+                <StyledTableCell>Block</StyledTableCell>
+                <StyledTableCell>Timestamp</StyledTableCell>
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
                 <StyledTableCell align="right">Amount</StyledTableCell>
@@ -272,6 +273,9 @@ const TokenTransactions = ({ token, transactions }) => {
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
                       {row[0]}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {row[4]}
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[1]}`}>
@@ -356,6 +360,11 @@ const Token = ({ token, transactions, holders }) => {
                   amount: fawd(token.totalSupply, token.decimals),
                 })}`}
               <br />
+              Circulating Supply: 1234
+              <br />
+              Date of creation: 07/01/2023
+              <br />
+              Created at round: 31020682
             </code>
           </Stack>
         </Stack>
@@ -382,13 +391,14 @@ function Page() {
             fa(what[0]),
             fa(what[1]),
             bn2bi(what[2]).toString(),
+            bn2n(what[3]),
           ];
         })
         .reverse();
       const holders = {
         [zeroAddress]: Number(token.totalSupply),
       };
-      for (const [_, from, to, amountStr] of ret) {
+      for (const [_, from, to, amountStr, __] of ret) {
         const amount = Number(amountStr);
         if (holders[from]) holders[from] -= amount;
         else holders[from] = -amount;
