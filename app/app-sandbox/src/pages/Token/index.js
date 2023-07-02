@@ -147,9 +147,7 @@ const TokenHolders = ({ token, holders }) => {
               <TableHead>
                 <TableRow>
                   <StyledTableCell>Address</StyledTableCell>
-                  <StyledTableCell align="right">
-                    Balance
-                  </StyledTableCell>
+                  <StyledTableCell align="right">Balance</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -246,9 +244,7 @@ const TokenTransactions = ({ token, transactions }) => {
                 <StyledTableCell>block</StyledTableCell>
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
-                <StyledTableCell align="right">
-                  Amount
-                </StyledTableCell>
+                <StyledTableCell align="right">Amount</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -390,7 +386,7 @@ function Page() {
         if (a2 === b2) return a1.localeCompare(b1);
         return b2 - a2;
       });
-      setHolders(balances);
+      setHolders(balances.filter((el) => el[0] !== token.zeroAddress));
       setTransactions(ret);
     })();
   }, [token]);

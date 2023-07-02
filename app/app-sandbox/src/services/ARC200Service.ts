@@ -4,6 +4,7 @@ import { fromSome } from "../utils/common.js";
 import { makeStdLib } from "../utils/reach.js";
 
 const stdlib = makeStdLib();
+const fa = stdlib.formatAddress;
 const bn = stdlib.bigNumberify;
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
@@ -75,7 +76,7 @@ const getTokenMetadata = async (ctcInfo: number) => {
   if (!storedTokenMetadata) {
     const { v } = (
       await stdlib.connectAccount({
-        addr: zeroAddress,
+        addr: zeroAddress
       })
     ).contract(backend, ctcInfo);
     const prepareString = (str: string) => {
@@ -91,13 +92,14 @@ const getTokenMetadata = async (ctcInfo: number) => {
       symbol: dSymbol,
       decimals: decimalsBn,
       totalSupply: totalSupplyBn,
+      zeroAddress: zeroAddressHexStr
     } = fromSome(await v.state(), {});
-    console.log({ dName, dSymbol });
     const name = prepareString(dName);
     const symbol = prepareString(dSymbol);
     const decimals = bn2n(decimalsBn);
     const totalSupply = bn2bi(totalSupplyBn).toString();
-    const metadata = { name: name, symbol, decimals, totalSupply };
+    const tZeroAddress = fa(zeroAddressHexStr)
+    const metadata = { name: name, symbol, decimals, totalSupply, zeroAddress: tZeroAddress };
     localStorage.setItem(`token-${ctcInfo}`, JSON.stringify(metadata));
     return metadata;
   } else {
