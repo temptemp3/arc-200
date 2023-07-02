@@ -1,6 +1,6 @@
 "reach 0.1";
 
-const MAX_DECIMALS = 256; // fits in UInt8
+const MAX_DECIMALS = 19; // same as AS
 
 const TokenMeta = Struct([
   ["name", Bytes(32)], // name
@@ -12,7 +12,7 @@ const TokenMeta = Struct([
 const State = Struct([
   ...Struct.fields(TokenMeta), // token meta
   ["zeroAddress", Address], // zero address
-  ["managerAddress", Address], // manager address
+  ["manager", Address], // manager address
   ["enableZeroAddressBurn", Bool], // allow zero address to burn tokens
   ["closed", Bool], // closed
 ]);
@@ -26,7 +26,7 @@ const MintParams = Object({
 
 const Params = Object({
   zeroAddress: Address, // zero address
-  managerAddress: Address, // manager address
+  manager: Address, // manager address
   enableZeroAddressBurn: Bool, // allow zero address to burn tokens
   meta: MintParams, // token meta
 });
@@ -59,37 +59,39 @@ export const ARC200 = Reach.App(() => {
   });
 
   const E = Events({
-    Transfer: [Address, Address, UInt],
-    Approval: [Address, Address, UInt],
+    Transfer: [Address, Address, UInt, UInt],
+    Approval: [Address, Address, UInt, UInt],
   });
 
   init();
 
   D.only(() => {
-    const { zeroAddress, managerAddress, enableZeroAddressBurn, meta } =
-      declassify(interact.params);
+    const { zeroAddress, manager, enableZeroAddressBurn, meta } = declassify(
+      interact.params
+    );
   });
-  D.publish(zeroAddress, managerAddress, enableZeroAddressBurn, meta).check(
-    () => {
-      check(
-        zeroAddress != managerAddress,
-        "ARC200: Zero address must not equal manager address"
-      );
-      check(meta.totalSupply > 0, "ARC200: Total supply must be greater than zero");
-      check(
-        meta.decimals < MAX_DECIMALS,
-        "ARC200: Decimals must be less than 256 (fits in UInt8)"
-      );
-    }
-  );
+  D.publish(zeroAddress, manager, enableZeroAddressBurn, meta).check(() => {
+    check(
+      zeroAddress != manager,
+      "ARC200: Zero address must not equal manager address"
+    );
+    check(
+      meta.totalSupply > 0,
+      "ARC200: Total supply must be greater than zero"
+    );
+    check(
+      meta.decimals < MAX_DECIMALS,
+      "ARC200: Decimals must be less than 19"
+    );
+  });
 
   const balances = new Map(UInt);
   const allowances = new Map(Tuple(Address, Address), UInt);
 
-  balances[managerAddress] = meta.totalSupply; // D creates manager and zero addres balance boxes
+  balances[manager] = meta.totalSupply; // D creates manager and zero addres balance boxes
   balances[zeroAddress] = 0;
 
-  E.Transfer(zeroAddress, managerAddress, meta.totalSupply);
+  E.Transfer(zeroAddress, manager, meta.totalSupply, thisConsensusTime());
   D.interact.ready(getContract());
 
   V.name.set(() => meta.name);
@@ -100,7 +102,7 @@ export const ARC200 = Reach.App(() => {
   const initialState = {
     ...meta,
     zeroAddress,
-    managerAddress,
+    manager,
     enableZeroAddressBurn,
     closed: false,
   };
@@ -126,7 +128,7 @@ export const ARC200 = Reach.App(() => {
       const transfer_ = (from_, to, amount) => {
         balances[from_] = balanceOf(from_) - amount;
         balances[to] = balanceOf(to) + amount;
-        E.Transfer(from_, to, amount);
+        E.Transfer(from_, to, amount, thisConsensusTime());
       };
     })
     // api: transfer
@@ -169,7 +171,7 @@ export const ARC200 = Reach.App(() => {
           transfer_(from_, to, amount);
           const newAllowance = allowance(from_, this) - amount;
           allowances[[from_, this]] = newAllowance;
-          E.Approval(from_, this, newAllowance);
+          E.Approval(from_, this, newAllowance, thisConsensusTime());
           k(true);
           return [s];
         },
@@ -185,7 +187,7 @@ export const ARC200 = Reach.App(() => {
       return [
         (k) => {
           allowances[[this, spender]] = amount;
-          E.Approval(this, spender, amount);
+          E.Approval(this, spender, amount, thisConsensusTime());
           k(true);
           return [s];
         },
