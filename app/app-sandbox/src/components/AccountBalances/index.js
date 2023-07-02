@@ -85,7 +85,7 @@ function AccountBalance(props) {
                       icon: <DeleteIcon color="warning" />,
                       onClick: () => {
                         const tokens = JSON.parse(
-                          localStorage.getItem("tokens") || "[249906631]"
+                          localStorage.getItem("tokens") || "[253370163]" // TODO centralize arc200 token id
                         );
                         const newTokens = tokens.filter(
                           (el) => el != token.appId

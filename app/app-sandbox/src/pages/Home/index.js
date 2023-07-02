@@ -54,7 +54,7 @@ function Balances(props) {
 
 function Home() {
   const { activeAccount } = useWallet();
-  const tokens = JSON.parse(localStorage.getItem("tokens") || "[249906631]");
+  const tokens = JSON.parse(localStorage.getItem("tokens") || "[253370163]"); // TODO centralize arc200 token id
   return activeAccount ? <Balances tokens={tokens} /> : <Connect />;
 }
 
