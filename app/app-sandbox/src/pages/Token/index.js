@@ -148,7 +148,7 @@ const TokenHolders = ({ token, holders }) => {
                 <TableRow>
                   <StyledTableCell>Address</StyledTableCell>
                   <StyledTableCell align="right">
-                    Balance ({token.symbol})
+                    Balance
                   </StyledTableCell>
                 </TableRow>
               </TableHead>
@@ -247,7 +247,7 @@ const TokenTransactions = ({ token, transactions }) => {
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
                 <StyledTableCell align="right">
-                  Amount ({token.symbol})
+                  Amount
                 </StyledTableCell>
               </TableRow>
             </TableHead>

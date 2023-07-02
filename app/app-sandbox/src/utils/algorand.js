@@ -32,3 +32,19 @@ export const displayToken = (token) => {
     </div>
   );
 };
+
+export function isValidAlgorandAddress(address) {
+  // Algorand address format: must be a string of length 58
+  if (typeof address !== "string" || address.length !== 58) {
+    return false;
+  }
+  // Algorand address characters: can only contain base32 encoded alphanumeric characters
+  const validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  for (let i = 1; i < address.length; i++) {
+    const char = address.charAt(i);
+    if (!validChars.includes(char)) {
+      return false;
+    }
+  }
+  return true;
+}
