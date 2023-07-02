@@ -23,6 +23,7 @@ import ARC200Service from "../../services/ARC200Service";
 import { Link, useParams } from "react-router-dom";
 import { displayTokenValue, zeroAddress } from "../../utils/algorand";
 import NFDService from "../../services/NFDService";
+import { CSVLink } from "react-csv";
 
 const stdlib = makeStdLib();
 const fa = stdlib.formatAddress;
@@ -137,7 +138,19 @@ const TokenHolders = ({ token, holders }) => {
   return (
     token && (
       <Box sx={{ textAlign: "left", margin: 1 }}>
-        <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
+        <h2>
+          Holders [{holders?.length > 0 ? holders?.length : "..."}] [
+          <CSVLink
+            data={holders.map(([address, amount]) => ({ address, amount }))}
+            headers={[
+              { label: "Address", key: "address" },
+              { label: "Amount", key: "amount" },
+            ]}
+          >
+            Download
+          </CSVLink>
+          ]
+        </h2>
         {true || holders?.length > 0 ? (
           <TableContainer component={Paper}>
             <Table

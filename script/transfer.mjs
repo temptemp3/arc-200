@@ -10,7 +10,6 @@ const balanceOf = balanceOfHelper(stdlib);
 const batchSize = 35;
 
 const main = async () => {
-
   // TODO move these somewhere else
 
   // util: generate tokens between decimals 0 and 19
@@ -83,16 +82,30 @@ const main = async () => {
   */
 
   console.log("Deploy!");
-  const [, , appIdStr, inputJson] = process.argv;
+  const [, , appIdStr, infile] = process.argv;
   const appId = parseInt(appIdStr);
   try {
-    if (!inputJson) {
-      console.log("No input json provided");
+    if (!infile) {
+      console.log("No input file provided");
       process.exit(1);
     }
-    const payload = JSON.parse(
-      Buffer.from(fs.readFileSync(inputJson)).toString("utf-8")
-    );
+    const [name, type] = infile.split(".");
+
+    let payload;
+    switch (type) {
+      case "csv":
+        payload = Buffer.from(fs.readFileSync(infile))
+          .toString("utf-8")
+          .split(/\r?\n/)
+          .map((el) => (([addr, amt]) => [addr, Number(amt)])(el.split(",")));
+        break;
+      case "json":
+        payload = JSON.parse(
+          Buffer.from(fs.readFileSync(infile)).toString("utf-8")
+        );
+        break;
+    }
+
     const acc = await getAccount();
 
     const balance = await balanceOf(acc, appId, acc.networkAccount.addr);
@@ -107,9 +120,15 @@ const main = async () => {
     const promises = [];
     let i = 0;
     for (const p of payload) {
-      //console.log("Transfering...");
-      //console.log({ p });
-      const promise = transfer(acc, appId, p.recipientAddress, p.amount);
+      let promise;
+      switch(type) {
+        case "json":
+          promise = transfer(acc, appId, p.recipientAddress, p.amount);
+          break;
+        case "csv":
+          promise = transfer(acc, appId, p[0], p[1]);
+          break;
+      }
       promises.push(promise);
       i++;
       if (i >= batchSize) {
