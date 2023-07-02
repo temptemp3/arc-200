@@ -139,8 +139,9 @@ const TokenHolders = ({ token, holders }) => {
     token && (
       <Box sx={{ textAlign: "left", margin: 1 }}>
         <h2>
-          Holders [{holders?.length > 0 ? holders?.length : "..."}] [
-          <CSVLink
+          Holders [{holders?.length > 0 ? holders?.length : "..."}]
+          {/*[
+          {<CSVLink
             data={holders.map(([address, amount]) => ({ address, amount }))}
             headers={[
               { label: "Address", key: "address" },
@@ -148,8 +149,9 @@ const TokenHolders = ({ token, holders }) => {
             ]}
           >
             Download
-          </CSVLink>
+          </CSVLink>}
           ]
+        */}
         </h2>
         {true || holders?.length > 0 ? (
           <TableContainer component={Paper}>
@@ -301,7 +303,7 @@ const TokenTransactions = ({ token, transactions }) => {
                 ))
               ) : (
                 <StyledTableRow style={{ height: 184 }}>
-                  <StyledTableCell colSpan={4} align="center">
+                  <StyledTableCell colSpan={5} align="center">
                     Loading...
                   </StyledTableCell>
                 </StyledTableRow>
