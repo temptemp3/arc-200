@@ -57,6 +57,7 @@ function SendDialog(props) {
           tokenAmount
         );
         if (res) {
+          props.reloadToken();
           toast(
             <div>
               Transfer successful!

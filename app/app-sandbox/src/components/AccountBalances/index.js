@@ -45,13 +45,11 @@ function AccountBalance(props) {
   useEffect(() => {
     if (!activeAccount) return;
     // realtime
-    /*
-    ARC200Service.nextTransferEvent(token.appId)
-      .then(reloadToken())
-      .catch(console.error);
-    */
-    // every 30 seconds
-    const interval = setInterval(reloadToken, 30_000);
+    //ARC200Service.nextTransferEvent(token.appId)
+    //  .then(reloadToken())
+    //  .catch(console.error);
+    // every interval
+    const interval = setInterval(reloadToken, 60_000); 
     return () => clearInterval(interval);
   }, [activeAccount, token]);
   return (
@@ -62,6 +60,7 @@ function AccountBalance(props) {
           open={sendDialogOpen}
           setOpen={setSendDialogOpen}
           token={token}
+          reloadToken={reloadToken}
         />
         <TableRow key={token.appId}>
           <TableCell>{token.appId}</TableCell>
