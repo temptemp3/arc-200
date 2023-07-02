@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@txnlab/use-wallet";
-import { Button, Dialog, DialogActions, DialogContent } from "@mui/material";
+import {
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+} from "@mui/material";
 import SendForm from "../SendForm";
 import ARC200Service from "../../services/ARC200Service.ts";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -76,7 +82,7 @@ function SendDialog(props) {
   }, [activeAccount, doSubmit]);
   return (
     <div className="SendDialog">
-      <Dialog fullScreen={true} open={props.open} onClose={props.onClose}>
+      <Dialog fullScreen open={props.open} onClose={props.onClose}>
         <DialogContent
           style={{
             display: "flex",
@@ -84,28 +90,30 @@ function SendDialog(props) {
             justifyContent: "center",
           }}
         >
-          {pending ? (
-            <Stack
-              gap={5}
-              direction="column"
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <CircularProgress size={100} />
-              <Typography variant="h6">Transaction pending...</Typography>
-            </Stack>
-          ) : (
-            <SendForm
-              token={props.token}
-              tokens={[props.token]}
-              setToken={setToken}
-              setTokenAmount={setTokenAmount}
-              setAccountAddress={setAccountAddress}
-            />
-          )}
+          <Container maxWidth="sm">
+            {pending ? (
+              <Stack
+                gap={5}
+                direction="column"
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <CircularProgress size={100} />
+                <Typography variant="h6">Transaction pending...</Typography>
+              </Stack>
+            ) : (
+              <SendForm
+                token={props.token}
+                tokens={[props.token]}
+                setToken={setToken}
+                setTokenAmount={setTokenAmount}
+                setAccountAddress={setAccountAddress}
+              />
+            )}
+          </Container>
         </DialogContent>
         {!pending && (
           <DialogActions>

@@ -26,7 +26,6 @@ export default function CustomizedInputBase({
           p: "2px 4px",
           display: "flex",
           alignItems: "center",
-          width: 400,
           height: "3.4375em",
         }}
       >

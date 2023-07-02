@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Stack, Button, ButtonGroup } from "@mui/material";
+import { Stack, Button, ButtonGroup, Container } from "@mui/material";
 import TextInputBase from "../TextInputBase/index.tsx";
 import { useWallet } from "@txnlab/use-wallet";
 import ARC200Service from "../../services/ARC200Service.ts";
@@ -116,7 +116,7 @@ function MintForm({
     })();
   }, [doSubmit]);
   return (
-    <div className="MintForm" style={{ textAlign: "left" }}>
+    <div style={{ textAlign: "left" }}>
       {ctcInfo ? (
         <div>{bn2n(ctcInfo)}</div>
       ) : progress ? (

@@ -71,10 +71,10 @@ export default function CustomizedInputBase({
       <InputLabel>Send</InputLabel>
       <Paper
         component="form"
-        sx={{ p: "2px 4px", display: "flex", alignItems: "center", width: 400 }}
+        sx={{ p: "2px 4px", display: "flex", alignItems: "center" }}
       >
         <InputBase
-          sx={{ ml: 1, flex: 1, padding: "10px 26px 10px 12px" }}
+          sx={{ ml: 1, flex: 1, padding: "10px 26px 10px 12px", width: "80%" }}
           onChange={onTokenAmountChange}
         />
         <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
