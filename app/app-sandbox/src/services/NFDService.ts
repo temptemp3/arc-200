@@ -27,19 +27,29 @@ const getNFDByAddress = (address: string) => {
 };
 */
 
+const requestNFDByAddress = async (address: string) => {
+  return axios
+    .get(`${baseUrl}/nfd/lookup`, {
+      params: {
+        address,
+      },
+    })
+    .then((response) => {
+      localStorage.setItem(`nfd-${address}`, JSON.stringify(response.data));
+    });
+};
+
+/*
+ * fetchNFDByAddress
+ * - return promise or false
+ */
 const fetchNFDByAddress = async (address: string) => {
   const stored = localStorage.getItem(`nfd-${address}`);
   if (!stored) {
-    axios
-      .get(`${baseUrl}/nfd/lookup`, {
-        params: {
-          address,
-        },
-      })
-      .then((response) => {
-        localStorage.setItem(`nfd-${address}`, JSON.stringify(response.data));
-      });
+    requestNFDByAddress(address);
+    return true;
   }
+  return false;
 };
 
 const getNFDByAddress = (address: string) => {
@@ -55,4 +65,5 @@ export default {
   getNFDByName,
   getNFDByAddress,
   fetchNFDByAddress,
+  requestNFDByAddress
 };

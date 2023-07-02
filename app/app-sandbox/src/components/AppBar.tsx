@@ -9,7 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useWallet } from "@txnlab/use-wallet";
-import { Button, Typography } from "@mui/material";
+import { Button } from "@mui/material";
 import { makeStdLib } from "../utils/reach.js";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import * as Copy from "react-copy-to-clipboard";
@@ -60,16 +60,30 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 const stdlib = makeStdLib();
 
-export default function PrimarySearchAppBar() {
-  const { CopyToClipboard } = Copy;
+const MyAppBar = () => {
   const navigate = useNavigate();
-
   const { providers, activeAccount } = useWallet();
+  const { CopyToClipboard } = Copy;
   const notify = (msg: string) => toast(msg);
+  const menuId = "primary-search-account-menu";
 
-  console.log({ providers, activeAccount });
+  const [displayName, setDisplayName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!activeAccount) return;
+    (async () => {
+      try {
+        await NFDService.requestNFDByAddress(activeAccount.address);
+      } catch (e) {}
+      setDisplayName(
+        ((address) =>
+          NFDService.getNFDByAddress(address)?.[address]?.name ||
+          address.slice(0, 8) + "...")(activeAccount.address)
+      );
+    })();
+  }, [activeAccount]);
+
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-
   const isMenuOpen = Boolean(anchorEl);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -79,8 +93,6 @@ export default function PrimarySearchAppBar() {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-
-  const menuId = "primary-search-account-menu";
 
   const renderMenu = (
     <Menu
@@ -114,125 +126,126 @@ export default function PrimarySearchAppBar() {
   );
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar
-        position="fixed"
-        sx={{ top: "auto", bottom: 0, backgroundColor: "#000000" }}
-      >
-        <Toolbar>
+    <AppBar
+      position="fixed"
+      sx={{ top: "auto", bottom: 0, backgroundColor: "#000000" }}
+    >
+      <Toolbar>
+        <IconButton
+          size="large"
+          edge="start"
+          color="inherit"
+          aria-label="home"
+          sx={{ mr: 2 }}
+          onClick={() => navigate("/")}
+        >
+          <HomeIcon />
+        </IconButton>
+        {false && (
           <IconButton
             size="large"
             edge="start"
             color="inherit"
-            aria-label="home"
+            aria-label="open drawer"
             sx={{ mr: 2 }}
-            onClick={() => navigate("/")}
           >
-            <HomeIcon />
+            <MenuIcon />
           </IconButton>
-          {false && (
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              aria-label="open drawer"
-              sx={{ mr: 2 }}
+        )}
+        <Box sx={{ flexGrow: 1 }} />
+        {!activeAccount ? (
+          providers?.map((provider) => (
+            <Box
+              sx={{
+                display: {
+                  xs: "flex",
+                  alignItems: "center",
+                  gap: "1em",
+                },
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Box sx={{ flexGrow: 1 }} />
-          {!activeAccount ? (
-            providers?.map((provider) => (
-              <Box
-                sx={{
-                  display: {
-                    xs: "flex",
-                    alignItems: "center",
-                    gap: "1em",
-                  },
+              <Button
+                variant="text"
+                style={{ color: "white" }}
+                onClick={() => {
+                  provider.connect().then(() => {
+                    window.location.reload();
+                  });
                 }}
               >
-                <Button
-                  variant="text"
-                  style={{ color: "white" }}
-                  onClick={() => {
-                    provider.connect().then(() => {
-                      window.location.reload();
-                    });
-                  }}
-                >
-                  <img
-                    style={{ height: "30px", filter: "grayscale(1)" }}
-                    src={provider.metadata.icon}
-                  />
-                </Button>
-              </Box>
-            ))
-          ) : (
-            <>
-              <Box
-                sx={{
-                  display: {
-                    xs: "flex",
-                    //md: "flex",
-                    alignItems: "center",
-                    gap: "1em",
-                  },
+                <img
+                  style={{ height: "30px", filter: "grayscale(1)" }}
+                  src={provider.metadata.icon}
+                />
+              </Button>
+            </Box>
+          ))
+        ) : (
+          <>
+            <Box
+              sx={{
+                display: {
+                  xs: "flex",
+                  //md: "flex",
+                  alignItems: "center",
+                  gap: "1em",
+                },
+              }}
+            >
+              {displayName && <strong>{displayName}</strong>}
+              <CopyToClipboard
+                text={activeAccount.address}
+                onCopy={() => {
+                  notify(
+                    `Copied address ${activeAccount.address.slice(
+                      0,
+                      4
+                    )}...${activeAccount.address.slice(-4)} to clipboard!`
+                  );
                 }}
               >
-                <strong>
-                  {((address) =>
-                    NFDService.getNFDByAddress(address)?.[address]?.name ||
-                    address.slice(0, 8) + "...")(activeAccount.address)}
-                </strong>
-                <CopyToClipboard
-                  text={activeAccount.address}
-                  onCopy={() => {
-                    notify(
-                      `Copied address ${activeAccount.address.slice(
-                        0,
-                        4
-                      )}...${activeAccount.address.slice(-4)} to clipboard!`
-                    );
-                  }}
-                >
-                  <ContentCopyIcon />
-                </CopyToClipboard>
-                {providers &&
-                  activeAccount &&
-                  providers.map(
-                    (provider) =>
-                      provider.metadata.id === activeAccount.providerId && (
-                        <IconButton
-                          size="large"
-                          edge="end"
-                          aria-label="account of current user"
-                          aria-controls={menuId}
-                          aria-haspopup="true"
-                          onClick={handleProfileMenuOpen}
-                          color="inherit"
-                        >
-                          <img
-                            style={{
-                              height: "30px",
-                              filter:
-                                provider.metadata.id ===
-                                activeAccount.providerId
-                                  ? ""
-                                  : "grayscale(1)",
-                            }}
-                            src={provider.metadata.icon}
-                          />
-                        </IconButton>
-                      )
-                  )}
-              </Box>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
+                <ContentCopyIcon />
+              </CopyToClipboard>
+              {providers &&
+                activeAccount &&
+                providers.map(
+                  (provider) =>
+                    provider.metadata.id === activeAccount.providerId && (
+                      <IconButton
+                        size="large"
+                        edge="end"
+                        aria-label="account of current user"
+                        aria-controls={menuId}
+                        aria-haspopup="true"
+                        onClick={handleProfileMenuOpen}
+                        color="inherit"
+                      >
+                        <img
+                          style={{
+                            height: "30px",
+                            filter:
+                              provider.metadata.id === activeAccount.providerId
+                                ? ""
+                                : "grayscale(1)",
+                          }}
+                          src={provider.metadata.icon}
+                        />
+                      </IconButton>
+                    )
+                )}
+            </Box>
+          </>
+        )}
+      </Toolbar>
       {renderMenu}
+    </AppBar>
+  );
+};
+
+export default function PrimarySearchAppBar() {
+  return (
+    <Box sx={{ flexGrow: 1 }}>
+      <MyAppBar />
     </Box>
   );
 }

@@ -358,6 +358,7 @@ function Page() {
   const [token, setToken] = React.useState(null);
   const [transactions, setTransactions] = React.useState([]);
   const [holders, setHolders] = React.useState([]);
+  const [version, setVersion] = React.useState(0);
   React.useEffect(() => {
     if (!token) return;
     (async () => {
@@ -396,8 +397,17 @@ function Page() {
       const addresses = Array.from(
         new Set(transactions.map(([, from, to]) => [from, to]).flat())
       );
+      let doReload = false;
       for (const address of addresses) {
-        await NFDService.fetchNFDByAddress(address);
+        const nfd = NFDService.getNFDByAddress(address);
+        if (nfd?.owner === address) continue;
+        const res = NFDService.fetchNFDByAddress(address);
+        if (res) {
+          doReload = true;
+        }
+      }
+      if (doReload) {
+        setVersion(1);
       }
     })();
   }, [transactions]);
@@ -408,7 +418,14 @@ function Page() {
       setToken(token);
     })();
   }, []);
-  return <Token token={token} transactions={transactions} holders={holders} />;
+  return (
+    <Token
+      version={version}
+      token={token}
+      transactions={transactions}
+      holders={holders}
+    />
+  );
 }
 
 export default Page;

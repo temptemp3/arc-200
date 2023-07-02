@@ -87,9 +87,7 @@ const Token = ({ address, token, transactions }) => {
                 <StyledTableCell>Block</StyledTableCell>
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
-                <StyledTableCell align="right">
-                  Amount ({token.symbol})
-                </StyledTableCell>
+                <StyledTableCell align="right">Amount</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -136,6 +134,7 @@ function Page() {
   const { id: appId, addr: address } = useParams();
   const [token, setToken] = React.useState(null);
   const [transactions, setTransactions] = React.useState([]);
+  const [version, setVersion] = React.useState(0);
   React.useEffect(() => {
     if (!token) return;
     (async () => {
@@ -159,8 +158,17 @@ function Page() {
       const addresses = Array.from(
         new Set(transactions.map(([, from, to]) => [from, to]).flat())
       );
+      let doReload = false;
       for (const address of addresses) {
-        await NFDService.fetchNFDByAddress(address);
+        const nfd = NFDService.getNFDByAddress(address);
+        if (nfd?.owner === address) continue;
+        const res = NFDService.fetchNFDByAddress(address);
+        if (res) {
+          doReload = true;
+        }
+      }
+      if (doReload) {
+        setVersion(1);
       }
     })();
   }, [transactions]);
