@@ -28,14 +28,14 @@ function Balances(props) {
               if (!token) return;
               const newTokens = Array.from(new Set([...tokens, token]));
               setTokens(newTokens);
-              const tokens = JSON.parse(
-                localStorage.getItem("tokens") || defaultTokens[node] // TODO centralize arc200 token id
+              const storedTokens = JSON.parse(
+                localStorage.getItem("tokens") ||
+                  `${JSON.stringify(defaultTokens)}`
               );
-
               localStorage.setItem(
                 "tokens",
                 JSON.stringify({
-                  ...tokens,
+                  ...storedTokens,
                   [node]: newTokens,
                 })
               );
@@ -72,6 +72,7 @@ function Home() {
   const tokens = JSON.parse(
     localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}`
   );
+  console.log({ tokens });
   return activeAccount ? <Balances tokens={tokens[node]} /> : <Connect />;
 }
 

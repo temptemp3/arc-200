@@ -81,7 +81,7 @@ function MintForm({
         console.log(`${name} ${symbol} ${decimals} ${totalSupply}`);
         const params = {
           ...paramsTemplate,
-          managerAddress: activeAccount.address,
+          manager: activeAccount.address,
           ...{
             meta: {
               name,
@@ -97,7 +97,7 @@ function MintForm({
         );
         //setCtcInfo(ctcInfo);
         const tokens = JSON.parse(
-          localStorage.getItem("tokens") ?? defaultTokens[node] // TODO centralize arc200 token id
+          localStorage.getItem("tokens") ?? `${JSON.stringify(defaultTokens)}`
         );
         localStorage.setItem(
           "tokens",
