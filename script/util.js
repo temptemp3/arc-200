@@ -2,7 +2,11 @@ import * as backend from "./build/index.ARC200.mjs";
 
 const appId = process.env.APP_ID || 0;
 
-const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
+export const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
+
+export const getContractHelper = (stdlib) => (acc, appId) => {
+  return acc.contract(backend, appId);
+}
 
 // transfer
 // - transfers the given amount from the given account to the given account
@@ -26,6 +30,12 @@ export const deployAsHelper = (stdlib) => async (acc, params) =>
         },
       })
     ))(acc.contract(backend));
+
+export const destroyHelper = (stdlib) => async (acc) => {
+  (async (ctc) =>{
+    ctc.a.destroy();
+  })(acc.contract(backend));  
+}
 
 export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
   const bn = stdlib.bigNumberify;

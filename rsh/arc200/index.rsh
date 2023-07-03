@@ -80,7 +80,7 @@ export const ARC200 = Reach.App(() => {
       "ARC200: Total supply must be greater than zero"
     );
     check(
-      meta.decimals < MAX_DECIMALS,
+      meta.decimals <= MAX_DECIMALS,
       "ARC200: Decimals must be less than 19"
     );
   });
@@ -201,10 +201,7 @@ export const ARC200 = Reach.App(() => {
     .api_(A.deleteBalanceBox, (addr) => {
       check(addr != zeroAddress, "ARC200: Delete balance box to zero address");
       check(isSome(balances[addr]), "ARC200: Balance box not found");
-      check(
-        balanceOf(addr) == 0 || balanceOf(zeroAddress) == meta.totalSupply,
-        "ARC200: Balance box not empty or zero address balance box not total supply"
-      );
+      check(balanceOf(addr) == 0, "ARC200: Balance box not empty");
       return [
         (k) => {
           delete balances[addr];
@@ -222,11 +219,7 @@ export const ARC200 = Reach.App(() => {
         isSome(allowances[[owner, spender]]),
         "ARC200: Allowance box not found"
       );
-      check(
-        allowance(owner, spender) == 0 ||
-          balanceOf(zeroAddress) == meta.totalSupply,
-        "ARC200: Allowance box not empty or zero address balance box not total supply"
-      );
+      check(allowance(owner, spender) == 0, "ARC200: Allowance box not empty");
       return [
         (k) => {
           delete allowances[[owner, spender]];
@@ -244,10 +237,6 @@ export const ARC200 = Reach.App(() => {
       check(
         isSome(balances[zeroAddress]),
         "ARC200: Zero address balance box not found"
-      );
-      check(
-        balanceOf(zeroAddress) == meta.totalSupply,
-        "ARC200: Zero address balance box not total supply"
       );
       return [
         (k) => {

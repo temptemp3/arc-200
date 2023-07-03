@@ -26,7 +26,10 @@ const main = async () => {
     //
     // TODO validate token
     //
-    const ctcInfo = await deployAs(acc, token);
+    const ctcInfo = await deployAs(acc, {
+      ...token,
+      manager: acc.networkAccount.addr
+    });
     console.log(`Minted token ${bn2n(ctcInfo)} to ${token.manager}`);
     console.log({ ctcInfo: bn2n(ctcInfo) });
     minted.push({

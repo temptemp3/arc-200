@@ -10,6 +10,11 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import defaultTokens from "../../config/defaultTokens.js";
+
+const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
+  ":"
+);
 
 const paramsTemplate = {
   zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ", // 58 chars
@@ -92,11 +97,14 @@ function MintForm({
         );
         //setCtcInfo(ctcInfo);
         const tokens = JSON.parse(
-          localStorage.getItem("tokens") ?? "[253377546]" // TODO centralize arc200 token id
+          localStorage.getItem("tokens") ?? defaultTokens[node] // TODO centralize arc200 token id
         );
         localStorage.setItem(
           "tokens",
-          JSON.stringify([...tokens, bn2n(ctcInfo)])
+          JSON.stringify({
+            ...tokens,
+            [node]: [...tokens[node], bn2n(ctcInfo)],
+          })
         );
         toast(
           <div>

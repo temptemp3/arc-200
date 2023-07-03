@@ -21,9 +21,14 @@ import TableContainer from "@mui/material/TableContainer";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
+import defaultTokens from "../../config/defaultTokens.js";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
+
+const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
+  ":"
+);
 
 function AccountBalance(props) {
   const { activeAccount } = useWallet();
@@ -49,7 +54,7 @@ function AccountBalance(props) {
     //  .then(reloadToken())
     //  .catch(console.error);
     // every interval
-    const interval = setInterval(reloadToken, 60_000); 
+    const interval = setInterval(reloadToken, 60_000);
     return () => clearInterval(interval);
   }, [activeAccount, token]);
   return (
@@ -85,14 +90,17 @@ function AccountBalance(props) {
                       icon: <DeleteIcon color="warning" />,
                       onClick: () => {
                         const tokens = JSON.parse(
-                          localStorage.getItem("tokens") || "[253377546]" // TODO centralize arc200 token id
+                          localStorage.getItem("tokens") || defaultTokens[node] // TODO centralize arc200 token id
                         );
-                        const newTokens = tokens.filter(
+                        const newTokens = tokens[node].filter(
                           (el) => el != token.appId
                         );
                         localStorage.setItem(
                           "tokens",
-                          JSON.stringify(newTokens)
+                          JSON.stringify({
+                            ...tokens,
+                            [node]: newTokens,
+                          })
                         );
                         //setTokens(newTokens);
                         setToken(null);

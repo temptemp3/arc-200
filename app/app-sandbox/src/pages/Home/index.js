@@ -4,8 +4,13 @@ import * as React from "react";
 import Blink from "react-blink-text";
 import AccountBalances from "../../components/AccountBalances";
 import Connect from "../../components/Connect";
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import defaultTokens from "../../config/defaultTokens";
+
+const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
+  ":"
+);
 
 function Balances(props) {
   const [tokens, setTokens] = React.useState(props.tokens);
@@ -21,10 +26,19 @@ function Balances(props) {
             try {
               const token = parseInt(window.prompt("Enter appId"));
               if (!token) return;
-              // TODO verify token
               const newTokens = Array.from(new Set([...tokens, token]));
               setTokens(newTokens);
-              localStorage.setItem("tokens", JSON.stringify(newTokens));
+              const tokens = JSON.parse(
+                localStorage.getItem("tokens") || defaultTokens[node] // TODO centralize arc200 token id
+              );
+
+              localStorage.setItem(
+                "tokens",
+                JSON.stringify({
+                  ...tokens,
+                  [node]: newTokens,
+                })
+              );
             } catch (e) {
               console.log(e);
             }
@@ -32,20 +46,21 @@ function Balances(props) {
         >
           +
         </Button>
-        <Button variant="outlined"
-          sx={{margin: 1}}
+        <Button
+          variant="outlined"
+          sx={{ margin: 1 }}
           onClick={() => {
             setManage(!manage);
           }}
         >
           Manage
         </Button>
-        <Box sx={{margin: 1}}>
-        <AccountBalances
-          manage={manage}
-          tokens={tokens}
-          onSetAppId={setAppId}
-        />
+        <Box sx={{ margin: 1 }}>
+          <AccountBalances
+            manage={manage}
+            tokens={tokens}
+            onSetAppId={setAppId}
+          />
         </Box>
       </div>
     </>
@@ -54,8 +69,10 @@ function Balances(props) {
 
 function Home() {
   const { activeAccount } = useWallet();
-  const tokens = JSON.parse(localStorage.getItem("tokens") || "[253377546]"); // TODO centralize arc200 token id
-  return activeAccount ? <Balances tokens={tokens} /> : <Connect />;
+  const tokens = JSON.parse(
+    localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}`
+  );
+  return activeAccount ? <Balances tokens={tokens[node]} /> : <Connect />;
 }
 
 export default Home;
