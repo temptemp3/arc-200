@@ -44,7 +44,6 @@ const main = async () => {
       fromSome(await ctc.v.totalSupply(), bn(0))
     ).toString();
 
-    /*
     if(balance !== totalSupply) {
       console.log("Abort: balance !== totalSupply")
       process.exit(1)
@@ -59,7 +58,6 @@ const main = async () => {
     console.log("Deleting box...")
 
     await ctc.a.deleteBalanceBox(acc);
-    */
 
     console.log("Destroying contract...");
 
