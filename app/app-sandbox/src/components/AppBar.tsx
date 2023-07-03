@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
 import NFDService from "../services/NFDService";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -236,6 +237,12 @@ const MyAppBar = () => {
             </Box>
           </>
         )}
+        <SettingsIcon
+          onClick={() => {
+            navigate("/config");
+          }}
+          sx={{ ml: 2 }}
+        />
       </Toolbar>
       {renderMenu}
     </AppBar>
