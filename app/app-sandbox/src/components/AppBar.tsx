@@ -142,6 +142,16 @@ const MyAppBar = () => {
         >
           <HomeIcon />
         </IconButton>
+        <IconButton
+          size="large"
+          edge="start"
+          color="inherit"
+          aria-label="home"
+          sx={{ mr: 2 }}
+          onClick={() => navigate("/config")}
+        >
+          <SettingsIcon />
+        </IconButton>
         {false && (
           <IconButton
             size="large"
@@ -237,12 +247,6 @@ const MyAppBar = () => {
             </Box>
           </>
         )}
-        <SettingsIcon
-          onClick={() => {
-            navigate("/config");
-          }}
-          sx={{ ml: 2 }}
-        />
       </Toolbar>
       {renderMenu}
     </AppBar>
