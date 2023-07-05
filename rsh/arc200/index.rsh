@@ -1,12 +1,12 @@
 "reach 0.1";
 
-const MAX_DECIMALS = 19; // same as AS
+const MAX_DECIMALS = 256; // decimals fits in UInt8
 
 const TokenMeta = Struct([
   ["name", Bytes(32)], // name
   ["symbol", Bytes(8)], // symbol
   ["decimals", UInt], // number of decimals
-  ["totalSupply", UInt], // total supply
+  ["totalSupply", UInt256], // total supply
 ]);
 
 const State = Struct([
@@ -21,7 +21,7 @@ const MintParams = Object({
   name: Bytes(32), // name
   symbol: Bytes(8), // symbol
   decimals: UInt, // number of decimals
-  totalSupply: UInt, // total supply
+  totalSupply: UInt256, // total supply
 });
 
 const Params = Object({
@@ -40,9 +40,9 @@ export const ARC200 = Reach.App(() => {
   });
 
   const A = API({
-    transfer: Fun([Address, UInt], Bool), // tranfer from this to address
-    transferFrom: Fun([Address, Address, UInt], Bool), // transfer from address to address
-    approve: Fun([Address, UInt], Bool), // approve address to spend this
+    transfer: Fun([Address, UInt256], Bool), // tranfer from this to address
+    transferFrom: Fun([Address, Address, UInt256], Bool), // transfer from address to address
+    approve: Fun([Address, UInt256], Bool), // approve address to spend this
     deleteBalanceBox: Fun([Address], Bool), // delete balance box if zero
     deleteAllowanceBox: Fun([Address, Address], Bool), // delete allowance box if zero
     destroy: Fun([], Null), // destroy this contract
@@ -52,15 +52,15 @@ export const ARC200 = Reach.App(() => {
     name: Fun([], Bytes(32)), // get name
     symbol: Fun([], Bytes(8)), // get symbol
     decimals: Fun([], UInt), // get decimals
-    totalSupply: Fun([], UInt), // get total supply
-    balanceOf: Fun([Address], UInt), // get balance of address
-    allowance: Fun([Address, Address], UInt), // get allowance of address to spend this
+    totalSupply: Fun([], UInt256), // get total supply
+    balanceOf: Fun([Address], UInt256), // get balance of address
+    allowance: Fun([Address, Address], UInt256), // get allowance of address to spend this
     state: Fun([], State), // get state
   });
 
   const E = Events({
-    Transfer: [Address, Address, UInt, UInt],
-    Approval: [Address, Address, UInt, UInt],
+    Transfer: [Address, Address, UInt256, UInt],
+    Approval: [Address, Address, UInt256, UInt],
   });
 
   init();
@@ -76,7 +76,7 @@ export const ARC200 = Reach.App(() => {
       "ARC200: Zero address must not equal manager address"
     );
     check(
-      meta.totalSupply > 0,
+      meta.totalSupply > UInt256(0),
       "ARC200: Total supply must be greater than zero"
     );
     check(
@@ -85,11 +85,11 @@ export const ARC200 = Reach.App(() => {
     );
   });
 
-  const balances = new Map(UInt);
-  const allowances = new Map(Tuple(Address, Address), UInt);
+  const balances = new Map(UInt256);
+  const allowances = new Map(Tuple(Address, Address), UInt256);
 
   balances[manager] = meta.totalSupply; // D creates manager and zero addres balance boxes
-  balances[zeroAddress] = 0;
+  balances[zeroAddress] = UInt256(0);
 
   E.Transfer(zeroAddress, manager, meta.totalSupply, thisConsensusSecs());
   D.interact.ready(getContract());
@@ -111,12 +111,12 @@ export const ARC200 = Reach.App(() => {
     .define(() => {
       const balanceOf = (owner) => {
         const m_bal = balances[owner];
-        return fromSome(m_bal, 0);
+        return fromSome(m_bal, UInt256(0));
       };
       V.balanceOf.set(balanceOf);
       const allowance = (owner, spender) => {
         const m_bal = allowances[[owner, spender]];
-        return fromSome(m_bal, 0);
+        return fromSome(m_bal, UInt256(0));
       };
       V.allowance.set(allowance);
       const state = () => State.fromObject(s);
