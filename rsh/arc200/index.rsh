@@ -201,7 +201,7 @@ export const ARC200 = Reach.App(() => {
     .api_(A.deleteBalanceBox, (addr) => {
       check(addr != zeroAddress, "ARC200: Delete balance box to zero address");
       check(isSome(balances[addr]), "ARC200: Balance box not found");
-      check(balanceOf(addr) == 0, "ARC200: Balance box not empty");
+      check(balanceOf(addr) == UInt256(0), "ARC200: Balance box not empty");
       return [
         (k) => {
           delete balances[addr];
@@ -219,7 +219,7 @@ export const ARC200 = Reach.App(() => {
         isSome(allowances[[owner, spender]]),
         "ARC200: Allowance box not found"
       );
-      check(allowance(owner, spender) == 0, "ARC200: Allowance box not empty");
+      check(allowance(owner, spender) == UInt256(0), "ARC200: Allowance box not empty");
       return [
         (k) => {
           delete allowances[[owner, spender]];

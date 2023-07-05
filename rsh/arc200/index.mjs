@@ -1,9 +1,9 @@
 import * as backend from "./build/index.ARC200.mjs";
 import { loadStdlib } from "@reach-sh/stdlib";
 
-const deployCost = "0.1408"; // txn cost + cost for box
+const deployCost = "0.16"; // txn cost + cost for box
 const transferCostHot = "0.001"; // txn cost
-const transferCostCold = "0.0209"; // txn cost + cost for box
+const transferCostCold = "0.0305"; // txn cost + cost for box
 const transferGain = "0.0189"; // gain on box deletion
 const transferNetCost = "0.0020"; // transferCostCold - transferGain
 const transferFromCostCold = "";
@@ -154,7 +154,12 @@ do {
     e,
   } = accZero.contract(backend, ctcInfo);
 
+  console.log("total supply:");
+  console.log(await totalSupply());
+
+  console.log("manager balance:");
   console.log(await balanceOf(accManager)); // totalSupply
+  console.log("zero balance:");
   console.log(await balanceOf(accZero)); // 0
 
   const ctcManager = accManager.contract(backend, ctcInfo);
@@ -166,7 +171,9 @@ do {
     stdlib.bigNumberify(tokens[0].totalSupply)
   );
 
+  console.log("manager balance:");
   console.log(await balanceOf(accManager)); // 0
+  console.log("zero balance:");
   console.log(await balanceOf(accZero)); // totalSupply
 
   console.log("Deleting balance box...");
@@ -193,7 +200,7 @@ do {
     const before = await accMaster.balanceOf();
     ctcInfo = await deployAs(accMaster, {
       zeroAddress,
-      managerAddress: addrManager,
+      manager: addrManager,
       enableZeroAddressBurn: true,
       meta: tokens[0],
     });
@@ -290,7 +297,7 @@ do {
   console.log(initialState);
 
   const {
-    managerAddress,
+    manager: managerAddress,
     enableZeroAddressBurn,
     zeroAddress: zeroAddressState,
   } = initialState;
