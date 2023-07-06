@@ -383,17 +383,37 @@ function Page() {
   const [transactions, setTransactions] = React.useState([]);
   const [holders, setHolders] = React.useState([]);
   const [version, setVersion] = React.useState(0);
+  const [roundTimes, setRoundTimes] = React.useState(null);
+  React.useEffect(() => {
+    (async () => {
+      const { indexer } = await stdlib.getProvider();
+      const txns = await indexer
+        .searchForTransactions()
+        .applicationID(appId)
+        .limit(0)
+        .do();
+      const roundTimes = {};
+      for (const txn of txns?.transactions) {
+        const confirmedRound = txn["confirmed-round"];
+        const roundTime = txn["round-time"];
+        roundTimes[confirmedRound] = roundTime;
+      }
+      setRoundTimes(roundTimes);
+    })();
+  }, []);
   React.useEffect(() => {
     if (!token) return;
+    if (!roundTimes) return;
     (async () => {
       const ret = (await ARC200Service.getTransferEvents(appId))
         .map(({ when, what }) => {
+          console.log({ when, what });
           return [
             bn2n(when),
             fa(what[0]),
             fa(what[1]),
             bn2bi(what[2]).toString(),
-            bn2n(what[3]),
+            bn2n(when) in roundTimes ? roundTimes[bn2n(when)] : 0,
           ];
         })
         .reverse();
@@ -415,7 +435,7 @@ function Page() {
       setHolders(balances.filter((el) => el[0] !== token.zeroAddress));
       setTransactions(ret);
     })();
-  }, [token]);
+  }, [token, roundTimes]);
   React.useEffect(() => {
     if (!transactions) return;
     (async () => {

@@ -14,7 +14,7 @@ import ARC200Service from "../../services/ARC200Service.ts";
 import { makeStdLib } from "../../utils/reach";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { displayToken } from "../../utils/algorand.js";
+import { displayToken, zeroAddress } from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
 import Paper from "@mui/material/Paper";
 import TableContainer from "@mui/material/TableContainer";
@@ -22,6 +22,8 @@ import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import defaultTokens from "../../config/defaultTokens.js";
+
+import FireplaceIcon from "@mui/icons-material/Fireplace";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
@@ -41,11 +43,12 @@ function AccountBalance(props) {
       await ARC200Service.balanceOf(token.appId, activeAccount.address),
       meta.decimals
     );
-    setToken({
+    const token = {
       appId: token.appId,
       amount,
       ...meta,
-    });
+    };
+    setToken(token);
   }, [activeAccount, token]);
   useEffect(() => {
     if (!activeAccount) return;
@@ -90,7 +93,8 @@ function AccountBalance(props) {
                       icon: <DeleteIcon color="warning" />,
                       onClick: () => {
                         const tokens = JSON.parse(
-                          localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}` // TODO centralize arc200 token id
+                          localStorage.getItem("tokens") ||
+                            `${JSON.stringify(defaultTokens)}` // TODO centralize arc200 token id
                         );
                         const newTokens = tokens[node].filter(
                           (el) => el != token.appId
@@ -110,16 +114,45 @@ function AccountBalance(props) {
                 : [
                     {
                       label: "S",
-                      desciption: "Send",
+                      description: "Send",
                       icon: <SendIcon />,
                       onClick: () => {
                         setToken(token);
                         setSendDialogOpen(true);
                       },
                     },
+                    {
+                      label: "B",
+                      description: "Burn",
+                      icon: <FireplaceIcon />,
+                      onClick: async () => {
+                        console.log({ token });
+                        const balance = fawd(
+                          await ARC200Service.balanceOf(
+                            token.appId,
+                            activeAccount.address,
+                            token.decimals
+                          ),
+                          token.decimals
+                        );
+                        ARC200Service.transfer(
+                          token,
+                          activeAccount.address,
+                          token.zeroAddress,
+                          fawd(
+                            await ARC200Service.balanceOf(
+                              token.appId,
+                              activeAccount.address,
+                              token.decimals
+                            ),
+                            token.decimals
+                          )
+                        );
+                      },
+                    },
                   ]
               ).map((el) => (
-                <Tooltip key={el.label} placement="top" title={el.desciption}>
+                <Tooltip key={el.label} placement="top" title={el.description}>
                   <Button onClick={el.onClick}>{el.icon || el.label}</Button>
                 </Tooltip>
               ))}

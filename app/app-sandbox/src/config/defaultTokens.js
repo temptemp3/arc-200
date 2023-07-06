@@ -1,5 +1,5 @@
 export default {
-  "algorand-testnet": [253404959],
-  "algorand": [1139040208], 
+  "algorand-testnet": [253995654],
+  "algorand": [], 
   "voi": []
 }

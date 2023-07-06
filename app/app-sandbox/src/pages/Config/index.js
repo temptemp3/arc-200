@@ -55,7 +55,7 @@ function NodeSelection() {
             value="algorand"
             control={<Radio />}
             label="Algorand"
-            //disabled
+            disabled
           />
           <FormControlLabel
             value="algorand-testnet"
