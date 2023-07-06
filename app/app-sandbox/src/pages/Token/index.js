@@ -24,8 +24,11 @@ import { Link, useParams } from "react-router-dom";
 import { displayTokenValue, zeroAddress } from "../../utils/algorand";
 import NFDService from "../../services/NFDService";
 import { CSVLink } from "react-csv";
+import { fromSome } from "../../utils/common";
+import moment from "moment";
 
 const stdlib = makeStdLib();
+const bn = stdlib.bigNumberify;
 const fa = stdlib.formatAddress;
 const fawd = stdlib.formatWithDecimals;
 const bn2n = stdlib.bigNumberToNumber;
@@ -362,11 +365,16 @@ const Token = ({ token, transactions, holders }) => {
                   amount: fawd(token.totalSupply, token.decimals),
                 })}`}
               <br />
-              Circulating Supply: 1234
+              Circulating Supply:{" "}
+              {displayTokenValue({ ...token, amount: token.circulatingSupply })}
               <br />
-              Date of creation: 07/01/2023
+              Date of creation:{" "}
+              {transactions?.length > 0
+                ? moment.unix(transactions.slice(-1)[0][4]).format("L")
+                : "-"}
               <br />
-              Created at round: 31020682
+              Created at round:{" "}
+              {transactions?.length > 0 ? transactions.slice(-1)[0][0] : "-"}
             </code>
           </Stack>
         </Stack>
@@ -384,6 +392,7 @@ function Page() {
   const [holders, setHolders] = React.useState([]);
   const [version, setVersion] = React.useState(0);
   const [roundTimes, setRoundTimes] = React.useState(null);
+  // EFFECT: load round times to convert confirmed rounds to round times
   React.useEffect(() => {
     (async () => {
       const { indexer } = await stdlib.getProvider();
@@ -407,7 +416,6 @@ function Page() {
     (async () => {
       const ret = (await ARC200Service.getTransferEvents(appId))
         .map(({ when, what }) => {
-          console.log({ when, what });
           return [
             bn2n(when),
             fa(what[0]),
@@ -459,7 +467,20 @@ function Page() {
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
-      const token = { ...tokenMetadata, appId };
+      const nonCirculating = (
+        await Promise.all([
+          ARC200Service.balanceOf(appId, tokenMetadata.zeroAddress),
+          ARC200Service.balanceOf(appId, tokenMetadata.manager),
+        ])
+      ).reduce((acc, val) => acc.add(val), bn(0));
+      const circulatingSupplyBn = bn(tokenMetadata.totalSupply).sub(
+        nonCirculating
+      );
+      const token = {
+        ...tokenMetadata,
+        appId,
+        circulatingSupply: fawd(circulatingSupplyBn, tokenMetadata.decimals),
+      };
       setToken(token);
     })();
   }, []);

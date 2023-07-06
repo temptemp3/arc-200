@@ -93,18 +93,21 @@ const getTokenMetadata = async (ctcInfo: number) => {
       decimals: decimalsBn,
       totalSupply: totalSupplyBn,
       zeroAddress: zeroAddressHexStr,
+      manager: managerAddressHexStr,
     } = fromSome(await v.state(), {});
     const name = prepareString(dName);
     const symbol = prepareString(dSymbol);
     const decimals = bn2n(decimalsBn);
     const totalSupply = bn2bi(totalSupplyBn).toString();
     const tZeroAddress = fa(zeroAddressHexStr);
+    const managerAddress = fa(managerAddressHexStr);
     const metadata = {
       name: name,
       symbol,
       decimals,
       totalSupply,
       zeroAddress: tZeroAddress,
+      manager: managerAddress,
     };
     localStorage.setItem(`token-${ctcInfo}`, JSON.stringify(metadata));
     return metadata;
@@ -184,30 +187,20 @@ const transfer = async (
   addrTo: string,
   amount: string
 ) => {
-  console.log({ token, addrFrom, addrTo, amount });
   try {
     const acc = await stdlib.connectAccount({ addr: addrFrom });
     const [mlhs, mrhs, rst] = amount.split(".");
-    console.log({ mlhs, mrhs, rst });
     if (rst) throw Error("Invalid amount: malformed number");
-    console.log("Not malformed number");
     const lhs = mlhs === "" ? "0" : mlhs;
-    console.log({ lhs });
     if (typeof mrhs === "string" && mrhs.length > token.decimals) {
       throw Error("Invalid amount: too many decimals");
     }
-    console.log("not too many decimals");
     const rhs = mrhs === "" || !mrhs ? "0" : mrhs;
-    console.log({ rhs });
-
     const lhsBase = parseInt(lhs);
     const lhsDecimals = token.decimals;
-    console.log({ lhsBase, lhsDecimals });
-
     const lhsBn = bn(parseInt(lhs)).mul(
       bn(10).pow(bn(parseInt(token.decimals)))
     );
-    console.log("here");
     const rhsBn =
       parseInt(token.decimals) > 0
         ? bn(
