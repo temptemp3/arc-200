@@ -121,6 +121,7 @@ function AccountBalance(props) {
                         setSendDialogOpen(true);
                       },
                     },
+                    /*
                     {
                       label: "B",
                       description: "Burn",
@@ -150,6 +151,7 @@ function AccountBalance(props) {
                         );
                       },
                     },
+                    */
                   ]
               ).map((el) => (
                 <Tooltip key={el.label} placement="top" title={el.description}>

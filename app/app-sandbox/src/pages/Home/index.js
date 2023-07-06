@@ -7,6 +7,7 @@ import Connect from "../../components/Connect";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import defaultTokens from "../../config/defaultTokens";
+import { useNavigate } from "react-router-dom";
 
 const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
   ":"
@@ -16,6 +17,7 @@ function Balances(props) {
   const [tokens, setTokens] = React.useState(props.tokens);
   const [appId, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
+  const navigate = useNavigate();
   return (
     <>
       <div>
@@ -44,7 +46,16 @@ function Balances(props) {
             }
           }}
         >
-          +
+          Add Token
+        </Button>
+        <Button
+          variant="outlined"
+          sx={{ ml: 1 }}
+          onClick={() => {
+            navigate("/mint");
+          }}
+        >
+          Mint
         </Button>
         <Button
           variant="outlined"
@@ -55,7 +66,7 @@ function Balances(props) {
         >
           Manage
         </Button>
-        <Box sx={{ margin: 1 }}>
+        <Box sx={{ ml: 1 }}>
           <AccountBalances
             manage={manage}
             tokens={tokens}
