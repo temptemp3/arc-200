@@ -8,6 +8,7 @@ const fa = stdlib.formatAddress;
 const bn = stdlib.bigNumberify;
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
+const ib = stdlib.isBigNumber;
 
 // deprecated
 const ctcInfo = 249072786;
@@ -116,10 +117,28 @@ const getTokenMetadata = async (ctcInfo: number) => {
   }
 };
 
+const allowance = async (ctcInfo: number, owner: any, spender: any) => {
+  const acc = await stdlib.connectAccount({ addr: zeroAddress });
+  const ctc = acc.contract(backend, ctcInfo);
+  return fromSome(await ctc.v.allowance(owner, spender), bn(0));
+};
+
 const balanceOf = async (ctcInfo: number, addr: string) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
   const ctc = acc.contract(backend, ctcInfo);
   return fromSome(await ctc.v.balanceOf(addr), bn(0));
+};
+
+const totalSupply = async (ctcInfo: number) => {
+  const acc = await stdlib.connectAccount({ addr: zeroAddress });
+  const ctc = acc.contract(backend, ctcInfo);
+  return fromSome(await ctc.v.totalSupply(), bn(0));
+};
+
+const decimals = async (ctcInfo: number) => {
+  const acc = await stdlib.connectAccount({ addr: zeroAddress });
+  const ctc = acc.contract(backend, ctcInfo);
+  return fromSome(await ctc.v.decimals(), bn(0));
 };
 
 // code below from ChildService.ts
@@ -137,24 +156,31 @@ const approve = async (
   token: any,
   addrFrom: string,
   addrSpender: string,
-  amount: string
+  amount: any
 ) => {
+  console.log({
+    token,
+    addrFrom,
+    addrSpender,
+    amount,
+  });
   const acc = await stdlib.connectAccount({ addr: addrFrom });
-  const [lhs, rhs, rst] = amount.split(".");
-  if (rst) throw Error("Invalid amount");
-  const lhsBn = bn(parseInt(lhs)).mul(bn(10).pow(bn(token.decimals)));
-  const rhsBn =
-    token.decimals > 0
-      ? bn((rhs ?? "0").slice(0, token.decimals).padEnd(token.decimals, "0"))
-      : bn(0);
-  const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
+  console.log({ acc });
   const ctc = acc.contract(backend, token.appId);
-  const {
-    a: {
-      U1: { approve },
-    },
-  } = ctc;
-  return await approve(addrSpender, amountBn);
+  if (ib(amount)) {
+    return await ctc.a.approve(addrSpender, amount);
+  } else {
+    const acc = await stdlib.connectAccount({ addr: addrFrom });
+    const [lhs, rhs, rst] = amount.split(".");
+    if (rst) throw Error("Invalid amount");
+    const lhsBn = bn(parseInt(lhs)).mul(bn(10).pow(bn(token.decimals)));
+    const rhsBn =
+      token.decimals > 0
+        ? bn((rhs ?? "0").slice(0, token.decimals).padEnd(token.decimals, "0"))
+        : bn(0);
+    const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
+    return await ctc.a.approve(addrSpender, amountBn);
+  }
 };
 
 const deposit = async (
@@ -258,4 +284,7 @@ export default {
   getTokenMetadata,
   getCTCInfo,
   nextTransferEvent,
+  totalSupply,
+  decimals,
+  allowance,
 };

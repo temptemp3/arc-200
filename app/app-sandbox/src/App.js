@@ -18,6 +18,7 @@ import { DaffiWalletConnect } from "@daffiwallet/connect";
 import { WalletConnectModalSign } from "@walletconnect/modal-sign-html";
 
 import Home from "./pages/Home";
+import Subscription from "./pages/Subscription";
 import Mint from "./pages/Mint";
 import Token from "./pages/Token";
 import Config from "./pages/Config";
@@ -66,6 +67,7 @@ function App() {
           <Route path="/mint" element={<Mint />} />
           <Route path="/token/:id" element={<Token />} />
           <Route path="/token/:id/address/:addr" element={<TokenAddress />} />
+          <Route path="/s" element={<Subscription />} />
         </Routes>
       </div>
       <AppBar />
