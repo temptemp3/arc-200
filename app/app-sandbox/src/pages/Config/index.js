@@ -49,7 +49,6 @@ function NodeSelection() {
             value="voi-testnet"
             control={<Radio />}
             label="Voi (Testnet)"
-            disabled
           />
           <FormControlLabel
             value="algorand"

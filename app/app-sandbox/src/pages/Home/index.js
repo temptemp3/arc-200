@@ -8,19 +8,36 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import defaultTokens from "../../config/defaultTokens";
 import { useNavigate } from "react-router-dom";
+import { makeStdLib } from "../../utils/reach";
+
+const stdlib = makeStdLib();
+const fc = stdlib.formatCurrency;
 
 const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
   ":"
 );
 
 function Balances(props) {
+  const { activeAccount } = useWallet();
+  const navigate = useNavigate();
   const [tokens, setTokens] = React.useState(props.tokens);
   const [appId, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
-  const navigate = useNavigate();
+  const [balance, setBalance] = React.useState(null);
+  React.useEffect(() => {
+    if (!activeAccount) return;
+    if (balance) return;
+    (async () => {
+      const acc = await stdlib.connectAccount({ addr: activeAccount.address });
+      const balance = await stdlib.balanceOf(acc);
+      setBalance(balance);
+    })();
+  }, [activeAccount]);
+  console.log({ balance });
   return (
     <>
       <div>
+        {balance && <div>{fc(balance)}</div>}
         <Typography variant="h6">Balances</Typography>
         <Button
           variant="outlined"

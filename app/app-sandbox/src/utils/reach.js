@@ -75,7 +75,11 @@ export const makeStdLib = () => {
   let ALGO_INDEXER_SERVER;
   switch (node) {
     default:
-    case "voi":
+    case "voi": 
+    case "voi-testnet":
+      ALGO_SERVER = "https://voitest-api.algorpc.pro";
+      ALGO_INDEXER_SERVER = "https://voitest-idx.algorpc.pro";
+      break;
     case "algorand-testnet":
       ALGO_SERVER = "https://testnet-api.algonode.cloud";
       ALGO_INDEXER_SERVER = "https://testnet-idx.algonode.cloud";
