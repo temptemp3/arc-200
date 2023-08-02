@@ -1,0 +1,102 @@
+[
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "NYC Apartment Token",
+      "symbol": "NYCAPT",
+      "decimals": 18,
+      "totalSupply": "1000000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "SF Condo Token",
+      "symbol": "SFCT",
+      "decimals": 18,
+      "totalSupply": "500000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "London Townhouse Token",
+      "symbol": "LTT",
+      "decimals": 18,
+      "totalSupply": "800000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Tokyo Penthouse Token",
+      "symbol": "TPT",
+      "decimals": 18,
+      "totalSupply": "300000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Miami Villa Token",
+      "symbol": "MVT",
+      "decimals": 18,
+      "totalSupply": "600000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Sydney Harbor Apartment Token",
+      "symbol": "SHAT",
+      "decimals": 18,
+      "totalSupply": "200000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Paris Chateau Token",
+      "symbol": "PCT",
+      "decimals": 18,
+      "totalSupply": "700000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Dubai Luxury Suite Token",
+      "symbol": "DLST",
+      "decimals": 18,
+      "totalSupply": "400000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Vancouver Mountain Retreat Token",
+      "symbol": "VMRT",
+      "decimals": 18,
+      "totalSupply": "250000000000000000000000"
+    }
+  },
+  {
+    "zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": false,
+    "meta": {
+      "name": "Cape Town Oceanfront Token",
+      "symbol": "CTOT",
+      "decimals": 18,
+      "totalSupply": "900000000000000000000000"
+    }
+  }
+]

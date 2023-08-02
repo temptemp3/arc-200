@@ -3,8 +3,6 @@ import ReactDOM from "react-dom/client";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import Token from "./pages/Token";
-import TokenAddress from "./pages/TokenAddress";
 import reportWebVitals from "./reportWebVitals";
 
 import { ToastContainer } from "react-toastify";

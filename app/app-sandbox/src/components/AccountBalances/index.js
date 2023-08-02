@@ -26,6 +26,7 @@ import defaultTokens from "../../config/defaultTokens.js";
 import FireplaceIcon from "@mui/icons-material/Fireplace";
 
 const stdlib = makeStdLib();
+const { algosdk } = stdlib;
 const fawd = stdlib.formatWithDecimals;
 
 const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
@@ -37,10 +38,10 @@ function AccountBalance(props) {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [token, setToken] = useState(props.token);
   const reloadToken = useCallback(async () => {
-    if (!activeAccount) return;
-    const meta = await ARC200Service.getTokenMetadata(token.appId);
+    const backendId = await ARC200Service.getBackendId(token.appId);
+    const meta = await ARC200Service.getTokenMetadata(token.appId, backendId);
     const amount = fawd(
-      await ARC200Service.balanceOf(token.appId, activeAccount.address),
+      await ARC200Service.balanceOf(token.appId, activeAccount.address, backendId),
       meta.decimals
     );
     const token = {
@@ -190,15 +191,17 @@ function AccountBalances(props) {
     if (!activeAccount) return;
     const tokens = [];
     for (const appId of props.tokens) {
-      const meta = await ARC200Service.getTokenMetadata(appId);
+      const backendId = await ARC200Service.getBackendId(appId);
+      const meta = await ARC200Service.getTokenMetadata(appId, backendId);
       const amount = fawd(
-        await ARC200Service.balanceOf(appId, activeAccount.address),
+        await ARC200Service.balanceOf(appId, activeAccount.address, backendId),
         meta.decimals
       );
       tokens.push({
         appId,
         amount,
         ...meta,
+        backendId,
       });
     }
     setTokens(tokens);

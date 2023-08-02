@@ -1,0 +1,12 @@
+[
+  {
+		"zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+    "enableZeroAddressBurn": true,
+		"meta": {
+    	"name": "CRA200 Token",
+    	"symbol": "CRA200",
+    	"decimals": 8,
+    	"totalSupply": 1000000000000000000
+		}
+  }
+]

@@ -1,8 +1,7 @@
 [
   {
 		"zeroAddress": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
-    "manager": "MANAGER_ADDRESS",
-    "enableZeroAddressBurn": true,
+    "enableZeroAddressBurn": false,
 		"meta": {
     	"name": "META_NAME",
     	"symbol": "META_SYMBOL",

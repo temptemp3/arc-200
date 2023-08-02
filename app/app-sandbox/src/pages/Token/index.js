@@ -28,6 +28,7 @@ import { fromSome } from "../../utils/common";
 import moment from "moment";
 
 const stdlib = makeStdLib();
+const { algosdk } = stdlib;
 const bn = stdlib.bigNumberify;
 const fa = stdlib.formatAddress;
 const fawd = stdlib.formatWithDecimals;
@@ -186,10 +187,11 @@ const TokenHolders = ({ token, holders }) => {
                         </Link>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        {displayTokenValue({
+                        {/*displayTokenValue({
                           ...token,
                           amount: fawd(row[1], token.decimals),
-                        })}
+                        })*/}
+                        {row[1]}
                       </StyledTableCell>
                     </StyledTableRow>
                   ))
@@ -297,10 +299,11 @@ const TokenTransactions = ({ token, transactions }) => {
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      {displayTokenValue({
+                      {/*displayTokenValue({
                         ...token,
                         amount: fawd(row[3], token.decimals),
-                      })}
+                      })*/}
+                      {fawd(row[3], token.decimals)}
                     </StyledTableCell>
                   </StyledTableRow>
                 ))
@@ -408,13 +411,18 @@ function Page() {
         roundTimes[confirmedRound] = roundTime;
       }
       setRoundTimes(roundTimes);
+      console.log({ txns });
     })();
   }, []);
   React.useEffect(() => {
     if (!token) return;
     if (!roundTimes) return;
+    console.log({ token });
     (async () => {
-      const ret = (await ARC200Service.getTransferEvents(appId))
+      const backendId = await ARC200Service.getBackendId(appId);
+      const ret = (
+        await ARC200Service.getTransferEvents(appId, null, backendId)
+      )
         .map(({ when, what }) => {
           return [
             bn2n(when),
@@ -440,8 +448,15 @@ function Page() {
         if (a2 === b2) return a1.localeCompare(b1);
         return b2 - a2;
       });
-      setHolders(balances.filter((el) => el[0] !== token.zeroAddress));
+      setHolders(
+        balances.filter(
+          (el) =>
+            el[0] !== token.zeroAddress &&
+            el[0] !== algosdk.getApplicationAddress(Number(appId))
+        )
+      );
       setTransactions(ret);
+      console.log({ ret });
     })();
   }, [token, roundTimes]);
   React.useEffect(() => {
@@ -466,11 +481,15 @@ function Page() {
   }, [transactions]);
   React.useEffect(() => {
     (async () => {
-      const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
+      const backendId = await ARC200Service.getBackendId(appId);
+      const tokenMetadata = await ARC200Service.getTokenMetadata(
+        appId,
+        backendId
+      );
       const nonCirculating = (
         await Promise.all([
-          ARC200Service.balanceOf(appId, tokenMetadata.zeroAddress),
-          ARC200Service.balanceOf(appId, tokenMetadata.manager),
+          ARC200Service.balanceOf(appId, tokenMetadata.zeroAddress, backendId),
+          ARC200Service.balanceOf(appId, tokenMetadata.manager, backendId),
         ])
       ).reduce((acc, val) => acc.add(val), bn(0));
       const circulatingSupplyBn = bn(tokenMetadata.totalSupply).sub(

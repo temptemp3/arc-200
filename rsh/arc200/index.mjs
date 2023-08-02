@@ -1,11 +1,23 @@
-import * as backend from "./build/index.ARC200.mjs";
+import * as ARC200Backend from "./build/index.ARC200.mjs";
 import * as ASABridgeBackend from "./companion/index.ASABridge.mjs";
+import * as trimvirateBackend from "./companion/index.triumvirate.mjs";
+import * as ctcCtcSwap200Backend from "./companion/index.ctc_ctc.mjs";
+import * as icoBackend from "./companion/index.ico.mjs";
 
-import { loadStdlib } from "@reach-sh/stdlib";
+import { loadStdlib, test } from "@reach-sh/stdlib";
+const { chk } = test;
+
+const zeroAddress =
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
+const UInt256MaxBIS =
+  "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+const TokTotalSupplyBIS = "1000000000000000000";
 
 const deployCost = "0.16"; // txn cost + cost for box
 const transferCostHot = "0.001"; // txn cost
 const transferCostCold = "0.0305"; // txn cost + cost for box
+const transferTxnCostCold = "0.002";
+const transferBalanceBoxCost = "0.0285";
 const transferGain = "0.0189"; // gain on box deletion
 const transferNetCost = "0.0020"; // transferCostCold - transferGain
 const transferFromCostCold = "";
@@ -20,7 +32,8 @@ const deleteBalanceBoxCost = "";
 
 const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
 
-const stdlib = loadStdlib({ REACH_NO_WARN: "Y" });
+const stdlib = loadStdlib({ REACH_NO_WARN: "Y", REACH_DEBUG: "0" });
+const { algosdk } = stdlib;
 
 const bn = stdlib.bigNumberify;
 const bn2n = stdlib.bigNumberToNumber;
@@ -29,9 +42,6 @@ const pc = stdlib.parseCurrency;
 const fc = stdlib.formatCurrency;
 const fawd = stdlib.formatWithDecimals;
 const fa = stdlib.formatAddress;
-
-const zeroAddress =
-  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
 
 const tokens = [
   {
@@ -703,8 +713,475 @@ for (const addr of addrRobots) {
   // TODO
 };
 
+const TestSwap200CtcCtc = async () => {
+  console.log("Testing Swap200...");
+  // begin accs
+  const accs = await stdlib.newTestAccounts(3, stdlib.parseCurrency(100));
+  const [accCaesar, accPompey, accCrassus] = accs;
+  const accZero = await stdlib.connectAccount({ addr: zeroAddress });
+  // begin triumvirate
+  const ctcTri0 = accCaesar.contract(trimvirateBackend);
+  console.log({ ctcTri0 });
+  const ctcTri0Info = await stdlib.withDisconnect(() =>
+    ctcTri0.p.Deployer({
+      params: {
+        umvirs: [accCaesar, accPompey, accCrassus],
+        info: {
+          protoFee: 5,
+          lpFee: 25,
+          totFee: 30,
+        },
+      },
+      ready: (ctcInfo) => {
+        console.log("Ready!");
+        stdlib.disconnect(ctcInfo); // causes withDisconnect to immediately return ctcInfo
+      },
+    })
+  );
+
+  // [TRI] here
+
+  const ctcCaesar = accCaesar.contract(trimvirateBackend, ctcTri0Info);
+  const ctcPompey = accPompey.contract(trimvirateBackend, ctcTri0Info);
+  const ctcCrassus = accCrassus.contract(trimvirateBackend, ctcTri0Info);
+  console.log({ ctcTri0Info });
+  ctcTri0.e.Event.monitor(console.log);
+  console.log(await ctcTri0.v.Info());
+  await ctcCaesar.a.Umvir.propose(["NoOp", null]);
+  await ctcPompey.a.Umvir.propose(["NoOp", null]);
+  await ctcCrassus.a.Umvir.propose(["NoOp", null]);
+  await ctcPompey.a.Umvir.support(0, ["NoOp", null]);
+  await ctcCrassus.a.Umvir.support(0, ["NoOp", null]);
+  // begin arc200
+  const tokenMeta = [
+    {
+      zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+      enableZeroAddressBurn: true,
+      meta: {
+        name: "Token A",
+        symbol: "TOKA",
+        decimals: 8,
+        totalSupply: 1000000000000000000,
+      },
+    },
+    {
+      zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+      enableZeroAddressBurn: true,
+      meta: {
+        name: "Token B",
+        symbol: "TOKB",
+        decimals: 8,
+        totalSupply: 1000000000000000000,
+      },
+    },
+  ];
+  const tokens = [];
+  for (const token of tokenMeta) {
+    console.log({ token });
+    const ctc = accCaesar.contract(ARC200Backend);
+    ["Approval", "Transfer"].forEach((el) => ctc.e[el].monitor(console.log));
+    const ctcInfo = await stdlib.withDisconnect(() =>
+      ctc.p.Deployer({
+        params: { ...token, manager: accCaesar },
+        ready: (ctcInfo) => {
+          console.log("Ready!");
+          stdlib.disconnect(ctcInfo);
+        },
+      })
+    );
+    tokens.push(ctcInfo);
+  }
+
+  const [TokA, TokB] = tokens.map((el) => {
+    const ctc = accZero.contract(ARC200Backend, el);
+    return {
+      id: el,
+      balanceOf: async (acc) =>
+        bn2bi(fromSome(await ctc.v.balanceOf(acc), bn(0))),
+      allowance: async (acc, addr) =>
+        bn2bi(fromSome(await ctc.v.allowance(acc, addr), bn(0))),
+      totalSupply: async () => fromSome(await ctc.v.totalSupply(), bn(0)),
+    };
+  });
+
+  chk(
+    "initial tokA balance accurate",
+    (await TokA.balanceOf(accCaesar)).toString(),
+    TokTotalSupplyBIS
+  );
+
+  chk(
+    "initial tokB balance accurate",
+    (await TokB.balanceOf(accCaesar)).toString(),
+    TokTotalSupplyBIS
+  );
+
+  // begin swap net ctc
+  const ctcSwap0 = accCaesar.contract(ctcCtcSwap200Backend);
+  const ctcSwap0Info = await stdlib.withDisconnect(() =>
+    ctcSwap0.p.Deployer({
+      params: {
+        zeroAddress,
+        meta: {
+          name: "SWAP200 LP - ALGO/TOKB",
+          symbol: "ARC200LT",
+          decimals: 6,
+        },
+        swap: {
+          tokA: TokA.id,
+          tokB: TokB.id,
+          proto: ctcTri0Info,
+        },
+      },
+      ready: (ctcInfo) => {
+        console.log("Ready!");
+        stdlib.disconnect(ctcInfo); // causes withDisconnect to immediately return ctcInfo
+      },
+    })
+  );
+
+  const swapAddress = algosdk.getApplicationAddress(bn2n(ctcSwap0Info));
+
+  const [LT] = [ctcSwap0Info].map((el) => {
+    const ctc = accZero.contract(ctcCtcSwap200Backend, el);
+    return {
+      id: el,
+      balanceOf: async (acc) =>
+        bn2bi(fromSome(await ctc.v.balanceOf(acc), bn(0))),
+      allowance: async (acc, addr) =>
+        bn2bi(fromSome(await ctc.v.allowance(acc, addr), bn(0))),
+      totalSupply: async () => fromSome(await ctc.v.totalSupply(), bn(0)),
+      Info: async () => fromSome(await ctc.v.Info(), {}),
+    };
+  });
+
+  chk(
+    "initial liquidity accurate",
+    (await LT.balanceOf(swapAddress)).toString(),
+    UInt256MaxBIS
+  );
+
+  console.log(await LT.Info());
+
+  // begin deposit
+
+  console.log("DEPOSIT");
+
+  do {
+    // approve tokB spending by ctc
+
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log(
+      `caesar tokB allowance ctcSwap0 ${await TokB.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    const ctcTokA = accCaesar.contract(ARC200Backend, TokA.id);
+    const ctcTokB = accCaesar.contract(ARC200Backend, TokB.id);
+    await ctcTokA.a.approve(swapAddress, await TokA.totalSupply());
+    await ctcTokB.a.approve(swapAddress, await TokB.totalSupply());
+    console.log(
+      `caesar tokB allowance ctcSwap0 ${await TokB.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    // cold transfer box payment
+    do {
+      const before = await stdlib.balanceOf(accCaesar);
+      await ctcTokA.a.transfer(swapAddress, 0);
+      await ctcTokB.a.transfer(swapAddress, 0);
+      const after = await stdlib.balanceOf(accCaesar);
+      const diff = after.gt(before) ? after.sub(before) : before.sub(after);
+      console.log({ before: fc(before), after: fc(after), diff: fc(diff) });
+    } while (0);
+    console.log(`caesar tokA balance: ${await TokA.balanceOf(accCaesar)}`);
+    console.log(`caesar tokB balance: ${await TokB.balanceOf(accCaesar)}`);
+    console.log(`swap tokA balance: ${await TokA.balanceOf(swapAddress)}`);
+    console.log(`swap tokB balance: ${await TokB.balanceOf(swapAddress)}`);
+    console.log(`caesar lt balance: ${await LT.balanceOf(accCaesar)}`);
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log("Deposit A");
+    await ctcSwap0.a.Provider.depositA(pc(50));
+    console.log("Deposit B");
+    await ctcSwap0.a.Provider.depositB(pc(50));
+    console.log("Deposit");
+    await stdlib.wait(1);
+    await ctcSwap0.a.Provider.deposit([pc(40), pc(40)], pc(0));
+    console.log(
+      `caesar tokB allowance ctcSwap0 ${await TokB.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    console.log(`caesar tokB balance: ${await TokB.balanceOf(accCaesar)}`);
+    console.log(`caesar tokA balance: ${await TokA.balanceOf(accCaesar)}`);
+    console.log(`swap tokA balance: ${await TokA.balanceOf(swapAddress)}`);
+    console.log(`swap tokB balance: ${await TokB.balanceOf(swapAddress)}`);
+    console.log(`caesar lt balance: ${await LT.balanceOf(accCaesar)}`);
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    // test: cold deposit with zero payment fails
+    // test: cold deposit with payment succeeds
+    // test: hot deposit with  zero payment succeeds
+  } while (0);
+
+  // begin withdraw
+
+  console.log("WITHDRAW");
+
+  do {
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log(
+      `caesar lt allowance ctcSwap0 ${await LT.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    await ctcSwap0.a.approve(
+      swapAddress,
+      fromSome(await ctcSwap0.v.totalSupply(), bn(0))
+    );
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log(
+      `caesar lt allowance ctcSwap0 ${await LT.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    // TODO check approval here
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log(`caesar tokB balance: ${await TokB.balanceOf(accCaesar)}`);
+    console.log(`swap tokB balance: ${await TokB.balanceOf(swapAddress)}`);
+    console.log(`caesar lt balance: ${await LT.balanceOf(accCaesar)}`);
+    await ctcSwap0.a.Provider.withdraw(pc(25), [pc(24), pc(24)]);
+    await ctcSwap0.a.Provider.withdrawA(pc(10));
+    await ctcSwap0.a.Provider.withdrawA(pc(10));
+    console.log(
+      `caesar lt allowance ctcSwap0 ${await LT.allowance(
+        accCaesar,
+        swapAddress
+      )}`
+    );
+    console.log(`caesar balance: ${await stdlib.balanceOf(accCaesar)}`);
+    console.log(`caesar tokB balance: ${await TokB.balanceOf(accCaesar)}`);
+    console.log(`swap tokB balance: ${await TokB.balanceOf(swapAddress)}`);
+    console.log(`caesar lt balance: ${await LT.balanceOf(accCaesar)}`);
+  } while (0);
+
+  // begin swapAforB
+
+  do {
+    // Pompey has neither tokB or tokA
+    //  Caesar give Pompey some tokA
+    const ctcTokACaesar = accCaesar.contract(ARC200Backend, TokA.id);
+    const ctcTokAPompey = accPompey.contract(ARC200Backend, TokA.id);
+    const ctcTokBPompey = accPompey.contract(ARC200Backend, TokB.id);
+    await ctcTokACaesar.a.transfer(accPompey, pc(10));
+    console.log(`caesar tokA balance: ${await TokA.balanceOf(accCaesar)}`);
+    console.log(`pompey tokA balance: ${await TokA.balanceOf(accPompey)}`);
+    console.log(`pompey tokB balance: ${await TokB.balanceOf(accPompey)}`);
+    // Pompey wants tokB but only has tokA
+    //  He swaps tokA for tokB
+    await ctcTokAPompey.a.approve(swapAddress, await TokA.totalSupply());
+    const ctcSwap = accPompey.contract(ctcCtcSwap200Backend, LT.id);
+    console.log(ctcSwap);
+    console.log(await ctcSwap.v.reserve(accPompey));
+    await ctcSwap.a.Trader.swapAForB(pc(1), pc(0));
+    console.log(`pompey tokA balance: ${await TokA.balanceOf(accPompey)}`);
+    console.log(`pompey tokB balance: ${await TokB.balanceOf(accPompey)}`);
+    console.log(await ctcSwap.v.reserve(accPompey));
+    //  He has tokB
+    await ctcTokBPompey.a.transfer(accPompey, 0);
+    await ctcSwap.a.Provider.withdrawB(pc(0.5));
+    console.log(`pompey tokA balance: ${await TokA.balanceOf(accPompey)}`);
+    console.log(`pompey tokB balance: ${await TokB.balanceOf(accPompey)}`);
+    console.log(await LT.Info());
+    console.log(await LT.Info());
+    console.log(bn2bi((await LT.Info()).protoBals.A));
+  } while (0);
+  // spin wait
+  while (1) {
+    await stdlib.wait(1);
+  }
+};
+
+const TestICO = async () => {
+  // begin accs
+  const accs = await stdlib.newTestAccounts(3, stdlib.parseCurrency(100));
+  const [accCaesar, accPompey, accCrassus] = accs;
+  const accZero = await stdlib.connectAccount({ addr: zeroAddress });
+  // begin triumvirate
+  const ctcTri0 = accCaesar.contract(trimvirateBackend);
+  console.log({ ctcTri0 });
+  const ctcTri0Info = await stdlib.withDisconnect(() =>
+    ctcTri0.p.Deployer({
+      params: {
+        umvirs: [accCaesar, accPompey, accCrassus],
+        info: {
+          protoFee: 5,
+          lpFee: 25,
+          totFee: 30,
+        },
+      },
+      ready: (ctcInfo) => {
+        console.log("Ready!");
+        stdlib.disconnect(ctcInfo); // causes withDisconnect to immediately return ctcInfo
+      },
+    })
+  );
+
+  // [TRI] here
+
+  const ctcCaesar = accCaesar.contract(trimvirateBackend, ctcTri0Info);
+  const ctcPompey = accPompey.contract(trimvirateBackend, ctcTri0Info);
+  const ctcCrassus = accCrassus.contract(trimvirateBackend, ctcTri0Info);
+  console.log({ ctcTri0Info });
+  ctcTri0.e.Event.monitor(console.log);
+  console.log(await ctcTri0.v.Info());
+  await ctcCaesar.a.Umvir.propose(["NoOp", null]);
+  await ctcPompey.a.Umvir.propose(["NoOp", null]);
+  await ctcCrassus.a.Umvir.propose(["NoOp", null]);
+  await ctcPompey.a.Umvir.support(0, ["NoOp", null]);
+  await ctcCrassus.a.Umvir.support(0, ["NoOp", null]);
+  // begin arc200
+  const tokenMeta = [
+    {
+      zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+      enableZeroAddressBurn: true,
+      meta: {
+        name: "Token A",
+        symbol: "TOKA",
+        decimals: 8,
+        totalSupply: 1000000000000000000,
+      },
+    },
+    {
+      zeroAddress: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+      enableZeroAddressBurn: true,
+      meta: {
+        name: "Token B",
+        symbol: "TOKB",
+        decimals: 8,
+        totalSupply: 1000000000000000000,
+      },
+    },
+  ];
+  const tokens = [];
+  for (const token of tokenMeta) {
+    console.log({ token });
+    const ctc = accCaesar.contract(ARC200Backend);
+    ["Approval", "Transfer"].forEach((el) => ctc.e[el].monitor(console.log));
+    const ctcInfo = await stdlib.withDisconnect(() =>
+      ctc.p.Deployer({
+        params: { ...token, manager: accCaesar },
+        ready: (ctcInfo) => {
+          console.log("Ready!");
+          stdlib.disconnect(ctcInfo);
+        },
+      })
+    );
+    tokens.push(ctcInfo);
+  }
+
+  const [TokA, TokB] = tokens.map((el) => {
+    const ctc = accZero.contract(ARC200Backend, el);
+    return {
+      id: el,
+      balanceOf: async (acc) =>
+        bn2bi(fromSome(await ctc.v.balanceOf(acc), bn(0))),
+      allowance: async (acc, addr) =>
+        bn2bi(fromSome(await ctc.v.allowance(acc, addr), bn(0))),
+      totalSupply: async () => fromSome(await ctc.v.totalSupply(), bn(0)),
+    };
+  });
+
+  chk(
+    "initial tokA balance accurate",
+    (await TokA.balanceOf(accCaesar)).toString(),
+    TokTotalSupplyBIS
+  );
+
+  chk(
+    "initial tokB balance accurate",
+    (await TokB.balanceOf(accCaesar)).toString(),
+    TokTotalSupplyBIS
+  );
+
+  const ctcICO0 = accCaesar.contract(icoBackend);
+  const ctcICO0Info = await stdlib.withDisconnect(() =>
+    ctcICO0.p.Deployer({
+      params: {
+        price: 20000000,
+        tokenAmount: 100000000,
+        tokenUnit: 10000,
+        swap: {
+          tokA: TokA.id,
+          tokB: TokB.id,
+          proto: ctcTri0Info,
+        },
+      },
+      ready: (ctcInfo) => {
+        console.log("Ready!");
+        stdlib.disconnect(ctcInfo); // causes withDisconnect to immediately return ctcInfo
+      },
+    })
+  );
+
+  console.log(ctcICO0);
+
+  const ctcICO0Address = algosdk.getApplicationAddress(bn2n(ctcICO0Info));
+
+  // approve ctcICO0Address
+  // optin ctcICO0ADdress
+
+  do {
+    const ctcTokB = accCaesar.contract(ARC200Backend, TokB.id);
+    await ctcTokB.a.approve(
+      ctcICO0Address,
+      fromSome(await ctcTokB.v.totalSupply(), bn(0))
+    );
+    await ctcTokB.a.transfer(ctcICO0Address, 0);
+  } while (0);
+
+  // depositB
+
+  console.log(await TokB.balanceOf(ctcICO0Address));
+
+  await ctcICO0.a.Provider.depositB(100000000);
+
+  console.log(await TokB.balanceOf(ctcICO0Address));
+
+  // Pompey swaps A for B
+
+  do {
+    const ctcTokACaesar = accCaesar.contract(ARC200Backend, TokA.id);
+    const ctcTokAPompey = accPompey.contract(ARC200Backend, TokA.id);
+    await ctcTokACaesar.a.transfer(ctcICO0Address, 0);
+    await ctcTokACaesar.a.transfer(accPompey, 20000000 * 10);
+    await ctcTokAPompey.a.approve(
+      ctcICO0Address,
+      fromSome(await ctcTokAPompey.v.totalSupply(), bn(0))
+    );
+    const ctcTokBCaesar = accCaesar.contract(ARC200Backend, TokB.id);
+    await ctcTokBCaesar.a.transfer(accPompey, 0);
+    const ctcICOPompey = accPompey.contract(icoBackend, ctcICO0Info);
+    console.log(await ctcICO0.v.reserve(accPompey));
+    await ctcICOPompey.a.Trader.swapAForB(20000000 * 5);
+    console.log(await ctcICO0.v.reserve(accPompey));
+    // withdraw b
+    // may withdraw a
+  } while (0);
+  do {
+    await stdlib.wait(0);
+  } while(1);
+};
+
 const main = async () => {
-  await TestARC200();
+  console.log("Testing...");
+  //await TestARC200();
+  //await TestSwap200CtcCtc();
+  await TestICO();
 };
 
 await main();
