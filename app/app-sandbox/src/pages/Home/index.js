@@ -14,10 +14,10 @@ const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
 );
 
 function Balances(props) {
+  const navigate = useNavigate();
   const [tokens, setTokens] = React.useState(props.tokens);
   const [appId, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
-  const navigate = useNavigate();
   return (
     <>
       <div>

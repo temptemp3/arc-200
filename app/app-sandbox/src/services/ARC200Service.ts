@@ -54,8 +54,8 @@ const getEvents =
   };
 
 const getMintEvents = getEvents("Mint");
-const getTransferEvents = getEvents("Transfer");
-const getApproveEvents = getEvents("Approve");
+const getTransferEvents = getEvents("arc200_Transfer");
+const getApproveEvents = getEvents("arc200_Approve");
 
 const launch = async (addr: string, params: any) => {
   const acc = await stdlib.connectAccount({ addr });
@@ -120,25 +120,25 @@ const getTokenMetadata = async (ctcInfo: number) => {
 const allowance = async (ctcInfo: number, owner: any, spender: any) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
   const ctc = acc.contract(backend, ctcInfo);
-  return fromSome(await ctc.v.allowance(owner, spender), bn(0));
+  return fromSome(await ctc.v.arc200_allowance(owner, spender), bn(0));
 };
 
 const balanceOf = async (ctcInfo: number, addr: string) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
   const ctc = acc.contract(backend, ctcInfo);
-  return fromSome(await ctc.v.balanceOf(addr), bn(0));
+  return fromSome(await ctc.v.arc200_balanceOf(addr), bn(0));
 };
 
 const totalSupply = async (ctcInfo: number) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
   const ctc = acc.contract(backend, ctcInfo);
-  return fromSome(await ctc.v.totalSupply(), bn(0));
+  return fromSome(await ctc.v.arc200_totalSupply(), bn(0));
 };
 
 const decimals = async (ctcInfo: number) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
   const ctc = acc.contract(backend, ctcInfo);
-  return fromSome(await ctc.v.decimals(), bn(0));
+  return fromSome(await ctc.v.arc200_decimals(), bn(0));
 };
 
 // code below from ChildService.ts
@@ -168,7 +168,7 @@ const approve = async (
   console.log({ acc });
   const ctc = acc.contract(backend, token.appId);
   if (ib(amount)) {
-    return await ctc.a.approve(addrSpender, amount);
+    return await ctc.a.arc200_approve(addrSpender, amount);
   } else {
     const acc = await stdlib.connectAccount({ addr: addrFrom });
     const [lhs, rhs, rst] = amount.split(".");
@@ -179,7 +179,7 @@ const approve = async (
         ? bn((rhs ?? "0").slice(0, token.decimals).padEnd(token.decimals, "0"))
         : bn(0);
     const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
-    return await ctc.a.approve(addrSpender, amountBn);
+    return await ctc.a.arc200_approve(addrSpender, amountBn);
   }
 };
 
@@ -238,7 +238,7 @@ const transfer = async (
     const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
     const ctc = acc.contract(backend, token.appId);
     const {
-      a: { transfer },
+      a: { arc200_transfer: transfer },
     } = ctc;
     return transfer(addrTo, amountBn);
   } catch (e) {

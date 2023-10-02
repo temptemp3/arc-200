@@ -68,7 +68,7 @@ export const makeStdLib = () => {
       : baseProviderId;
 
   const [node, customNode, customIndexer] = (
-    localStorage.getItem("node") || "algorand-testnet::"
+    localStorage.getItem("node") || "voi-testnet::"
   ).split(":");
   console.log({ node, customNode, customIndexer });
   let ALGO_SERVER;
@@ -76,6 +76,10 @@ export const makeStdLib = () => {
   switch (node) {
     default:
     case "voi":
+    case "voi-testnet":
+      ALGO_SERVER = "https://testnet-api.voi.nodly.io";
+      ALGO_INDEXER_SERVER = "https://testnet-idx.voi.nodly.io";
+      break;
     case "algorand-testnet":
       ALGO_SERVER = "https://testnet-api.algonode.cloud";
       ALGO_INDEXER_SERVER = "https://testnet-idx.algonode.cloud";

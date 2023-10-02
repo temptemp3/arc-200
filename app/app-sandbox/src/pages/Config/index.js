@@ -21,7 +21,7 @@ const bn = stdlib.bigNumberify;
 const bn2n = stdlib.bigNumberToNumber;
 
 const [initialNode, initialCustomNode, initialCustomIndexer] = (
-  localStorage.getItem("node") || "algorand-testnet::"
+  localStorage.getItem("node") || "voi-testnet::"
 ).split(":");
 
 function NodeSelection() {
@@ -49,6 +49,11 @@ function NodeSelection() {
             value="voi-testnet"
             control={<Radio />}
             label="Voi (Testnet)"
+          />
+          <FormControlLabel
+            value="voi"
+            control={<Radio />}
+            label="Voi"
             disabled
           />
           <FormControlLabel
