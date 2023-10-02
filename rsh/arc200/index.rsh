@@ -40,27 +40,30 @@ export const ARC200 = Reach.App(() => {
   });
 
   const A = API({
-    transfer: Fun([Address, UInt256], Bool), // tranfer from this to address
-    transferFrom: Fun([Address, Address, UInt256], Bool), // transfer from address to address
-    approve: Fun([Address, UInt256], Bool), // approve address to spend this
+    arc200_transfer: Fun([Address, UInt256], Bool), // tranfer from this to address
+    arc200_transferFrom: Fun([Address, Address, UInt256], Bool), // transfer from address to address
+    arc200_approve: Fun([Address, UInt256], Bool), // approve address to spend this
     deleteBalanceBox: Fun([Address], Bool), // delete balance box if zero
     deleteAllowanceBox: Fun([Address, Address], Bool), // delete allowance box if zero
     destroy: Fun([], Null), // destroy this contract
   });
 
   const V = View({
-    name: Fun([], Bytes(32)), // get name
-    symbol: Fun([], Bytes(8)), // get symbol
-    decimals: Fun([], UInt), // get decimals
-    totalSupply: Fun([], UInt256), // get total supply
-    balanceOf: Fun([Address], UInt256), // get balance of address
-    allowance: Fun([Address, Address], UInt256), // get allowance of address to spend this
+    arc200_name: Fun([], Bytes(32)), // get name
+    arc200_symbol: Fun([], Bytes(8)), // get symbol
+    arc200_decimals: Fun([], UInt), // get decimals
+    arc200_totalSupply: Fun([], UInt256), // get total supply
+    arc200_balanceOf: Fun([Address], UInt256), // get balance of address
+    arc200_allowance: Fun([Address, Address], UInt256), // get allowance of address to spend this
     state: Fun([], State), // get state
   });
 
   const E = Events({
-    Transfer: [Address, Address, UInt256],
-    Approval: [Address, Address, UInt256],
+    arc200_Transfer: [Address, Address, UInt256], // transfer event
+    arc200_Approval: [Address, Address, UInt256], // approval event
+    DeleteBalanceBox: [Address], // delete balance box event
+    DeleteAllowanceBox: [Address, Address], // delete allowance box event
+    Destroy: [], // destroy event
   });
 
   init();
@@ -91,13 +94,13 @@ export const ARC200 = Reach.App(() => {
   balances[manager] = meta.totalSupply; // D creates manager and zero addres balance boxes
   balances[zeroAddress] = UInt256(0);
 
-  E.Transfer(zeroAddress, manager, meta.totalSupply);
+  E.arc200_Transfer(zeroAddress, manager, meta.totalSupply);
   D.interact.ready(getContract());
 
-  V.name.set(() => meta.name);
-  V.symbol.set(() => meta.symbol);
-  V.decimals.set(() => meta.decimals);
-  V.totalSupply.set(() => meta.totalSupply);
+  V.arc200_name.set(() => meta.name);
+  V.arc200_symbol.set(() => meta.symbol);
+  V.arc200_decimals.set(() => meta.decimals);
+  V.arc200_totalSupply.set(() => meta.totalSupply);
 
   const initialState = {
     ...meta,
@@ -113,12 +116,12 @@ export const ARC200 = Reach.App(() => {
         const m_bal = balances[owner];
         return fromSome(m_bal, UInt256(0));
       };
-      V.balanceOf.set(balanceOf);
+      V.arc200_balanceOf.set(balanceOf);
       const allowance = (owner, spender) => {
         const m_bal = allowances[[owner, spender]];
         return fromSome(m_bal, UInt256(0));
       };
-      V.allowance.set(allowance);
+      V.arc200_allowance.set(allowance);
       const state = () => State.fromObject(s);
       V.state.set(state);
     })
@@ -128,13 +131,13 @@ export const ARC200 = Reach.App(() => {
       const transfer_ = (from_, to, amount) => {
         balances[from_] = balanceOf(from_) - amount;
         balances[to] = balanceOf(to) + amount;
-        E.Transfer(from_, to, amount);
+        E.arc200_Transfer(from_, to, amount);
       };
     })
     // api: transfer
     // - transfer from this to address
     // + may transfer to zero address (burn) if zero address burn enabled
-    .api_(A.transfer, (to, amount) => {
+    .api_(A.arc200_transfer, (to, amount) => {
       check(
         enableZeroAddressBurn || to != zeroAddress,
         "ARC200: Transfer to zero address"
@@ -155,7 +158,7 @@ export const ARC200 = Reach.App(() => {
     // - transfer from address to address
     // + may not transfer to and from zero address
     // + requires allowance from spender to this
-    .api_(A.transferFrom, (from_, to, amount) => {
+    .api_(A.arc200_transferFrom, (from_, to, amount) => {
       check(from_ != zeroAddress, "ARC200: Transfer from zero address");
       check(to != zeroAddress, "ARC200: Transfer to zero address");
       check(
@@ -171,7 +174,7 @@ export const ARC200 = Reach.App(() => {
           transfer_(from_, to, amount);
           const newAllowance = allowance(from_, this) - amount;
           allowances[[from_, this]] = newAllowance;
-          E.Approval(from_, this, newAllowance);
+          E.arc200_Approval(from_, this, newAllowance);
           k(true);
           return [s];
         },
@@ -181,13 +184,13 @@ export const ARC200 = Reach.App(() => {
     // - approve address to spend this
     // + may not approve zero address
     // + may not approve this if zero address
-    .api_(A.approve, (spender, amount) => {
+    .api_(A.arc200_approve, (spender, amount) => {
       check(this != zeroAddress, "ARC200: Approve this to zero address");
       check(spender != zeroAddress, "ARC200: Approve to zero address");
       return [
         (k) => {
           allowances[[this, spender]] = amount;
-          E.Approval(this, spender, amount);
+          E.arc200_Approval(this, spender, amount);
           k(true);
           return [s];
         },
@@ -205,6 +208,7 @@ export const ARC200 = Reach.App(() => {
       return [
         (k) => {
           delete balances[addr];
+          E.DeleteBalanceBox(addr);
           k(true);
           return [s];
         },
@@ -219,10 +223,14 @@ export const ARC200 = Reach.App(() => {
         isSome(allowances[[owner, spender]]),
         "ARC200: Allowance box not found"
       );
-      check(allowance(owner, spender) == UInt256(0), "ARC200: Allowance box not empty");
+      check(
+        allowance(owner, spender) == UInt256(0),
+        "ARC200: Allowance box not empty"
+      );
       return [
         (k) => {
           delete allowances[[owner, spender]];
+          E.DeleteAllowanceBox(owner, spender);
           k(true);
           return [s];
         },
@@ -241,6 +249,7 @@ export const ARC200 = Reach.App(() => {
       return [
         (k) => {
           delete balances[zeroAddress]; // delete last balance box
+          E.Destroy();
           k(null);
           return [{ ...s, closed: true }];
         },

@@ -150,7 +150,15 @@ do {
   console.log(ctcInfo);
 
   const {
-    v: { balanceOf, allowance, decimals, name, symbol, totalSupply, state },
+    v: {
+      arc200_balanceOf: balanceOf,
+      arc200_allowance: allowance,
+      arc200_decimals: decimals,
+      arc200_name: name,
+      arc200_symbol: symbol,
+      arc200_totalSupply: totalSupply,
+      state,
+    },
     e,
   } = accZero.contract(backend, ctcInfo);
 
@@ -164,9 +172,9 @@ do {
 
   const ctcManager = accManager.contract(backend, ctcInfo);
 
-  console.log("Burnning tokens...");
+  console.log("Burning tokens...");
 
-  await ctcManager.a.transfer(
+  await ctcManager.a.arc200_transfer(
     zeroAddress,
     stdlib.bigNumberify(tokens[0].totalSupply)
   );
@@ -242,16 +250,24 @@ do {
   // - mint arc-200 token and send 100% of funds to addr (call ctc.a.mint(mintParams))
 
   const {
-    v: { balanceOf, allowance, decimals, name, symbol, totalSupply, state },
+    v: {
+      arc200_balanceOf: balanceOf,
+      arc200_allowance: allowance,
+      arc200_decimals: decimals,
+      arc200_name: name,
+      arc200_symbol: symbol,
+      arc200_totalSupply: totalSupply,
+      state,
+    },
     e,
   } = accZero.contract(backend, ctcInfo);
 
-  e.Transfer.monitor((a) =>
+  e.arc200_Transfer.monitor((a) =>
     console.log({
       Transfer: a,
     })
   );
-  e.Approval.monitor((a) =>
+  e.arc200_Approval.monitor((a) =>
     console.log({
       Approval: a,
     })
@@ -357,7 +373,8 @@ do {
 
   do {
     const before = await accManager.balanceOf();
-    await manager.transfer(addrAlice, 0); // creates box
+
+    await manager.arc200_transfer(addrAlice, 0); // creates box
     const after = await accManager.balanceOf();
 
     console.log({ before, after });
@@ -383,7 +400,7 @@ do {
 
   do {
     const before = await accManager.balanceOf();
-    await manager.transfer(addrAlice, 0); // creates box
+    await manager.arc200_transfer(addrAlice, 0); // creates box
     const after = await accManager.balanceOf();
 
     console.log({ before, after });
@@ -409,7 +426,7 @@ do {
 
   do {
     const before = await accManager.balanceOf();
-    await manager.transfer(addrBob, 0); // creates box
+    await manager.arc200_transfer(addrBob, 0); // creates box
     const after = await accManager.balanceOf();
 
     console.log({ before, after });
@@ -435,7 +452,7 @@ do {
 
   do {
     const before = await accManager.balanceOf();
-    await manager.transfer(addrBob, 0); // creates box
+    await manager.arc200_transfer(addrBob, 0); // creates box
     const after = await accManager.balanceOf();
 
     console.log({ before, after });
@@ -484,7 +501,7 @@ do {
 
   do {
     const before = await accManager.balanceOf();
-    await manager.transfer(addrAlice, 1);
+    await manager.arc200_transfer(addrAlice, 1);
     const after = await accManager.balanceOf();
 
     holders.add(addrAlice);
@@ -526,7 +543,7 @@ for (const addr of addrRobots) {
   do {
     const before = await stdlib.balanceOf(accManager);
     console.log(`Test: transfer 1au tokens from manager to ${addrRobots[0]}`);
-    await manager.transfer(addrRobots[0], 1);
+    await manager.arc200_transfer(addrRobots[0], 1);
     holders.add(addrRobots[0]);
     balanceBoxes.add(addrRobots[0]);
     const after = await stdlib.balanceOf(accManager);
@@ -541,7 +558,7 @@ for (const addr of addrRobots) {
   do {
     const before = await stdlib.balanceOf(accManager);
     console.log(`Test: transfer 1au tokens from manager to ${addrRobots[0]}`);
-    await manager.transfer(addrRobots[0], 1);
+    await manager.arc200_transfer(addrRobots[0], 1);
     holders.add(addrRobots[0]);
     balanceBoxes.add(addrRobots[0]);
     const after = await stdlib.balanceOf(accManager);
@@ -557,7 +574,9 @@ for (const addr of addrRobots) {
 
   do {
     const before = await stdlib.balanceOf(accMaster);
-    await accRobots[0].contract(backend, ctcInfo).a.transfer(addrRobots[1], 2);
+    await accRobots[0]
+      .contract(backend, ctcInfo)
+      .a.arc200_transfer(addrRobots[1], 2);
     await bob.deleteBalanceBox(addrRobots[0]);
     holders.delete(addrRobots[0]);
     balanceBoxes.delete(addrRobots[0]);
@@ -573,7 +592,7 @@ for (const addr of addrRobots) {
   console.log("Test: transfer 2au tokens from alice to bob (should fail)");
 
   try {
-    await alice.transfer(addrBob, 2);
+    await alice.arc200_transfer(addrBob, 2);
     process.exit(2);
   } catch (e) {
     console.log("ARC200: Transfer amount must not be greater than balance");
@@ -583,7 +602,7 @@ for (const addr of addrRobots) {
 
   console.log("Test: transfer 1au tokens from alice to bob");
 
-  await alice.transfer(addrBob, 1);
+  await alice.arc200_transfer(addrBob, 1);
 
   holders.add(addrBob);
   balanceBoxes.add(addrBob);
@@ -602,7 +621,7 @@ for (const addr of addrRobots) {
 
   console.log("Test: transferFrom Bob 1au to Carla by Alice");
 
-  await bob.approve(addrAlice, 1);
+  await bob.arc200_approve(addrAlice, 1);
 
   allowanceBoxes.add([addrBob, addrAlice]);
 
@@ -610,7 +629,7 @@ for (const addr of addrRobots) {
   assertEq(fromSome(await balanceOf(addrBob), bn(0)), bn(1));
   assertEq(fromSome(await balanceOf(addrCarla), bn(0)), bn(0));
 
-  await alice.transferFrom(addrBob, addrCarla, 1);
+  await alice.arc200_transferFrom(addrBob, addrCarla, 1);
 
   holders.add(addrCarla);
   balanceBoxes.add(addrCarla);
@@ -624,10 +643,10 @@ for (const addr of addrRobots) {
   console.log("Test: approve Bob 1au to Alice then set to 0au");
 
   assertEq(fromSome(await allowance(addrBob, addrAlice), bn(0)), bn(0));
-  await bob.approve(addrAlice, 1);
+  await bob.arc200_approve(addrAlice, 1);
   allowanceBoxes.add([addrBob, addrAlice]);
   assertEq(fromSome(await allowance(addrBob, addrAlice), bn(0)), bn(1));
-  await bob.approve(addrAlice, 0);
+  await bob.arc200_approve(addrAlice, 0);
   allowanceBoxes.add([addrBob, addrAlice]);
   assertEq(fromSome(await allowance(addrBob, addrAlice), bn(0)), bn(0));
 
