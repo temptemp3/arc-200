@@ -108,6 +108,16 @@ export const balanceOfHelper = (stdlib) => async (acc, appId, addr) => {
   return balance;
 };
 
+export const allowanceHelper = (stdlib) => async (acc, appId, addrFrom, addrSpender) => {
+  const bn = stdlib.bigNumberify;
+  const bn2bi = stdlib.bigNumberToBigInt;
+  const ctc = acc.contract(backend, appId);
+  const allowance = bn2bi(
+    fromSome(await ctc.v.arc200_allowance(addrFrom, addrSpender), bn(0))
+  ).toString();
+  return allowance;
+}
+
 export const eventMonitorHelper = (stdlib) => async (acc) => {
   const ctc = acc.contract(backend, appId);
   ctc.e.Mint.monitor(console.log);
