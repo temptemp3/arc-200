@@ -12,7 +12,7 @@ export const getContractHelper = (stdlib) => (acc, appId) => {
 // - transfers the given amount from the given account to the given account
 export const transferHelper = (stdlib) => (acc, appId, to, amount) => {
   const ctc = acc.contract(backend, appId);
-  return ctc.a.transfer(to, amount);
+  return ctc.a.arc200_transfer(to, amount);
 };
 
 //

@@ -81,7 +81,7 @@ const main = async () => {
   return;
   */
 
-  console.log("Deploy!");
+  console.log("Transfer!");
   const [, , appIdStr, infile] = process.argv;
   const appId = parseInt(appIdStr);
   try {
