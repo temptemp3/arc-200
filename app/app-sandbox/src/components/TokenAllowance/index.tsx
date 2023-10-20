@@ -48,6 +48,8 @@ interface CustomizedInputBaseProps {
   accountAddress?: string;
   showAllowance?: boolean;
   reverseAllowance?: boolean;
+  addrSpender?: string;
+  addrFrom?: string;
 }
 
 export default function CustomizedInputBase({
@@ -60,6 +62,8 @@ export default function CustomizedInputBase({
   accountAddress,
   showAllowance = false,
   reverseAllowance = false,
+  addrSpender,
+  addrFrom,
 }: CustomizedInputBaseProps) {
   const { activeAccount } = useWallet();
   const [selected, setSelected] = useState<any>(token);
@@ -67,78 +71,29 @@ export default function CustomizedInputBase({
   // -------------------------------------------
   const [options] = useState<any>(tokens); // TODO type me
   useEffect(() => {
-    if (!activeAccount) return;
-    if (!accountAddress) return;
+    if (!addrFrom) return;
+    if (!addrSpender) return;
     (async () => {
-      const allowance = !reverseAllowance
-        ? await ARC200Service.allowance(
-            token.appId,
-            activeAccount?.address ?? "",
-            accountAddress ?? ""
-          )
-        : await ARC200Service.allowance(
-            token.appId,
-            accountAddress ?? "",
-            activeAccount?.address ?? ""
-          );
+      const allowance = await ARC200Service.allowance(
+        token.appId,
+        addrFrom,
+        addrSpender
+      );
       setAllowance(fawd(allowance, token.decimals));
     })();
-  }, [activeAccount, accountAddress]);
+  }, [addrFrom, addrSpender]);
+  console.log({ allowance });
   // EFFECT: get token options
   useEffect(() => {
-    if (!activeAccount) return;
-    if (selected.amount) return;
+    if (!addrFrom) return;
+    if (!addrSpender) return;
     (async () => {
-      const amount = await ARC200Service.balanceOf(
-        selected.appId,
-        activeAccount?.address ?? ""
-      );
+      const amount = await ARC200Service.balanceOf(selected.appId, addrFrom);
       setSelected({ ...selected, amount });
     })();
-  }, [activeAccount, selected]);
+  }, [addrFrom, addrSpender]);
   return (
     <>
-      <InputLabel>{label}</InputLabel>
-      <Paper
-        component="form"
-        sx={{ p: "2px 4px", display: "flex", alignItems: "center" }}
-      >
-        <InputBase
-          sx={{ ml: 1, flex: 1, padding: "10px 26px 10px 12px", width: "80%" }}
-          onChange={onTokenAmountChange}
-        />
-        <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
-        <FormControl
-          style={{ minWidth: 100, border: 0 }}
-          sx={{
-            m: 1,
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="body2">{token.symbol}</Typography>
-          {/*<Select
-            disabled={disabled}
-            input={<BootstrapInput />}
-            sx={{ border: 0 }}
-            id="token-select"
-            onChange={(a, b: any) => {
-              onTokenChange(a, b);
-              setSelected(b?.props?.value || token);
-            }}
-            defaultValue={
-              options
-                ? options.filter((el: any) => el.appId === token.appId)[0]
-                : null
-            }
-          >
-            {options?.map((option: any) => (
-              <MenuItem key={option.appId} value={option}>
-                {option.symbol}
-              </MenuItem>
-            ))}
-            </Select>*/}
-        </FormControl>
-      </Paper>
       {selected.amount && selected.symbol ? (
         <Stack direction="row" spacing={1}>
           <Box>
@@ -146,6 +101,13 @@ export default function CustomizedInputBase({
               Available: {displayToken(selected)}
             </Typography>
           </Box>
+          {allowance && (
+            <Box>
+              <Typography variant="body2">
+                Allowance: {displayToken({ ...token, amount: allowance })}
+              </Typography>
+            </Box>
+          )}
         </Stack>
       ) : (
         <Skeleton variant="text" />

@@ -1,24 +1,54 @@
-import { Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
 import * as React from "react";
-import Blink from "react-blink-text";
 import AccountBalances from "../../components/AccountBalances";
 import Connect from "../../components/Connect";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import defaultTokens from "../../config/defaultTokens";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { makeStdLib } from "../../utils/reach";
+import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
 
-const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
-  ":"
-);
+const stdlib = makeStdLib();
+
+const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
 
 function Balances(props) {
   const navigate = useNavigate();
+  const params = useParams();
   const [tokens, setTokens] = React.useState(props.tokens);
-  const [appId, setAppId] = React.useState(0);
+  const [, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
-  return (
+  const { activeAccount } = useWallet();
+  const addrTo = params.addr;
+  const amount = params.amt;
+  const note = params.note;
+  return params?.addr && params.amt && params.note ? (
+    <div align="left">
+      <button
+        onClick={async () => {
+          if (false) return; // TODO: check if note is valid
+          const addr = activeAccount.address;
+          const acc = await stdlib.connectAccount({
+            addr,
+          });
+          await stdlib.transfer(acc, addrTo, amount, undefined, {
+            note: new TextEncoder().encode(note, "utf-8"),
+          });
+          alert("Transaction successful!");
+        }}
+      >
+        Sign transaction
+      </button>
+      <br />
+      Click button above to sign a payment transaction of with
+      <br />
+      note: "{note}"<br />
+      address: "{addrTo}"<br />
+      amount: {amount}
+    </div>
+  ) : (
     <>
       <div>
         <Typography variant="h6">Balances</Typography>

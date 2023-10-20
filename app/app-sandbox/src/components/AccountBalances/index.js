@@ -16,25 +16,28 @@ import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { displayToken, zeroAddress } from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
+import ApproveDialog from "../ApproveDialog/index.js";
+import SpendDialog from "../SpendDialog/index.js";
 import Paper from "@mui/material/Paper";
 import TableContainer from "@mui/material/TableContainer";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import defaultTokens from "../../config/defaultTokens.js";
-
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import FireplaceIcon from "@mui/icons-material/Fireplace";
+import { DEFAULT_NODE } from "../../config/defaultLocalStorage.js";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
 
-const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
-  ":"
-);
+const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
 
 function AccountBalance(props) {
   const { activeAccount } = useWallet();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [spendDialogOpen, setSpendDialogOpen] = useState(false);
   const [token, setToken] = useState(props.token);
   const reloadToken = useCallback(async () => {
     if (!activeAccount) return;
@@ -52,6 +55,28 @@ function AccountBalance(props) {
   }, [activeAccount, token]);
   useEffect(() => {
     if (!activeAccount) return;
+    (async () => {
+      const { indexer } = await stdlib.getProvider();
+      const assets = await indexer
+        .lookupAccountAssets(activeAccount.address)
+        .do();
+      console.log({ assets });
+      for (const asset of assets.assets) {
+        const assetDetails = await indexer
+          .lookupAssetByID(asset["asset-id"])
+          .do();
+        console.log(assetDetails);
+      }
+      const acc = stdlib.connectAccount({ addr: activeAccount.address });
+      console.log(acc);
+      const accInfo = await indexer
+        .lookupAccountByID(activeAccount.address)
+        .do();
+      console.log(accInfo);
+    })();
+  }, [activeAccount]);
+  useEffect(() => {
+    if (!activeAccount) return;
     // realtime
     //ARC200Service.nextTransferEvent(token.appId)
     //  .then(reloadToken())
@@ -67,6 +92,18 @@ function AccountBalance(props) {
         <SendDialog
           open={sendDialogOpen}
           setOpen={setSendDialogOpen}
+          token={token}
+          reloadToken={reloadToken}
+        />
+        <ApproveDialog
+          open={approveDialogOpen}
+          setOpen={setApproveDialogOpen}
+          token={token}
+          reloadToken={reloadToken}
+        />
+        <SpendDialog
+          open={spendDialogOpen}
+          setOpen={setSpendDialogOpen}
           token={token}
           reloadToken={reloadToken}
         />
@@ -119,6 +156,24 @@ function AccountBalance(props) {
                       onClick: () => {
                         setToken(token);
                         setSendDialogOpen(true);
+                      },
+                    },
+                    {
+                      label: "A",
+                      description: "Approve",
+                      icon: <ThumbUpIcon />,
+                      onClick: () => {
+                        setToken(token);
+                        setApproveDialogOpen(true);
+                      },
+                    },
+                    {
+                      label: "T",
+                      description: "Spend",
+                      icon: <SendIcon color="secondary" />,
+                      onClick: () => {
+                        setToken(token);
+                        setSpendDialogOpen(true);
                       },
                     },
                     /*

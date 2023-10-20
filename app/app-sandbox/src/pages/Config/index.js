@@ -7,21 +7,16 @@ import {
   Typography,
 } from "@mui/material";
 import * as React from "react";
-import { makeStdLib } from "../../utils/reach";
 
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
-
-const stdlib = makeStdLib();
-const pc = stdlib.parseCurrency;
-const bn = stdlib.bigNumberify;
-const bn2n = stdlib.bigNumberToNumber;
+import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
 
 const [initialNode, initialCustomNode, initialCustomIndexer] = (
-  localStorage.getItem("node") || "voi-testnet::"
+  localStorage.getItem("node") || DEFAULT_NODE
 ).split(":");
 
 function NodeSelection() {
@@ -60,7 +55,6 @@ function NodeSelection() {
             value="algorand"
             control={<Radio />}
             label="Algorand"
-            disabled
           />
           <FormControlLabel
             value="algorand-testnet"

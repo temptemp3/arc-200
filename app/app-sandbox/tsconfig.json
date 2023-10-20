@@ -10,5 +10,9 @@
     "esModuleInterop": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-  }
+  },
+  "include": [
+    "src/components",
+    "src/custom.d.ts"
+  ]
 }

@@ -11,8 +11,9 @@ import Typography from "@mui/material/Typography";
 import ArrowLeftIcon from "@mui/icons-material/ArrowLeft";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 import defaultTokens from "../../config/defaultTokens.js";
+import { DEFAULT_NODE } from "../../config/defaultLocalStorage.js";
 
-const [node] = (localStorage.getItem("node") || "algorand-testnet::").split(
+const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(
   ":"
 );
 
@@ -34,6 +35,8 @@ const fc = stdlib.formatCurrency;
 const bn2n = stdlib.bigNumberToNumber;
 const fawd = stdlib.formatWithDecimals;
 
+const standards = ["VSA", "VRC200"];
+
 function MintForm({
   token,
   tokens,
@@ -52,6 +55,7 @@ function MintForm({
   const [ctcInfo, setCtcInfo] = useState();
   const [progress, setProgress] = useState(false);
   const [step, setStep] = useState(0);
+  const [standard, setStandard] = useState("VRC200");
   console.log({ name, symbol, decimals, totalSupply, step });
   const isValid = useMemo(() => {
     return true; // TODO implement me
@@ -79,42 +83,59 @@ function MintForm({
       setProgress(true);
       try {
         console.log(`${name} ${symbol} ${decimals} ${totalSupply}`);
-        const params = {
-          ...paramsTemplate,
-          manager: activeAccount.address,
-          ...{
-            meta: {
-              name,
-              symbol,
-              decimals,
+        switch (standard) {
+          case "VRC200":
+            const params = {
+              ...paramsTemplate,
+              manager: activeAccount.address,
+              ...{
+                meta: {
+                  name,
+                  symbol,
+                  decimals,
+                  totalSupply: stdlib.parseCurrency(
+                    totalSupply,
+                    Number(decimals)
+                  ),
+                },
+              },
+            };
+            const ctcInfo = await ARC200Service.launch(
+              activeAccount.address,
+              params
+            );
+            //setCtcInfo(ctcInfo);
+            const tokens = JSON.parse(
+              localStorage.getItem("tokens") ??
+                `${JSON.stringify(defaultTokens)}`
+            );
+            localStorage.setItem(
+              "tokens",
+              JSON.stringify({
+                ...tokens,
+                [node]: [...tokens[node], bn2n(ctcInfo)],
+              })
+            );
+            toast(
+              <div>
+                Mint successful!
+                <br />
+                {totalSupply} {symbol} sent to{" "}
+                {activeAccount.address.slice(0, 4)}
+                ...{activeAccount.address.slice(-4)}
+              </div>
+            );
+            navigate("/");
+            break;
+          case "VSA":
+            const acc = await stdlib.connectAccount({
+              addr: activeAccount.address,
+            });
+            await stdlib.launchToken(acc, name, symbol, {
+              decimals: Number(decimals),
               totalSupply: stdlib.parseCurrency(totalSupply, Number(decimals)),
-            },
-          },
-        };
-        const ctcInfo = await ARC200Service.launch(
-          activeAccount.address,
-          params
-        );
-        //setCtcInfo(ctcInfo);
-        const tokens = JSON.parse(
-          localStorage.getItem("tokens") ?? `${JSON.stringify(defaultTokens)}`
-        );
-        localStorage.setItem(
-          "tokens",
-          JSON.stringify({
-            ...tokens,
-            [node]: [...tokens[node], bn2n(ctcInfo)],
-          })
-        );
-        toast(
-          <div>
-            Mint successful!
-            <br />
-            {totalSupply} {symbol} sent to {activeAccount.address.slice(0, 4)}
-            ...{activeAccount.address.slice(-4)}
-          </div>
-        );
-        navigate("/");
+            });
+        }
       } catch (e) {
         console.log(e);
       } finally {
@@ -142,6 +163,16 @@ function MintForm({
         </Stack>
       ) : step === 0 ? (
         <Stack spacing={2} style={{ textAlign: "left" }}>
+          <Stack direction="row" spacing={2}>
+            {standards.map((el) => (
+              <Button
+                variant={el === standard ? "outlined" : "text"}
+                onClick={() => setStandard(el)}
+              >
+                {el}
+              </Button>
+            ))}
+          </Stack>
           {[
             {
               name: "meta.name",

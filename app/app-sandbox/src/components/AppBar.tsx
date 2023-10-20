@@ -18,6 +18,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
 import NFDService from "../services/NFDService";
 import SettingsIcon from "@mui/icons-material/Settings";
+import { DEFAULT_NODE } from "../config/defaultLocalStorage.js";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -125,7 +126,6 @@ const MyAppBar = () => {
       </MenuItem>
     </Menu>
   );
-
   return (
     <AppBar
       position="fixed"

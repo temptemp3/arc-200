@@ -246,6 +246,46 @@ const transfer = async (
   }
 };
 
+const transferFrom = async (
+  token: any,
+  addrSpender: string,
+  addrFrom: string,
+  addrTo: string,
+  amount: string
+) => {
+  try {
+    const acc = await stdlib.connectAccount({ addr: addrSpender });
+    const [mlhs, mrhs, rst] = amount.split(".");
+    if (rst) throw Error("Invalid amount: malformed number");
+    const lhs = mlhs === "" ? "0" : mlhs;
+    if (typeof mrhs === "string" && mrhs.length > token.decimals) {
+      throw Error("Invalid amount: too many decimals");
+    }
+    const rhs = mrhs === "" || !mrhs ? "0" : mrhs;
+    const lhsBase = parseInt(lhs);
+    const lhsDecimals = token.decimals;
+    const lhsBn = bn(parseInt(lhs)).mul(
+      bn(10).pow(bn(parseInt(token.decimals)))
+    );
+    const rhsBn =
+      parseInt(token.decimals) > 0
+        ? bn(
+            (rhs ?? "0")
+              .slice(0, parseInt(token.decimals))
+              .padEnd(parseInt(token.decimals), "0")
+          )
+        : bn(0);
+    const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
+    const ctc = acc.contract(backend, token.appId);
+    const {
+      a: { arc200_transferFrom: transferFrom },
+    } = ctc;
+    return transferFrom(addrFrom, addrTo, amountBn);
+  } catch (e) {
+    console.log({ e });
+  }
+};
+
 const withdraw = async (
   token: any,
   addrFrom: string,
@@ -275,6 +315,7 @@ export default {
   approve,
   deposit,
   transfer,
+  transferFrom,
   withdraw,
   balanceOf,
   state,

@@ -24,6 +24,7 @@ import Token from "./pages/Token";
 import Config from "./pages/Config";
 import TokenAddress from "./pages/TokenAddress";
 import AppBar from "./components/AppBar.tsx";
+//  import ARC200AppBar from "./components/ARC200AppBar/index.js";
 
 function App() {
   const providers = useInitializeProviders({
@@ -31,6 +32,14 @@ function App() {
       { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
       { id: PROVIDER_ID.PERA, clientStatic: PeraWalletConnect },
       { id: PROVIDER_ID.DAFFI, clientStatic: DaffiWalletConnect },
+      /*
+      {
+        id: PROVIDER_ID.ALGOSIGNER,
+        clientOptions: {
+          ledger: "VoiTestNet",
+        },
+      },
+      */
       {
         // TODO here
         id: PROVIDER_ID.WALLETCONNECT,
@@ -60,9 +69,11 @@ function App() {
   });
   return (
     <WalletProvider value={providers}>
+      {/*<ARC200AppBar />*/}
       <div className="App">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/:addr/:amt/:note" element={<Home />} />
           <Route path="/config" element={<Config />} />
           <Route path="/mint" element={<Mint />} />
           <Route path="/token/:id" element={<Token />} />

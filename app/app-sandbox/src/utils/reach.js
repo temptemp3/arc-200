@@ -8,6 +8,9 @@ import MyAlgoConnect from "@randlabs/myalgo-connect";
 import { PeraWalletConnect } from "@perawallet/connect";
 
 import { decodeUnsignedTransaction } from "algosdk";
+import { DEFAULT_NODE } from "../config/defaultLocalStorage";
+
+import { ALGO_MakeAlgoSignerConnect as MakeAlgoSignerConnect } from "@reach-sh/stdlib";
 
 // override
 function ALGO_MakePeraConnect(PeraWalletConnect) {
@@ -46,14 +49,14 @@ function ALGO_MakePeraConnect(PeraWalletConnect) {
         txns.map((value) => {
           const decodedUnsignedTxn = decodeUnsignedTransaction(
             Buffer.from(value, "base64")
-          ); 
+          );
           return {
             txn: decodedUnsignedTxn,
           };
         }),
       ]);
-      return rawSignedTxns.map(
-        (value) => Buffer.from(value).toString("base64") 
+      return rawSignedTxns.map((value) =>
+        Buffer.from(value).toString("base64")
       );
     }
   };
@@ -68,7 +71,7 @@ export const makeStdLib = () => {
       : baseProviderId;
 
   const [node, customNode, customIndexer] = (
-    localStorage.getItem("node") || "voi-testnet::"
+    localStorage.getItem("node") || DEFAULT_NODE
   ).split(":");
   console.log({ node, customNode, customIndexer });
   let ALGO_SERVER;
@@ -127,6 +130,14 @@ export const makeStdLib = () => {
         stdlib.walletFallback({
           providerEnv,
           MyAlgoConnect,
+        })
+      );
+      break;
+    case "algosigner":
+      stdlib.setWalletFallback(
+        stdlib.walletFallback({
+          providerEnv,
+          MyAlgoConnect: MakeAlgoSignerConnect(AlgoSigner), // eslint-disable-line no-undef
         })
       );
       break;
