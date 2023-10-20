@@ -8,8 +8,9 @@ const tokenMetadata = tokenMetadataHelper(stdlib);
 // Display Token Metadata
 
 const main = async () => {
-  console.log("Deploy!");
+  console.log("Get token metadata!");
   const [, , tokenId] = process.argv;
+  console.log({ tokenId });
   //
   // TODO validate token
   // TODO check if token exists

@@ -6,14 +6,14 @@ export const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
 
 export const getContractHelper = (stdlib) => (acc, appId) => {
   return acc.contract(backend, appId);
-}
+};
 
 // transfer
 // - transfers the given amount from the given account to the given account
 export const transferHelper = (stdlib) => (acc, appId, to, amount) => {
   const ctc = acc.contract(backend, appId);
   return ctc.a.transfer(to, amount);
-}
+};
 
 //
 // deployAs
@@ -32,12 +32,13 @@ export const deployAsHelper = (stdlib) => async (acc, params) =>
     ))(acc.contract(backend));
 
 export const destroyHelper = (stdlib) => async (acc) => {
-  (async (ctc) =>{
+  (async (ctc) => {
     ctc.a.destroy();
-  })(acc.contract(backend));  
-}
+  })(acc.contract(backend));
+};
 
 export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
+  console.log({ acc, tokenId });
   const bn = stdlib.bigNumberify;
   const bn2bi = stdlib.bigNumberToBigInt;
   const prepareString = (str) => {
@@ -46,16 +47,43 @@ export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
       return str.slice(0, str.indexOf("\x00"));
     }
   };
-  const ctc = acc.contract(backend, appId);
-  const name = prepareString(fromSome(await ctc.v.name(tokenId), ""));
-  const symbol = prepareString(fromSome(await ctc.v.symbol(tokenId), ""));
+  const ctc = acc.contract(backend, Number(appId));
+  /*
+  const name = prepareString(
+    fromSome((await ctc.v.arc200_name(tokenId), ""))()
+  );
+  const symbol = prepareString(
+    fromSome(await ctc.v.arc200_symbol(tokenId), "")
+  );
   const decimals = bn2bi(
-    fromSome(await ctc.v.decimals(tokenId), bn(0))
+    fromSome(await ctc.v.arc200_decimals(tokenId), bn(0))
   ).toString();
   const totalSupply = bn2bi(
-    fromSome(await ctc.v.totalSupply(tokenId), bn(0))
+    fromSome(await ctc.v.arc200_totalSupply(tokenId), bn(0))
   ).toString();
-  const metadata = { name, symbol, decimals, totalSupply };
+  */
+  const {
+    name: dName,
+    symbol: dSymbol,
+    decimals: decimalsBn,
+    totalSupply: totalSupplyBn,
+    zeroAddress: zeroAddressHexStr,
+    manager: managerAddressHexStr,
+  } = fromSome(await ctc.v.state(), {});
+  const name = prepareString(dName);
+  const symbol = prepareString(dSymbol);
+  const decimals = bn2n(decimalsBn);
+  const totalSupply = bn2bi(totalSupplyBn).toString();
+  const tZeroAddress = fa(zeroAddressHexStr);
+  const managerAddress = fa(managerAddressHexStr);
+  const metadata = {
+    name: name,
+    symbol,
+    decimals,
+    totalSupply,
+    zeroAddress: tZeroAddress,
+    manager: managerAddress,
+  };
   return metadata;
 };
 
@@ -64,7 +92,7 @@ export const balanceOfHelper = (stdlib) => async (acc, appId, addr) => {
   const bn2bi = stdlib.bigNumberToBigInt;
   const ctc = acc.contract(backend, appId);
   const balance = bn2bi(
-    fromSome(await ctc.v.balanceOf(addr), bn(0))
+    fromSome(await ctc.v.arc200_balanceOf(addr), bn(0))
   ).toString();
   return balance;
 };
