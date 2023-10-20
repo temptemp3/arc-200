@@ -17,9 +17,17 @@ export const transferHelper = (stdlib) => (acc, appId, to, amount) => {
 
 // transferFrom
 // - transfers the given amount from the given account to the given account
-export const transferFromHelper = (stdlib) => (acc, appId, from, to, amount) => {
+export const transferFromHelper =
+  (stdlib) => (acc, appId, from, to, amount) => {
+    const ctc = acc.contract(backend, appId);
+    return ctc.a.arc200_transferFrom(from, to, amount);
+  };
+
+// approve
+// - approves the given amount from the given account to the given account
+export const approveHelper = (stdlib) => (acc, appId, spender, amount) => {
   const ctc = acc.contract(backend, appId);
-  return ctc.a.arc200_transferFrom(from, to, amount);
+  return ctc.a.arc200_approve(spender, amount);
 };
 
 //
@@ -108,15 +116,16 @@ export const balanceOfHelper = (stdlib) => async (acc, appId, addr) => {
   return balance;
 };
 
-export const allowanceHelper = (stdlib) => async (acc, appId, addrFrom, addrSpender) => {
-  const bn = stdlib.bigNumberify;
-  const bn2bi = stdlib.bigNumberToBigInt;
-  const ctc = acc.contract(backend, appId);
-  const allowance = bn2bi(
-    fromSome(await ctc.v.arc200_allowance(addrFrom, addrSpender), bn(0))
-  ).toString();
-  return allowance;
-}
+export const allowanceHelper =
+  (stdlib) => async (acc, appId, addrFrom, addrSpender) => {
+    const bn = stdlib.bigNumberify;
+    const bn2bi = stdlib.bigNumberToBigInt;
+    const ctc = acc.contract(backend, appId);
+    const allowance = bn2bi(
+      fromSome(await ctc.v.arc200_allowance(addrFrom, addrSpender), bn(0))
+    ).toString();
+    return allowance;
+  };
 
 export const eventMonitorHelper = (stdlib) => async (acc) => {
   const ctc = acc.contract(backend, appId);
