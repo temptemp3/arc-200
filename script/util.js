@@ -15,6 +15,13 @@ export const transferHelper = (stdlib) => (acc, appId, to, amount) => {
   return ctc.a.arc200_transfer(to, amount);
 };
 
+// transferFrom
+// - transfers the given amount from the given account to the given account
+export const transferFromHelper = (stdlib) => (acc, appId, from, to, amount) => {
+  const ctc = acc.contract(backend, appId);
+  return ctc.a.arc200_transferFrom(from, to, amount);
+};
+
 //
 // deployAs
 // - deploys the contract as the given account
