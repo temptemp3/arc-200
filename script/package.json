@@ -6,5 +6,8 @@
   "type": "module",
   "dependencies": {
     "@reach-sh/stdlib": "^0.1.13-rc.3"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
   }
 }

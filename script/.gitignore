@@ -1,4 +1,8 @@
 .env
+.env.testnet
+.env.mainnet
+.env.voi-testnet
+.env.voi-mainnet
 node_modules
 minted.json
 payload.json
