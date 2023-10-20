@@ -38,7 +38,6 @@ export const destroyHelper = (stdlib) => async (acc) => {
 };
 
 export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
-  console.log({ acc, tokenId });
   const bn = stdlib.bigNumberify;
   const bn2bi = stdlib.bigNumberToBigInt;
   const prepareString = (str) => {
@@ -47,21 +46,25 @@ export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
       return str.slice(0, str.indexOf("\x00"));
     }
   };
-  const ctc = acc.contract(backend, Number(appId));
-  /*
-  const name = prepareString(
-    fromSome((await ctc.v.arc200_name(tokenId), ""))()
-  );
-  const symbol = prepareString(
-    fromSome(await ctc.v.arc200_symbol(tokenId), "")
-  );
+  const ctc = acc.contract(backend, tokenId);
+  // slow way
+  console.log(await ctc.v.arc200_name());
+  const name = prepareString(fromSome(await ctc.v.arc200_name(), ""));
+  const symbol = prepareString(fromSome(await ctc.v.arc200_symbol(), ""));
   const decimals = bn2bi(
-    fromSome(await ctc.v.arc200_decimals(tokenId), bn(0))
+    fromSome(await ctc.v.arc200_decimals(), bn(0))
   ).toString();
   const totalSupply = bn2bi(
-    fromSome(await ctc.v.arc200_totalSupply(tokenId), bn(0))
+    fromSome(await ctc.v.arc200_totalSupply(), bn(0))
   ).toString();
-  */
+  const metadata = {
+    name: name,
+    symbol,
+    decimals,
+    totalSupply,
+  };
+  // fast way
+  /*
   const {
     name: dName,
     symbol: dSymbol,
@@ -84,6 +87,7 @@ export const tokenMetadataHelper = (stdlib) => async (acc, tokenId) => {
     zeroAddress: tZeroAddress,
     manager: managerAddress,
   };
+  */
   return metadata;
 };
 
