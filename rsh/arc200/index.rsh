@@ -84,7 +84,7 @@ export const ARC200 = Reach.App(() => {
     );
     check(
       meta.decimals <= MAX_DECIMALS,
-      "ARC200: Decimals must be less than 19"
+      "ARC200: Decimals must be less than 19" // TODO 19 -> max decimals
     );
   });
 
