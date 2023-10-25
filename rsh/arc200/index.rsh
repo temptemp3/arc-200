@@ -55,6 +55,8 @@ export const ARC200 = Reach.App(() => {
     arc200_totalSupply: Fun([], UInt256), // get total supply
     arc200_balanceOf: Fun([Address], UInt256), // get balance of address
     arc200_allowance: Fun([Address, Address], UInt256), // get allowance of address to spend this
+    hasBalance: Fun([Address], Bool), // check if balance box exists
+    hasAllowance: Fun([Address, Address], Bool), // check if allowance box exists
     state: Fun([], State), // get state
   });
 
@@ -122,6 +124,10 @@ export const ARC200 = Reach.App(() => {
         return fromSome(m_bal, UInt256(0));
       };
       V.arc200_allowance.set(allowance);
+      V.hasBalance.set((addr) => isSome(balances[addr]));
+      V.hasAllowance.set((owner, spender) =>
+        isSome(allowances[[owner, spender]])
+      );
       const state = () => State.fromObject(s);
       V.state.set(state);
     })

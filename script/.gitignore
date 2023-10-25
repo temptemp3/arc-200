@@ -7,3 +7,4 @@ node_modules
 minted.json
 payload.json
 out
+abi.mjs

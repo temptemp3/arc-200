@@ -23,7 +23,7 @@ export const displayToken = (token) => {
       {Number(Math.floor(token?.amount ?? 0)).toLocaleString()}
       {token.decimals > 0
         ? "." +
-          String(Number(token?.amount ?? 0).toFixed(token.decimals)).split(
+          String(Number(token?.amount ?? 0).toFixed(token.decimals ?? 0)).split(
             "."
           )[1]
         : ""}

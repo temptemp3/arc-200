@@ -29,13 +29,22 @@ function SendDialog(props) {
     if (!activeAccount) return;
     if (token.amount) return;
     (async () => {
-      const amount = fawd(
-        await ARC200Service.balanceOf(token.appId, activeAccount.address),
-        token.decimals
-      );
+      let amount;
+      switch (token.assetType) {
+        case "network":
+        case "native":
+          amount = fawd(await stdlib.balanceOf(activeAccount), token.decimals);
+          break;
+        case "arc200":
+          amount = fawd(
+            await ARC200Service.balanceOf(token.appId, activeAccount.address),
+            token.decimals
+          );
+          break;
+      }
       setToken({ ...token, amount });
     })();
-  }, [activeAccount, token, props.token]);
+  }, [activeAccount, props.token]);
   const handleSubmit = async () => {
     if (!activeAccount) {
       providers
@@ -50,27 +59,60 @@ function SendDialog(props) {
     (async () => {
       try {
         setPending(true);
-        const res = await ARC200Service.transfer(
-          props.token,
-          activeAccount.address,
-          accountAddress,
-          tokenAmount
-        );
-        if (res) {
-          props.reloadToken();
-          toast(
-            <div>
-              Transfer successful!
-              <br />
-              {tokenAmount} {token.symbol} sent to {accountAddress.slice(0, 4)}
-              ...{accountAddress.slice(-4)}
-            </div>
-          );
-          setToken({ ...token, amount: undefined });
-          props.setOpen(false);
-          props.setTokens(null);
-        } else {
-          alert("Transfer failed");
+        switch (props.token.assetType) {
+          case "network": {
+            const acc = await stdlib.connectAccount({
+              addr: activeAccount.address,
+            });
+            const res = await stdlib.transfer(
+              acc,
+              accountAddress,
+              stdlib.parseCurrency(tokenAmount)
+            );
+            if (res) {
+              props.reloadToken();
+              toast(
+                <div>
+                  Transfer successful!
+                  <br />
+                  {tokenAmount} {token.symbol} sent to{" "}
+                  {accountAddress.slice(0, 4)}
+                  ...{accountAddress.slice(-4)}
+                </div>
+              );
+              setToken({ ...token, amount: undefined });
+              props.setOpen(false);
+              props.setTokens(null);
+            }
+            break;
+          }
+          case "native":
+            break;
+          case "arc200":
+            const res = await ARC200Service.transfer(
+              props.token,
+              activeAccount.address,
+              accountAddress,
+              tokenAmount
+            );
+            if (res) {
+              props.reloadToken();
+              toast(
+                <div>
+                  Transfer successful!
+                  <br />
+                  {tokenAmount} {token.symbol} sent to{" "}
+                  {accountAddress.slice(0, 4)}
+                  ...{accountAddress.slice(-4)}
+                </div>
+              );
+              setToken({ ...token, amount: undefined });
+              props.setOpen(false);
+              props.setTokens(null);
+            } else {
+              alert("Transfer failed");
+            }
+            break;
         }
         // TODO catch others
       } catch (e) {

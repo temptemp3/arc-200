@@ -54,6 +54,20 @@ function Balances(props) {
         <Typography variant="h6">Balances</Typography>
         <Button
           variant="outlined"
+          sx={{ ml: 1 }}
+          onClick={async () => {
+            const assetIdStr = window.prompt("Enter assetId");
+            if (!assetIdStr) return;
+            const assetId = parseInt(assetIdStr);
+            const acc = await stdlib.connectAccount({ addr: activeAccount.address });
+            await acc.tokenAccepted(assetId);
+          }}
+        >
+          Add VSA
+        </Button>
+        <Button
+          variant="outlined"
+          sx={{ ml: 1 }}
           onClick={() => {
             try {
               const token = parseInt(window.prompt("Enter appId"));
@@ -76,7 +90,7 @@ function Balances(props) {
             }
           }}
         >
-          Add Token
+          Add VRC200
         </Button>
         <Button
           variant="outlined"
@@ -113,7 +127,6 @@ function Home() {
   const tokens = JSON.parse(
     localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}`
   );
-  console.log({ tokens });
   return activeAccount ? <Balances tokens={tokens[node]} /> : <Connect />;
 }
 

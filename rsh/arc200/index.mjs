@@ -153,6 +153,8 @@ do {
     v: {
       arc200_balanceOf: balanceOf,
       arc200_allowance: allowance,
+      hasBalance,
+      hasAllowance,
       arc200_decimals: decimals,
       arc200_name: name,
       arc200_symbol: symbol,
@@ -167,8 +169,10 @@ do {
 
   console.log("manager balance:");
   console.log(await balanceOf(accManager)); // totalSupply
+  console.log(await hasBalance(accManager)); // true
   console.log("zero balance:");
   console.log(await balanceOf(accZero)); // 0
+  console.log(await hasBalance(accZero)); // true
 
   const ctcManager = accManager.contract(backend, ctcInfo);
 
@@ -253,6 +257,8 @@ do {
     v: {
       arc200_balanceOf: balanceOf,
       arc200_allowance: allowance,
+      hasBalance,
+      hasAllowance,
       arc200_decimals: decimals,
       arc200_name: name,
       arc200_symbol: symbol,
@@ -372,6 +378,7 @@ do {
   console.log("Test: transfer 0au tokens from manager to alice (cold)");
 
   do {
+    console.log(await hasBalance(addrAlice));
     const before = await accManager.balanceOf();
 
     await manager.arc200_transfer(addrAlice, 0); // creates box
@@ -394,6 +401,7 @@ do {
       console.log("* txns cost + box cost");
       //assertEq(diff, transferCostCold); // assertEq: 0.020801 == 0.0209
     }
+    console.log(await hasBalance(addrAlice));
   } while (0);
 
   console.log("Test: transfer 0au tokens from manager to alice (hot)");

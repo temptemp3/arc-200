@@ -9,6 +9,7 @@ import {
   TableRow,
   Tooltip,
   Skeleton,
+  Chip,
 } from "@mui/material";
 import ARC200Service from "../../services/ARC200Service.ts";
 import { makeStdLib } from "../../utils/reach";
@@ -41,40 +42,35 @@ function AccountBalance(props) {
   const [token, setToken] = useState(props.token);
   const reloadToken = useCallback(async () => {
     if (!activeAccount) return;
-    const meta = await ARC200Service.getTokenMetadata(token.appId);
-    const amount = fawd(
-      await ARC200Service.balanceOf(token.appId, activeAccount.address),
-      meta.decimals
-    );
-    const token = {
-      appId: token.appId,
-      amount,
-      ...meta,
-    };
-    setToken(token);
-  }, [activeAccount, token]);
-  useEffect(() => {
-    if (!activeAccount) return;
-    (async () => {
+    if (props.token.assetType === "arc200") {
+      const meta = await ARC200Service.getTokenMetadata(token.appId);
+      const amount = fawd(
+        await ARC200Service.balanceOf(token.appId, activeAccount.address),
+        meta.decimals
+      );
+      const token = {
+        tokenId: token.appId,
+        amount,
+        ...meta,
+      };
+      setToken(token);
+    } else if (props.token.assetType === "asa") {
       const { indexer } = await stdlib.getProvider();
-      const assets = await indexer
-        .lookupAccountAssets(activeAccount.address)
+      const assetDetails = await indexer
+        .lookupAssetByID(token["asset-id"])
         .do();
-      console.log({ assets });
-      for (const asset of assets.assets) {
-        const assetDetails = await indexer
-          .lookupAssetByID(asset["asset-id"])
-          .do();
-        console.log(assetDetails);
-      }
-      const acc = stdlib.connectAccount({ addr: activeAccount.address });
-      console.log(acc);
-      const accInfo = await indexer
-        .lookupAccountByID(activeAccount.address)
-        .do();
-      console.log(accInfo);
-    })();
-  }, [activeAccount]);
+      const amount = fawd(
+        await stdlib.balanceOf(token["asset-id"], activeAccount.address),
+        assetDetails.decimals
+      );
+      const token = {
+        tokenId: token["asset-id"],
+        amount,
+        ...assetDetails.asset,
+      };
+      setToken(token);
+    }
+  }, [activeAccount, token]);
   useEffect(() => {
     if (!activeAccount) return;
     // realtime
@@ -107,10 +103,17 @@ function AccountBalance(props) {
           token={token}
           reloadToken={reloadToken}
         />
-        <TableRow key={token.appId}>
-          <TableCell>{token.appId}</TableCell>
+        <TableRow key={token?.appId || token?.assetId}>
+          {/*<TableCell>{token.tokenId}</TableCell>*/}
           <TableCell>
-            {token.name} <br />
+            {token.name}{" "}
+            {token.type !== "network" && (
+              <Chip
+                size="small"
+                label={[token.assetType.toUpperCase(), token.tokenId].join(":")}
+              />
+            )}
+            <br />
             <Link to={`/token/${token.appId}`}>Token Info</Link>
             <br />
             <Link to={`/token/${token.appId}/address/${activeAccount.address}`}>
@@ -158,24 +161,28 @@ function AccountBalance(props) {
                         setSendDialogOpen(true);
                       },
                     },
-                    {
-                      label: "A",
-                      description: "Approve",
-                      icon: <ThumbUpIcon />,
-                      onClick: () => {
-                        setToken(token);
-                        setApproveDialogOpen(true);
-                      },
-                    },
-                    {
-                      label: "T",
-                      description: "Spend",
-                      icon: <SendIcon color="secondary" />,
-                      onClick: () => {
-                        setToken(token);
-                        setSpendDialogOpen(true);
-                      },
-                    },
+                    token.assetType === "vrc200"
+                      ? {
+                          label: "A",
+                          description: "Approve",
+                          icon: <ThumbUpIcon />,
+                          onClick: () => {
+                            setToken(token);
+                            setApproveDialogOpen(true);
+                          },
+                        }
+                      : null,
+                    token.assetType === "vrc200"
+                      ? {
+                          label: "T",
+                          description: "Spend",
+                          icon: <SendIcon color="secondary" />,
+                          onClick: () => {
+                            setToken(token);
+                            setSpendDialogOpen(true);
+                          },
+                        }
+                      : null,
                     /*
                     {
                       label: "B",
@@ -208,11 +215,17 @@ function AccountBalance(props) {
                     },
                     */
                   ]
-              ).map((el) => (
-                <Tooltip key={el.label} placement="top" title={el.description}>
-                  <Button onClick={el.onClick}>{el.icon || el.label}</Button>
-                </Tooltip>
-              ))}
+              )
+                .filter((el) => !!el)
+                .map((el) => (
+                  <Tooltip
+                    key={el.label}
+                    placement="top"
+                    title={el.description}
+                  >
+                    <Button onClick={el.onClick}>{el.icon || el.label}</Button>
+                  </Tooltip>
+                ))}
             </ButtonGroup>
           </TableCell>
         </TableRow>
@@ -226,9 +239,90 @@ function AccountBalance(props) {
 function AccountBalances(props) {
   const { activeAccount } = useWallet();
   const [token, setToken] = useState({});
+  const [networkTokens, setNetworkTokens] = useState(null);
+  const [nativeTokens, setNativeTokens] = useState(null);
+  const [arc200Tokens, setArc200Tokens] = useState(null);
   const [tokens, setTokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
-
+  useEffect(() => {
+    if (!activeAccount) return;
+    (async () => {
+      const { indexer } = await stdlib.getProvider();
+      const accInfo = await indexer
+        .lookupAccountByID(activeAccount.address)
+        .do();
+      setNetworkTokens([
+        {
+          name: "Voi",
+          symbol: "VOI",
+          tokenId: 0,
+          amount: fawd(accInfo?.account?.["amount-without-pending-rewards"], 6),
+          type: "network",
+          network: "voi",
+          decimals: 6,
+        },
+      ]);
+    })();
+  }, [activeAccount]);
+  useEffect(() => {
+    if (!activeAccount) return;
+    (async () => {
+      const { indexer } = await stdlib.getProvider();
+      const assets = await indexer
+        .lookupAccountAssets(activeAccount.address)
+        .do();
+      const assetList = [];
+      for (const asset of assets.assets) {
+        const assetDetails = await indexer
+          .lookupAssetByID(asset["asset-id"])
+          .do();
+        const decimals = assetDetails?.asset?.params?.decimals ?? 0;
+        const name = assetDetails?.asset?.params?.name ?? "Unknown";
+        const symbol = assetDetails?.asset?.params?.["unit-name"] ?? "Unknown";
+        const amountAu = asset?.amount ?? 0;
+        const amount = stdlib.formatWithDecimals(
+          stdlib.bigNumberify(amountAu),
+          decimals
+        );
+        assetList.push({
+          ...asset,
+          ...(assetDetails?.asset ?? {}),
+          amount,
+          name,
+          symbol,
+          decimals,
+        });
+      }
+      setNativeTokens(assetList);
+    })();
+  }, [activeAccount]);
+  useEffect(() => {
+    if (!nativeTokens || !arc200Tokens || !networkTokens) return;
+    const tokens = [];
+    for (const asset of nativeTokens) {
+      tokens.push({
+        ...asset,
+        tokenId: asset["asset-id"],
+        assetType: "vsa", // TODO switch display based on network
+      });
+    }
+    for (const token of arc200Tokens) {
+      tokens.push({
+        ...token,
+        tokenId: token.appId,
+        assetType: "vrc200", // TODO switch display based on network
+      });
+    }
+    for (const token of networkTokens) {
+      tokens.push({
+        ...token,
+        tokenId: 0,
+        assetType: "network",
+      });
+    }
+    tokens.sort((a, b) => a.tokenId - b.tokenId);
+    setTokens(tokens);
+  }, [nativeTokens, arc200Tokens, networkTokens]);
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: theme.palette.common.black,
@@ -241,6 +335,7 @@ function AccountBalances(props) {
     },
   }));
 
+  // TODO reload network and native tokens on account change
   const reloadTokens = useCallback(async () => {
     if (!activeAccount) return;
     const tokens = [];
@@ -256,15 +351,15 @@ function AccountBalances(props) {
         ...meta,
       });
     }
-    setTokens(tokens);
+    setArc200Tokens(tokens);
   }, [activeAccount, props.tokens]);
   // -------------------------------------------
   // effect: reload tokens on account change
   // -------------------------------------------
   useEffect(() => {
-    if (tokens) return;
+    if (arc200Tokens) return;
     reloadTokens();
-  }, [activeAccount, tokens]);
+  }, [activeAccount, arc200Tokens]);
   useEffect(() => {
     reloadTokens();
   }, [props.tokens]);
@@ -273,7 +368,7 @@ function AccountBalances(props) {
     <div className="AccountBalances">
       <TableContainer component={Paper}>
         <Table aria-label="customized pagination table">
-          {!tokens ? (
+          {!arc200Tokens ? (
             <>
               <TableHead>
                 <TableRow>
@@ -292,11 +387,11 @@ function AccountBalances(props) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tokens?.map((appId, index) => (
+                {arc200Tokens?.map((appId, index) => (
                   <TableRow key={appId}>
-                    <StyledTableCell>
+                    {/*<StyledTableCell>
                       <Skeleton variant="text" />
-                    </StyledTableCell>
+                </StyledTableCell>*/}
                     <StyledTableCell>
                       <Skeleton variant="text" />
                     </StyledTableCell>
@@ -316,12 +411,12 @@ function AccountBalances(props) {
                 open={sendDialogOpen}
                 setOpen={setSendDialogOpen}
                 token={token}
-                setTokens={setTokens}
-                tokens={tokens}
+                setTokens={setArc200Tokens}
+                tokens={arc200Tokens}
               />
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>ID</StyledTableCell>
+                  {/*<StyledTableCell>ID</StyledTableCell>*/}
                   <StyledTableCell>Name</StyledTableCell>
                   <StyledTableCell>Balance</StyledTableCell>
                   <StyledTableCell>Action</StyledTableCell>

@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@reach-sh/stdlib": "^0.1.13-rc.3"
+    "@reach-sh/stdlib": "^0.1.13-rc.3",
+    "algosdk": "^2.7.0"
   },
   "devDependencies": {
     "dotenv": "^16.3.1"
