@@ -2,6 +2,10 @@
 
 const MAX_DECIMALS = 256; // decimals fits in UInt8
 
+// TODO maybe used to depreciate reach bool to algosdk.abi.bool mod
+const BOOL_TRUE = 128; // unsed
+const BOOL_FALSE = 0; // unsed
+
 const TokenMeta = Struct([
   ["name", Bytes(32)], // name
   ["symbol", Bytes(8)], // symbol
@@ -43,8 +47,10 @@ export const ARC200 = Reach.App(() => {
     arc200_transfer: Fun([Address, UInt256], Bool), // tranfer from this to address
     arc200_transferFrom: Fun([Address, Address, UInt256], Bool), // transfer from address to address
     arc200_approve: Fun([Address, UInt256], Bool), // approve address to spend this
-    deleteBalanceBox: Fun([Address], Bool), // delete balance box if zero
-    deleteAllowanceBox: Fun([Address, Address], Bool), // delete allowance box if zero
+    deleteBalanceBox: Fun([Address], Null), // delete balance box if zero
+    deleteAllowanceBox: Fun([Address, Address], Null), // delete allowance box if zero
+    touch: Fun([], Null), // touch this contract
+    grant: Fun([Address], Null), // grant address to be manager
     destroy: Fun([], Null), // destroy this contract
   });
 
@@ -86,7 +92,7 @@ export const ARC200 = Reach.App(() => {
     );
     check(
       meta.decimals <= MAX_DECIMALS,
-      "ARC200: Decimals must be less than 19" // TODO 19 -> max decimals
+      "ARC200: Decimals must be less than 256" 
     );
   });
 
@@ -140,6 +146,31 @@ export const ARC200 = Reach.App(() => {
         E.arc200_Transfer(from_, to, amount);
       };
     })
+    // api: touch
+    // - touch this contract
+    // + does nothing but flushes excess fees to manager
+    .api_(A.touch, () => {
+      return [
+        (k) => {
+          const f1 = getUntrackedFunds();
+          transfer(f1).to(s.manager);
+          k(null);
+          return [s];
+        },
+      ];
+    })
+    // api: grant
+    // - grant address to be manager
+    // + may not grant zero address
+    .api_(A.grant, (addr) => {
+      check(addr != zeroAddress, "ARC200: Grant zero address");
+      return [
+        (k) => {
+          k(null);
+          return [{...s, manager: addr}];
+        },
+      ];
+    })      
     // api: transfer
     // - transfer from this to address
     // + may transfer to zero address (burn) if zero address burn enabled
@@ -215,7 +246,7 @@ export const ARC200 = Reach.App(() => {
         (k) => {
           delete balances[addr];
           E.DeleteBalanceBox(addr);
-          k(true);
+          k(null);
           return [s];
         },
       ];
@@ -237,7 +268,7 @@ export const ARC200 = Reach.App(() => {
         (k) => {
           delete allowances[[owner, spender]];
           E.DeleteAllowanceBox(owner, spender);
-          k(true);
+          k(null);
           return [s];
         },
       ];
