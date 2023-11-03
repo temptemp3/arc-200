@@ -89,6 +89,7 @@ function SendDialog(props) {
           case "native":
             break;
           case "arc200":
+          case "vrc200":
             const res = await ARC200Service.transfer(
               props.token,
               activeAccount.address,
