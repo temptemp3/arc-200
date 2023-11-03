@@ -1,6 +1,6 @@
 # ARC-200
 
-ERC20 like token on Algorand
+ERC20 like token on AVM (Algorand + Voi)
 
 ## Have a question?
 
