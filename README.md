@@ -1,4 +1,4 @@
-# ARC-200
+# OpenARC200
 
 ERC20 like token on AVM (Algorand + Voi)
 
