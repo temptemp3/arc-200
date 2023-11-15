@@ -1,5 +1,5 @@
 const tokens = {
-  "algorand-testnet": [],
+  "algorand-testnet": [479572008],
   algorand: [],
   voi: [],
   "voi-testnet": [6778021, 6779767],

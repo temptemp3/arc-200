@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWallet } from "@txnlab/use-wallet";
 import {
+  Box,
   Button,
+  ButtonGroup,
+  Chip,
   Container,
   Dialog,
   DialogActions,
@@ -15,6 +18,7 @@ import Stack from "@mui/material/Stack";
 
 import { toast } from "react-toastify";
 import { makeStdLib } from "../../utils/reach.js";
+import ConfirmationComponent from "../ConfirmationComponent.js";
 
 function SendDialog(props) {
   const { providers, activeAccount } = useWallet();
@@ -22,9 +26,33 @@ function SendDialog(props) {
   const [tokenAmount, setTokenAmount] = useState("");
   const [accountAddress, setAccountAddress] = useState("");
   const [doSubmit, setDoSubmit] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [step, setStep] = useState(0);
   const stdlib = makeStdLib();
   const fawd = stdlib.formatWithDecimals;
+  const reset = () => {
+    props.setOpen(false);
+    setDoSubmit(false);
+    setAccountAddress("");
+    setTokenAmount("");
+    setStep(0);
+  };
+  const prepareTokenAmount = useCallback(
+    (str) => {
+      const num = Number(str.replace(/[, ]/g, ""));
+      if (isNaN(num)) return "";
+      const [a, b] = stdlib
+        .formatWithDecimals(
+          stdlib.parseCurrency(num, token.decimals),
+          token.decimals
+        )
+        .split(".");
+      return !!b ? `${Number(a).toLocaleString()}.${b}` : a.toLocaleString();
+    },
+    [token, stdlib]
+  );
+  const handleClose = () => {
+    reset();
+  };
   useEffect(() => {
     if (!activeAccount) return;
     if (token.amount) return;
@@ -51,6 +79,7 @@ function SendDialog(props) {
         .filter((el) => el.metadata.id === activeAccount.providerId)[0]
         .connect();
     }
+    setStep(2);
     setDoSubmit(true);
   };
   useEffect(() => {
@@ -58,43 +87,38 @@ function SendDialog(props) {
     if (!doSubmit) return;
     (async () => {
       try {
-        setPending(true);
         switch (props.token.assetType) {
           case "network": {
             const acc = await stdlib.connectAccount({
               addr: activeAccount.address,
             });
-            const res = await stdlib.transfer(
+            await stdlib.transfer(
               acc,
               accountAddress,
-              stdlib.parseCurrency(tokenAmount)
+              stdlib.parseCurrency(
+                prepareTokenAmount(tokenAmount).replace(/,/g, "")
+              )
             );
-            if (res) {
-              props.reloadToken();
-              toast(
-                <div>
-                  Transfer successful!
-                  <br />
-                  {tokenAmount} {token.symbol} sent to{" "}
-                  {accountAddress.slice(0, 4)}
-                  ...{accountAddress.slice(-4)}
-                </div>
-              );
-              setToken({ ...token, amount: undefined });
-              props.setOpen(false);
-              props.setTokens(null);
-            }
+            props.reloadToken();
+            toast(
+              <div>
+                Transfer successful!
+                <br />
+                {prepareTokenAmount(tokenAmount)} {token.symbol} sent to{" "}
+                {accountAddress.slice(0, 4)}
+                ...{accountAddress.slice(-4)}
+              </div>
+            );
             break;
           }
           case "native":
             break;
-          case "arc200":
-          case "vrc200":
+          case "rc200": {
             const res = await ARC200Service.transfer(
               props.token,
               activeAccount.address,
               accountAddress,
-              tokenAmount
+              prepareTokenAmount(tokenAmount).replace(/,/g, "")
             );
             if (res) {
               props.reloadToken();
@@ -102,25 +126,34 @@ function SendDialog(props) {
                 <div>
                   Transfer successful!
                   <br />
-                  {tokenAmount} {token.symbol} sent to{" "}
+                  {prepareTokenAmount(tokenAmount)} {token.symbol} sent to{" "}
                   {accountAddress.slice(0, 4)}
                   ...{accountAddress.slice(-4)}
                 </div>
               );
-              setToken({ ...token, amount: undefined });
-              props.setOpen(false);
-              props.setTokens(null);
             } else {
-              alert("Transfer failed");
             }
             break;
+          }
+          default: {
+            alert(`Asset type ${props.token.assetType} not supported!`);
+          }
         }
         // TODO catch others
       } catch (e) {
         console.log(e);
+        toast(
+          <div>
+            Transfer rejected or failed!
+            <br />
+            Please try again.
+          </div>,
+          {
+            type: toast.TYPE.ERROR,
+          }
+        );
       } finally {
-        setPending(false);
-        setDoSubmit(false);
+        reset();
       }
     })();
   }, [activeAccount, doSubmit]);
@@ -135,7 +168,69 @@ function SendDialog(props) {
           }}
         >
           <Container maxWidth="sm">
-            {pending ? (
+            {step === 0 && (
+              <SendForm
+                token={props.token}
+                tokens={[props.token]}
+                setToken={setToken}
+                setTokenAmount={setTokenAmount}
+                setAccountAddress={setAccountAddress}
+                onClickCancel={handleClose}
+                onClickNext={() => {
+                  setStep(1);
+                }}
+              />
+            )}
+            {step === 1 && (
+              <>
+                <ConfirmationComponent
+                  label="Transaction Details"
+                  data={[
+                    {
+                      name: "Sender Address",
+                      value: activeAccount.address,
+                    },
+                    { name: "Recipient Address", value: accountAddress },
+                    {
+                      name: "Token",
+                      value: (
+                        <div>
+                          {token.name} ({token.symbol})
+                          {token.assetType !== "network" && (
+                            <Chip
+                              size="small"
+                              sx={{ ml: 1 }}
+                              label={`${(
+                                token.network[0] + token.assetType
+                              ).toUpperCase()}:${token.appId}`}
+                            />
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      name: "Token Quantity",
+                      value: `${prepareTokenAmount(tokenAmount)} ${
+                        token.symbol
+                      }`,
+                    },
+                  ]}
+                />
+                <ButtonGroup sx={{ mt: 3 }} fullWidth>
+                  <Button
+                    onClick={() => {
+                      setStep(0);
+                    }}
+                  >
+                    Back
+                  </Button>
+                  <Button variant="contained" onClick={handleSubmit}>
+                    Confirm
+                  </Button>
+                </ButtonGroup>
+              </>
+            )}
+            {step === 2 && (
               <Stack
                 gap={5}
                 direction="column"
@@ -146,22 +241,54 @@ function SendDialog(props) {
                 }}
               >
                 <CircularProgress size={100} />
-                <Typography variant="h6">Transaction pending...</Typography>
+                <Typography variant="h6">
+                  Waiting on signing of transaction...
+                </Typography>
+                <Typography variant="body1">
+                  Please sign or reject the transaction in your wallet.
+                </Typography>
+                <Box>
+                  <ConfirmationComponent
+                    label="Transaction Details"
+                    data={[
+                      {
+                        name: "Sender Address",
+                        value: activeAccount.address,
+                      },
+                      { name: "Recipient Address", value: accountAddress },
+                      {
+                        name: "Token",
+                        value: (
+                          <div>
+                            {token.name} ({token.symbol})
+                            {token.assetType !== "network" && (
+                              <Chip
+                                size="small"
+                                sx={{ ml: 1 }}
+                                label={`${(
+                                  token.network[0] + token.assetType
+                                ).toUpperCase()}:${token.appId}`}
+                              />
+                            )}
+                          </div>
+                        ),
+                      },
+                      {
+                        name: "Token Quantity",
+                        value: `${prepareTokenAmount(tokenAmount)} ${
+                          token.symbol
+                        }`,
+                      },
+                    ]}
+                  />
+                </Box>
               </Stack>
-            ) : (
-              <SendForm
-                token={props.token}
-                tokens={[props.token]}
-                setToken={setToken}
-                setTokenAmount={setTokenAmount}
-                setAccountAddress={setAccountAddress}
-              />
             )}
           </Container>
         </DialogContent>
-        {!pending && (
+        {false && step !== 2 && (
           <DialogActions>
-            <Button onClick={() => props.setOpen(false)}>Close</Button>
+            <Button onClick={handleClose}>Close</Button>
             <Button onClick={handleSubmit}>Send</Button>
           </DialogActions>
         )}

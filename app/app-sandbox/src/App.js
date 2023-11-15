@@ -57,7 +57,7 @@ function App() {
           },
         },
       },
-      { id: PROVIDER_ID.EXODUS },
+      //{ id: PROVIDER_ID.EXODUS },
     ],
     nodeConfig: {
       network: "testnet",

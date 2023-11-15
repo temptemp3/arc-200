@@ -62,6 +62,13 @@ function ALGO_MakePeraConnect(PeraWalletConnect) {
   };
 }
 
+export const getCurrentNode = () => {
+  const [node, customNode, customIndexer] = (
+    localStorage.getItem("node") || DEFAULT_NODE
+  ).split(":");
+  return [node, customNode, customIndexer];
+};
+
 export const makeStdLib = () => {
   const wallet = JSON.parse(localStorage.getItem("txnlab-use-wallet") || "{}");
   const baseProviderId = wallet?.state?.activeAccount?.providerId;
@@ -70,10 +77,7 @@ export const makeStdLib = () => {
       ? JSON.parse(localStorage.getItem("PeraWallet.Wallet") || "{}")?.type
       : baseProviderId;
 
-  const [node, customNode, customIndexer] = (
-    localStorage.getItem("node") || DEFAULT_NODE
-  ).split(":");
-  console.log({ node, customNode, customIndexer });
+  const [node, customNode, customIndexer] = getCurrentNode();
   let ALGO_SERVER;
   let ALGO_INDEXER_SERVER;
   switch (node) {
