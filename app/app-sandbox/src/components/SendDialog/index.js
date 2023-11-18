@@ -40,13 +40,14 @@ function SendDialog(props) {
     (str) => {
       const num = Number(str.replace(/[, ]/g, ""));
       if (isNaN(num)) return "";
-      const [a, b] = stdlib
-        .formatWithDecimals(
-          stdlib.parseCurrency(num, token.decimals),
-          token.decimals
-        )
-        .split(".");
-      return !!b ? `${Number(a).toLocaleString()}.${b}` : a.toLocaleString();
+  
+      const formattedAmount = stdlib.formatWithDecimals(
+        stdlib.parseCurrency(num, token.decimals),
+        token.decimals
+      );
+  
+      const [a, b] = formattedAmount.split(".");
+      return !!b ? `${Number(a).toLocaleString()}.${b}` : Number(a).toLocaleString();
     },
     [token, stdlib]
   );
