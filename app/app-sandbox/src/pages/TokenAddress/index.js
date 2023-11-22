@@ -55,7 +55,12 @@ const Token = ({ address, token, transactions }) => {
           <code style={{ display: "inline-block" }}>
             {token.appId && (
               <span>
-                Id: <Link to={`/token/${token.appId}`}>{token.appId}</Link>
+                Id:{" "}
+                <a
+                  href={`https://voi.observer/explorer/application/${token.appId}/transactions/`}
+                >
+                  {token.appId}
+                </a>
               </span>
             )}
             <br />
@@ -83,7 +88,21 @@ const Token = ({ address, token, transactions }) => {
       <Box sx={{ textAlign: "left" }}>
         <h2>Transactions</h2>
         <h3>
-          For: {NFDService.getNFDByAddress(address)?.[address]?.name || address}
+          For:{" "}
+          {NFDService.getNFDByAddress(address)?.[address]?.name ? (
+            <a
+              href={`https://voi.observer/explorer/account/${NFDService.getNFDByAddress(address)?.[address]?.name
+                }/transactions`}
+            >
+              {NFDService.getNFDByAddress(address)?.[address]?.name}
+            </a>
+          ) : (
+            <a
+              href={`https://voi.observer/explorer/account/${address}/transactions`}
+            >
+              {address}
+            </a>
+          )}
         </h3>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -185,7 +204,7 @@ function Page() {
     if (!transactions) return;
     (async () => {
       const addresses = Array.from(
-        new Set(transactions.map(([, from, to]) => [from, to]).flat())
+        new Set(transactions.map(([, from, to]) => [from, to]).flat()),
       );
       let doReload = false;
       for (const address of addresses) {
