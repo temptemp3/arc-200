@@ -72,6 +72,12 @@ const Token = ({ address, token, transactions }) => {
                 amount: fawd(token.totalSupply, token.decimals),
               })}`}
             <br />
+             {token.balanceOf &&
+            `Balance: ${displayTokenValue({
+              ...token,
+              amount: fawd(token.balanceOf, token.decimals),
+            })}`}
+            <br />
             Circulating Supply: 1234
             <br />
             Date of creation: 07/01/2023
@@ -203,7 +209,7 @@ function Page() {
   }, [transactions]);
   React.useEffect(() => {
     (async () => {
-      const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
+      const tokenMetadata = await ARC200Service.getTokenMetadata(appId, address);
       const token = { ...tokenMetadata, appId };
       setToken(token);
     })();

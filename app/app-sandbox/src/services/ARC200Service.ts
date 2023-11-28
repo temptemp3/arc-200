@@ -71,8 +71,7 @@ const launch = async (addr: string, params: any) => {
   );
   return ctcInfo;
 };
-
-const getTokenMetadata = async (ctcInfo: number) => {
+const getTokenMetadata = async (ctcInfo: number, addr: string) => {
   const storedTokenMetadata = localStorage.getItem(`token-${ctcInfo}`);
   if (!storedTokenMetadata) {
     const { v } = (
@@ -102,15 +101,19 @@ const getTokenMetadata = async (ctcInfo: number) => {
     const totalSupply = bn2bi(totalSupplyBn).toString();
     const tZeroAddress = fa(zeroAddressHexStr);
     const managerAddress = fa(managerAddressHexStr);
+    const balanceBn = await balanceOf(ctcInfo, addr);
+    const balance = bn2bi(balanceBn).toString();
     const metadata = {
       name: name,
       symbol,
       decimals,
       totalSupply,
+      balanceOf: balance,  // Add balanceOf here
       zeroAddress: tZeroAddress,
       manager: managerAddress,
     };
     localStorage.setItem(`token-${ctcInfo}`, JSON.stringify(metadata));
+     // console.log(`Balance of: ${balance}`);
     return metadata;
   } else {
     return JSON.parse(storedTokenMetadata);
@@ -128,6 +131,7 @@ const balanceOf = async (ctcInfo: number, addr: string) => {
   const ctc = acc.contract(backend, ctcInfo);
   return fromSome(await ctc.v.arc200_balanceOf(addr), bn(0));
 };
+
 
 const totalSupply = async (ctcInfo: number) => {
   const acc = await stdlib.connectAccount({ addr: zeroAddress });
