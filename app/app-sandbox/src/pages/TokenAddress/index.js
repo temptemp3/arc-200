@@ -15,10 +15,12 @@ import ARC200Service from "../../services/ARC200Service";
 import { Link, useParams } from "react-router-dom";
 import { displayTokenValue } from "../../utils/algorand";
 import NFDService from "../../services/NFDService";
+import moment from "moment";
 
 const stdlib = makeStdLib();
 const fa = stdlib.formatAddress;
 const fawd = stdlib.formatWithDecimals;
+const bn = stdlib.bigNumberify;
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
 
@@ -44,7 +46,13 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const Token = ({ address, token, transactions }) => {
+const Token = ({
+  address,
+  balance,
+  token,
+  transactions,
+  walletTransactions,
+}) => {
   return (
     <Box sx={{ margin: 1 }}>
       <Stack>
@@ -72,14 +80,46 @@ const Token = ({ address, token, transactions }) => {
                 amount: fawd(token.totalSupply, token.decimals),
               })}`}
             <br />
-            Circulating Supply: 1234
+            Circulating Supply:{" "}
+            {displayTokenValue({ ...token, amount: token.circulatingSupply })}
             <br />
-            Date of creation: 07/01/2023
+            Date of creation:{" "}
+            {transactions?.length > 0
+              ? moment.unix(transactions.slice(-1)[0][4]).format("L")
+              : "-"}
             <br />
-            Created at round: 31020682
+            Created at round:{" "}
+            {transactions?.length > 0 ? transactions.slice(-1)[0][0] : "-"}
           </code>
         </Stack>
       </Stack>
+      <Box sx={{ textAlign: "left" }}>
+        <h2>Balance</h2>
+        <h3>
+          For: {NFDService.getNFDByAddress(address)?.[address]?.name || address}
+        </h3>
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 300 }} aria-label="customized table">
+            <TableHead>
+              <TableRow>
+                <StyledTableCell align="right">Amount</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <StyledTableCell align="right">
+                  <small>
+                    {displayTokenValue({
+                      ...token,
+                      amount: fawd(balance, token.decimals),
+                    })}
+                  </small>
+                </StyledTableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
       <Box sx={{ textAlign: "left" }}>
         <h2>Transactions</h2>
         <h3>
@@ -97,30 +137,45 @@ const Token = ({ address, token, transactions }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {transactions?.length > 0 ? (
-                transactions?.map((row) => (
+              {walletTransactions?.length > 0 ? (
+                walletTransactions?.map((row) => (
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
-                      {row[0]}
+                      <small>{row[0]}</small>
                     </StyledTableCell>
                     <StyledTableCell component="th" scope="row">
-                      {row[4]}
+                      <small>
+                        {row[4] > 0 ? (
+                          <div>
+                            {row[4]}
+                            <br />({moment.unix(row[4]).fromNow()})
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      {((address) =>
-                        NFDService.getNFDByAddress(address)?.[address]?.name ||
-                        address)(row[1])}
+                      <small>
+                        {((address) =>
+                          NFDService.getNFDByAddress(address)?.[address]
+                            ?.name || address)(row[1])}
+                      </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      {((address) =>
-                        NFDService.getNFDByAddress(address)?.[address]?.name ||
-                        address)(row[2])}
+                      <small>
+                        {((address) =>
+                          NFDService.getNFDByAddress(address)?.[address]
+                            ?.name || address)(row[2])}
+                      </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      {displayTokenValue({
-                        ...token,
-                        amount: fawd(row[3], token.decimals),
-                      })}
+                      <small>
+                        {displayTokenValue({
+                          ...token,
+                          amount: fawd(row[3], token.decimals),
+                        })}
+                      </small>
                     </StyledTableCell>
                   </StyledTableRow>
                 ))
@@ -143,8 +198,10 @@ function Page() {
   const { id: appId, addr: address } = useParams();
   const [token, setToken] = React.useState(null);
   const [transactions, setTransactions] = React.useState([]);
+  const [walletTransactions, setWalletTransactions] = React.useState([]);
   const [version, setVersion] = React.useState(0);
   const [roundTimes, setRoundTimes] = React.useState(null);
+  const [balance, setBalance] = React.useState(null);
   React.useEffect(() => {
     (async () => {
       const { indexer } = await stdlib.getProvider();
@@ -176,9 +233,11 @@ function Page() {
             bn2n(when) in roundTimes ? roundTimes[bn2n(when)] : 0,
           ];
         })
-        .filter(([_, from, to, __]) => from === address || to === address) // !!!
         .reverse();
       setTransactions(ret);
+      setWalletTransactions(
+        ret.filter(([_, from, to, __]) => from === address || to === address)
+      );
     })();
   }, [token, roundTimes]);
   React.useEffect(() => {
@@ -204,13 +263,36 @@ function Page() {
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
-      const token = { ...tokenMetadata, appId };
+      const nonCirculating = (
+        await Promise.all([
+          ARC200Service.balanceOf(appId, tokenMetadata.zeroAddress),
+          ARC200Service.balanceOf(appId, tokenMetadata.manager),
+        ])
+      ).reduce((acc, val) => acc.add(val), bn(0));
+      const circulatingSupplyBn = bn(tokenMetadata.totalSupply).sub(
+        nonCirculating
+      );
+      const token = {
+        ...tokenMetadata,
+        appId,
+        circulatingSupply: fawd(circulatingSupplyBn, tokenMetadata.decimals),
+      };
       setToken(token);
     })();
   }, []);
+  React.useEffect(() => {
+    ARC200Service.balanceOf(appId, address).then(setBalance);
+  }, []);
   return (
-    token && (
-      <Token address={address} token={token} transactions={transactions} />
+    token &&
+    balance && (
+      <Token
+        address={address}
+        token={token}
+        balance={balance}
+        transactions={transactions}
+        walletTransactions={walletTransactions}
+      />
     )
   );
 }
