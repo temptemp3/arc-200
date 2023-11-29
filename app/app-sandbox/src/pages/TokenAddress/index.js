@@ -157,16 +157,18 @@ const Token = ({
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <small>
-                        {((address) =>
+                        {/*((address) =>
                           NFDService.getNFDByAddress(address)?.[address]
-                            ?.name || address)(row[1])}
+                        ?.name || address)(row[1])*/}
+                        {row[1]}
                       </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <small>
-                        {((address) =>
+                        {/*((address) =>
                           NFDService.getNFDByAddress(address)?.[address]
-                            ?.name || address)(row[2])}
+                      ?.name || address)(row[2])*/}
+                        {row[2]}
                       </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
@@ -240,6 +242,7 @@ function Page() {
       );
     })();
   }, [token, roundTimes]);
+  /*
   React.useEffect(() => {
     if (!transactions) return;
     (async () => {
@@ -260,6 +263,7 @@ function Page() {
       }
     })();
   }, [transactions]);
+  */
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
