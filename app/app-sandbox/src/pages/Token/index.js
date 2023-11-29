@@ -22,9 +22,11 @@ import { makeStdLib } from "../../utils/reach";
 import ARC200Service from "../../services/ARC200Service";
 import { Link, useParams } from "react-router-dom";
 import { displayTokenValue, zeroAddress } from "../../utils/algorand";
+
 import NFDService from "../../services/NFDService";
 import { CSVLink } from "react-csv";
 import { fromSome } from "../../utils/common";
+
 import moment from "moment";
 
 const stdlib = makeStdLib();
@@ -180,9 +182,10 @@ const TokenHolders = ({ token, holders }) => {
                     <StyledTableRow key={row[0]}>
                       <StyledTableCell>
                         <Link to={`/token/${token.appId}/address/${row[0]}`}>
-                          {((address) =>
+                          {/*((address) =>
                             NFDService.getNFDByAddress(address)?.[address]
-                              ?.name || address)(row[0])}
+                  ?.name || address)(row[0])*/}
+                          {row[0]}
                         </Link>
                       </StyledTableCell>
                       <StyledTableCell align="right">
@@ -284,16 +287,18 @@ const TokenTransactions = ({ token, transactions }) => {
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[1]}`}>
-                        {((address) =>
+                        {/*((address) =>
                           NFDService.getNFDByAddress(address)?.[address]
-                            ?.name || address)(row[1])}
+                ?.name || address)(row[1])*/}
+                        {row[1]}
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[2]}`}>
-                        {((address) =>
+                        {/*((address) =>
                           NFDService.getNFDByAddress(address)?.[address]
-                            ?.name || address)(row[2])}
+              ?.name || address)(row[2])*/}
+                        {row[2]}
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
@@ -444,6 +449,7 @@ function Page() {
       setTransactions(ret);
     })();
   }, [token, roundTimes]);
+  /*
   React.useEffect(() => {
     if (!transactions) return;
     (async () => {
@@ -464,6 +470,7 @@ function Page() {
       }
     })();
   }, [transactions]);
+  */
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
