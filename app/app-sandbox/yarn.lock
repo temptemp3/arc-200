@@ -4033,6 +4033,15 @@ axios@^1.4.0:
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
+axios@^1.6.2:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.2.tgz#de67d42c755b571d3e698df1b6504cde9b0ee9f2"
+  integrity sha512-7i24Ri4pmDRfJTR7LDBhsOTtcm+9kjX5WiY1X3wIisx6G9So3pfMkEiU7emUBe46oceVImccTEM3k6C5dbVW8A==
+  dependencies:
+    follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
 axobject-query@^3.1.1:
   version "3.1.1"
   resolved "https://registry.npmjs.org/axobject-query/-/axobject-query-3.1.1.tgz"
@@ -8264,6 +8273,13 @@ neo-async@^2.6.2:
   version "2.6.2"
   resolved "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
+
+nfdjs@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/nfdjs/-/nfdjs-1.1.0.tgz#52dfe0468a113236c856ef30f8b21aa2b7b40f62"
+  integrity sha512-RmqZWGZqyvDeuTuxnCrYi65mA9pwPBXL0HUY2WC8eIzBZ0fjDuK/MkcpucmH9DPeMLQJXZmpm54yNlpp2Rvd7w==
+  dependencies:
+    axios "^1.6.2"
 
 no-case@^3.0.4:
   version "3.0.4"

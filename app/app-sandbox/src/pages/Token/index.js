@@ -28,6 +28,7 @@ import { CSVLink } from "react-csv";
 import { fromSome } from "../../utils/common";
 
 import moment from "moment";
+import LoadingIndicator from "../../components/LoadingIndicator";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
@@ -127,7 +128,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const TokenHolders = ({ token, holders }) => {
+const TokenHolders = ({ token, holders, nfds }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   // Avoid a layout jump when reaching the last page with empty rows.
@@ -158,7 +159,7 @@ const TokenHolders = ({ token, holders }) => {
           ]
         */}
         </h2>
-        {true || holders?.length > 0 ? (
+        {holders?.length > 0 ? (
           <TableContainer component={Paper}>
             <Table
               sx={{ minWidth: 700 }}
@@ -182,10 +183,9 @@ const TokenHolders = ({ token, holders }) => {
                     <StyledTableRow key={row[0]}>
                       <StyledTableCell>
                         <Link to={`/token/${token.appId}/address/${row[0]}`}>
-                          {/*((address) =>
-                            NFDService.getNFDByAddress(address)?.[address]
-                  ?.name || address)(row[0])*/}
-                          {row[0]}
+                          {((address) => nfds[address]?.name || address)(
+                            row[0]
+                          )}
                         </Link>
                       </StyledTableCell>
                       <StyledTableCell align="right">
@@ -241,7 +241,7 @@ const TokenHolders = ({ token, holders }) => {
   );
 };
 
-const TokenTransactions = ({ token, transactions }) => {
+const TokenTransactions = ({ token, transactions, nfds }) => {
   const [pageTx, setTxPage] = React.useState(0);
   const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
   const handleTxChangePage = (event, newPage) => {
@@ -287,18 +287,12 @@ const TokenTransactions = ({ token, transactions }) => {
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[1]}`}>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-                ?.name || address)(row[1])*/}
-                        {row[1]}
+                        {((address) => nfds[address]?.name || address)(row[1])}
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[2]}`}>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-              ?.name || address)(row[2])*/}
-                        {row[2]}
+                        {((address) => nfds[address]?.name || address)(row[2])}
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
@@ -344,7 +338,7 @@ const TokenTransactions = ({ token, transactions }) => {
   );
 };
 
-const Token = ({ token, transactions, holders }) => {
+const Token = ({ token, transactions, holders, nfds }) => {
   return (
     // Token Info
     <Stack sx={{ margin: 1 }}>
@@ -384,8 +378,12 @@ const Token = ({ token, transactions, holders }) => {
           </Stack>
         </Stack>
       )}
-      <TokenHolders token={token} holders={holders} />
-      <TokenTransactions token={token} transactions={transactions} />
+      <TokenHolders token={token} holders={holders} nfds={nfds} />
+      <TokenTransactions
+        token={token}
+        transactions={transactions}
+        nfds={nfds}
+      />
     </Stack>
   );
 };
@@ -393,10 +391,19 @@ const Token = ({ token, transactions, holders }) => {
 function Page() {
   const { id: appId } = useParams();
   const [token, setToken] = React.useState(null);
-  const [transactions, setTransactions] = React.useState([]);
-  const [holders, setHolders] = React.useState([]);
-  const [version, setVersion] = React.useState(0);
+  const [transactions, setTransactions] = React.useState(null);
+  const [holders, setHolders] = React.useState(null);
   const [roundTimes, setRoundTimes] = React.useState(null);
+  const [nfds, setNfds] = React.useState(null);
+  const loading = React.useMemo(() => {
+    if (!roundTimes) return { message: "Loading round times...", progress: 10 };
+    if (!token) return { message: "Loading token metadata...", progress: 30 };
+    if (!transactions)
+      return { message: "Loading transactions...", progress: 50 };
+    if (!holders) return { message: "Loading holders...", progress: 70 };
+    if (!nfds) return { message: "Loading NFDs...", progress: 90 };
+    return null;
+  }, [roundTimes, token, holders, transactions, nfds]);
   // EFFECT: load round times to convert confirmed rounds to round times
   React.useEffect(() => {
     (async () => {
@@ -449,28 +456,16 @@ function Page() {
       setTransactions(ret);
     })();
   }, [token, roundTimes]);
-  /*
   React.useEffect(() => {
     if (!transactions) return;
     (async () => {
       const addresses = Array.from(
         new Set(transactions.map(([, from, to]) => [from, to]).flat())
       );
-      let doReload = false;
-      for (const address of addresses) {
-        const nfd = NFDService.getNFDByAddress(address);
-        if (nfd?.owner === address) continue;
-        const res = NFDService.fetchNFDByAddress(address);
-        if (res) {
-          doReload = true;
-        }
-      }
-      if (doReload) {
-        setVersion(1);
-      }
+      await NFDService.getNFDByAddressBatch(addresses);
+      setNfds(NFDService.getNFDs());
     })();
   }, [transactions]);
-  */
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
@@ -491,13 +486,15 @@ function Page() {
       setToken(token);
     })();
   }, []);
-  return (
+  return transactions && nfds ? (
     <Token
-      version={version}
       token={token}
       transactions={transactions}
       holders={holders}
+      nfds={nfds}
     />
+  ) : (
+    <LoadingIndicator message={loading.message} progress={loading.progress} />
   );
 }
 
