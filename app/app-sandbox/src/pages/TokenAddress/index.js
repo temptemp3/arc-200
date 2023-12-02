@@ -9,6 +9,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import LoadingIndicator from "../../components/LoadingIndicator";
 import { useWallet } from "@txnlab/use-wallet";
 import { makeStdLib } from "../../utils/reach";
 import ARC200Service from "../../services/ARC200Service";
@@ -52,6 +53,7 @@ const Token = ({
   token,
   transactions,
   walletTransactions,
+  nfds,
 }) => {
   return (
     <Box sx={{ margin: 1 }}>
@@ -95,9 +97,7 @@ const Token = ({
       </Stack>
       <Box sx={{ textAlign: "left" }}>
         <h2>Balance</h2>
-        <h3>
-          For: {NFDService.getNFDByAddress(address)?.[address]?.name || address}
-        </h3>
+        <h3>For: {((address) => nfds[address]?.name || address)(address)}</h3>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 300 }} aria-label="customized table">
             <TableHead>
@@ -122,9 +122,7 @@ const Token = ({
       </Box>
       <Box sx={{ textAlign: "left" }}>
         <h2>Transactions</h2>
-        <h3>
-          For: {NFDService.getNFDByAddress(address)?.[address]?.name || address}
-        </h3>
+        <h3>For: {((address) => nfds[address]?.name || address)(address)}</h3>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
@@ -157,18 +155,12 @@ const Token = ({
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <small>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-                        ?.name || address)(row[1])*/}
-                        {row[1]}
+                        {((address) => nfds[address]?.name || address)(row[1])}
                       </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <small>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-                      ?.name || address)(row[2])*/}
-                        {row[2]}
+                        {((address) => nfds[address]?.name || address)(row[2])}
                       </small>
                     </StyledTableCell>
                     <StyledTableCell align="right">
@@ -199,11 +191,20 @@ const Token = ({
 function Page() {
   const { id: appId, addr: address } = useParams();
   const [token, setToken] = React.useState(null);
-  const [transactions, setTransactions] = React.useState([]);
+  const [transactions, setTransactions] = React.useState(null);
   const [walletTransactions, setWalletTransactions] = React.useState([]);
-  const [version, setVersion] = React.useState(0);
   const [roundTimes, setRoundTimes] = React.useState(null);
   const [balance, setBalance] = React.useState(null);
+  const [nfds, setNfds] = React.useState(null);
+  const loading = React.useMemo(() => {
+    if (!roundTimes) return { message: "Loading round times...", progress: 10 };
+    if (!token) return { message: "Loading token metadata...", progress: 30 };
+    if (!transactions)
+      return { message: "Loading transactions...", progress: 50 };
+    if (!balance) return { message: "Loading balance...", progress: 70 };
+    if (!nfds) return { message: "Loading NFDs...", progress: 90 };
+    return null;
+  }, [roundTimes, token, balance, transactions, nfds]);
   React.useEffect(() => {
     (async () => {
       const { indexer } = await stdlib.getProvider();
@@ -242,28 +243,13 @@ function Page() {
       );
     })();
   }, [token, roundTimes]);
-  /*
   React.useEffect(() => {
     if (!transactions) return;
-    (async () => {
-      const addresses = Array.from(
-        new Set(transactions.map(([, from, to]) => [from, to]).flat())
-      );
-      let doReload = false;
-      for (const address of addresses) {
-        const nfd = NFDService.getNFDByAddress(address);
-        if (nfd?.owner === address) continue;
-        const res = NFDService.fetchNFDByAddress(address);
-        if (res) {
-          doReload = true;
-        }
-      }
-      if (doReload) {
-        setVersion(1);
-      }
-    })();
+    const addresses = Array.from(
+      new Set(transactions.map(([, from, to]) => [from, to]).flat())
+    );
+    NFDService.getNFDByAddressBatch(addresses).then(setNfds);
   }, [transactions]);
-  */
   React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
@@ -287,17 +273,17 @@ function Page() {
   React.useEffect(() => {
     ARC200Service.balanceOf(appId, address).then(setBalance);
   }, []);
-  return (
-    token &&
-    balance && (
-      <Token
-        address={address}
-        token={token}
-        balance={balance}
-        transactions={transactions}
-        walletTransactions={walletTransactions}
-      />
-    )
+  return token && balance && transactions && nfds ? (
+    <Token
+      address={address}
+      token={token}
+      balance={balance}
+      transactions={transactions}
+      walletTransactions={walletTransactions}
+      nfds={nfds}
+    />
+  ) : (
+    <LoadingIndicator message={loading.message} progress={loading.progress} />
   );
 }
 

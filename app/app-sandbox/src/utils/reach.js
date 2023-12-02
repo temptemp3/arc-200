@@ -69,14 +69,7 @@ export const getCurrentNode = () => {
   return [node, customNode, customIndexer];
 };
 
-export const makeStdLib = () => {
-  const wallet = JSON.parse(localStorage.getItem("txnlab-use-wallet") || "{}");
-  const baseProviderId = wallet?.state?.activeAccount?.providerId;
-  const providedId =
-    baseProviderId === "pera"
-      ? JSON.parse(localStorage.getItem("PeraWallet.Wallet") || "{}")?.type
-      : baseProviderId;
-
+export const getCurrentNodeEnv = () => {
   const [node, customNode, customIndexer] = getCurrentNode();
   let ALGO_SERVER;
   let ALGO_INDEXER_SERVER;
@@ -100,6 +93,21 @@ export const makeStdLib = () => {
       ALGO_INDEXER_SERVER = customIndexer;
       break;
   }
+  return {
+    ALGO_SERVER,
+    ALGO_INDEXER_SERVER,
+  };
+};
+
+export const makeStdLib = () => {
+  const wallet = JSON.parse(localStorage.getItem("txnlab-use-wallet") || "{}");
+  const baseProviderId = wallet?.state?.activeAccount?.providerId;
+  const providedId =
+    baseProviderId === "pera"
+      ? JSON.parse(localStorage.getItem("PeraWallet.Wallet") || "{}")?.type
+      : baseProviderId;
+
+  const { ALGO_SERVER, ALGO_INDEXER_SERVER } = getCurrentNodeEnv();
 
   const networkEnv = "ALGO-live";
   //const networkProvider = "testnet";

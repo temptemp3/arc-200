@@ -19,20 +19,20 @@ import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import { makeStdLib } from "../../utils/reach";
-import ARC200Service from "../../services/ARC200Service";
 import { Link, useParams } from "react-router-dom";
-import { displayTokenValue, zeroAddress } from "../../utils/algorand";
+import { getAlgorandClients, zeroAddress } from "../../utils/algorand";
 
 import NFDService from "../../services/NFDService";
-import { CSVLink } from "react-csv";
-import { fromSome } from "../../utils/common";
 
 import moment from "moment";
+import LoadingIndicator from "../../components/LoadingIndicator";
+
+import arc200 from "arc200js";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
 const fa = stdlib.formatAddress;
-const fawd = stdlib.formatWithDecimals;
+const fawd = (amt, dec) => stdlib.formatWithDecimals(amt, Number(dec));
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
 
@@ -127,7 +127,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const TokenHolders = ({ token, holders }) => {
+const TokenHolders = ({ token, holders, nfds }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   // Avoid a layout jump when reaching the last page with empty rows.
@@ -158,7 +158,7 @@ const TokenHolders = ({ token, holders }) => {
           ]
         */}
         </h2>
-        {true || holders?.length > 0 ? (
+        {holders?.length > 0 ? (
           <TableContainer component={Paper}>
             <Table
               sx={{ minWidth: 700 }}
@@ -182,17 +182,19 @@ const TokenHolders = ({ token, holders }) => {
                     <StyledTableRow key={row[0]}>
                       <StyledTableCell>
                         <Link to={`/token/${token.appId}/address/${row[0]}`}>
-                          {/*((address) =>
-                            NFDService.getNFDByAddress(address)?.[address]
-                  ?.name || address)(row[0])*/}
-                          {row[0]}
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[0]
+                          )}
                         </Link>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        {displayTokenValue({
+                        {Number(row[1]).toFixed(token.decimals)}
+                        {/*displayTokenValue({
                           ...token,
                           amount: fawd(row[1], token.decimals),
-                        })}
+                        })*/}
                       </StyledTableCell>
                     </StyledTableRow>
                   ))
@@ -241,7 +243,7 @@ const TokenHolders = ({ token, holders }) => {
   );
 };
 
-const TokenTransactions = ({ token, transactions }) => {
+const TokenTransactions = ({ token, transactions, nfds }) => {
   const [pageTx, setTxPage] = React.useState(0);
   const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
   const handleTxChangePage = (event, newPage) => {
@@ -283,29 +285,30 @@ const TokenTransactions = ({ token, transactions }) => {
                       {row[0]}
                     </StyledTableCell>
                     <StyledTableCell component="th" scope="row">
-                      {row[4]}
-                    </StyledTableCell>
-                    <StyledTableCell align="right">
-                      <Link to={`/token/${token.appId}/address/${row[1]}`}>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-                ?.name || address)(row[1])*/}
-                        {row[1]}
-                      </Link>
+                      {moment.unix(row[1]).format()}
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link to={`/token/${token.appId}/address/${row[2]}`}>
-                        {/*((address) =>
-                          NFDService.getNFDByAddress(address)?.[address]
-              ?.name || address)(row[2])*/}
-                        {row[2]}
+                        {((address) =>
+                          nfds[address]?.name ||
+                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          row[2]
+                        )}
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      {displayTokenValue({
-                        ...token,
-                        amount: fawd(row[3], token.decimals),
-                      })}
+                      <Link to={`/token/${token.appId}/address/${row[3]}`}>
+                        {((address) =>
+                          nfds[address]?.name ||
+                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          row[3]
+                        )}
+                      </Link>
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      {Number(
+                        fawd(bn(row[4].toString()), token.decimals)
+                      ).toFixed(token.decimals)}
                     </StyledTableCell>
                   </StyledTableRow>
                 ))
@@ -344,7 +347,7 @@ const TokenTransactions = ({ token, transactions }) => {
   );
 };
 
-const Token = ({ token, transactions, holders }) => {
+const Token = ({ token, transactions, holders, nfds }) => {
   return (
     // Token Info
     <Stack sx={{ margin: 1 }}>
@@ -361,31 +364,34 @@ const Token = ({ token, transactions, holders }) => {
               <br />
               {token.symbol && `Symbol: ${token.symbol}`}
               <br />
-              {typeof token.decimals === "number" &&
-                `Decimals: ${token.decimals}`}
+              Decimals: {token.decimals.toString()}
               <br />
-              {token.totalSupply &&
-                `Total Supply: ${displayTokenValue({
-                  ...token,
-                  amount: fawd(token.totalSupply, token.decimals),
-                })}`}
+              Total Supply:{" "}
+              {Number(
+                fawd(token.totalSupply.toString(), token.decimals)
+              ).toLocaleString()}
               <br />
-              Circulating Supply:{" "}
-              {displayTokenValue({ ...token, amount: token.circulatingSupply })}
+              Circulating Supply: {token.circulatingSupply}
               <br />
               Date of creation:{" "}
               {transactions?.length > 0
-                ? moment.unix(transactions.slice(-1)[0][4]).format("L")
+                ? moment.unix(transactions.slice(-1)[0][1]).format("LLL")
                 : "-"}
               <br />
               Created at round:{" "}
-              {transactions?.length > 0 ? transactions.slice(-1)[0][0] : "-"}
+              {transactions?.length > 0
+                ? Number(transactions.slice(-1)[0][0]).toLocaleString()
+                : "-"}
             </code>
           </Stack>
         </Stack>
       )}
-      <TokenHolders token={token} holders={holders} />
-      <TokenTransactions token={token} transactions={transactions} />
+      <TokenHolders token={token} holders={holders} nfds={nfds} />
+      <TokenTransactions
+        token={token}
+        transactions={transactions}
+        nfds={nfds}
+      />
     </Stack>
   );
 };
@@ -393,111 +399,82 @@ const Token = ({ token, transactions, holders }) => {
 function Page() {
   const { id: appId } = useParams();
   const [token, setToken] = React.useState(null);
-  const [transactions, setTransactions] = React.useState([]);
-  const [holders, setHolders] = React.useState([]);
-  const [version, setVersion] = React.useState(0);
-  const [roundTimes, setRoundTimes] = React.useState(null);
-  // EFFECT: load round times to convert confirmed rounds to round times
+  const [transactions, setTransactions] = React.useState(null);
+  const [holders, setHolders] = React.useState(null);
+  const [nfds, setNfds] = React.useState(null);
+  const [events, setEvents] = React.useState(null);
+  const loading = React.useMemo(() => {
+    if (!events) return { message: "Loading token info...", progress: 0 };
+    return null;
+  }, [events, token, holders, transactions, nfds]);
   React.useEffect(() => {
     (async () => {
-      const { indexer } = await stdlib.getProvider();
-      const txns = await indexer
-        .searchForTransactions()
-        .applicationID(appId)
-        .limit(0)
-        .do();
-      const roundTimes = {};
-      for (const txn of txns?.transactions) {
-        const confirmedRound = txn["confirmed-round"];
-        const roundTime = txn["round-time"];
-        roundTimes[confirmedRound] = roundTime;
+      const appIdN = Number(appId);
+      const { algodClient, indexerClient } = getAlgorandClients();
+      const ci = new arc200(appIdN, algodClient, indexerClient);
+      const events = await ci.getEvents();
+      const transferEvent = events.find((el) => el.name === "arc200_Transfer");
+      let state;
+      const stateR = await ci.state();
+      if (stateR.success) {
+        state = stateR.returnValue;
       }
-      setRoundTimes(roundTimes);
-    })();
-  }, []);
-  React.useEffect(() => {
-    if (!token) return;
-    if (!roundTimes) return;
-    (async () => {
-      const ret = (await ARC200Service.getTransferEvents(appId))
-        .map(({ when, what }) => {
-          return [
-            bn2n(when),
-            fa(what[0]),
-            fa(what[1]),
-            bn2bi(what[2]).toString(),
-            bn2n(when) in roundTimes ? roundTimes[bn2n(when)] : 0,
-          ];
-        })
-        .reverse();
+      let token;
+      const tokenR = await ci.getMetadata();
+      if (tokenR.success) {
+        token = tokenR.returnValue;
+      }
+      const nonCirculating = (
+        await Promise.all([
+          ci.arc200_balanceOf(state.zeroAddress),
+          ci.arc200_balanceOf(state.manager),
+        ])
+      ).reduce((acc, val) => acc + val.returnValue, 0n);
+      const circulatingSupply = Number(
+        fawd((token.totalSupply - nonCirculating).toString(), token.decimals)
+      ).toLocaleString();
       const holders = {
-        [zeroAddress]: Number(token.totalSupply),
+        [zeroAddress]: token.totalSupply,
       };
-      for (const [_, from, to, amountStr, __] of ret) {
-        const amount = Number(amountStr);
+      const txns = transferEvent.events;
+      const addresses = new Set();
+      for (const [, , from, to, amount] of txns) {
+        addresses.add(from);
+        addresses.add(to);
         if (holders[from]) holders[from] -= amount;
         else holders[from] = -amount;
         if (holders[to]) holders[to] += amount;
         else holders[to] = amount;
       }
-      const balances = Object.entries(holders);
+      const balances = Object.entries(holders)
+        .filter((el) => el[0] !== token.zeroAddress)
+        .map(([address, amount]) => [address, fawd(amount, token.decimals)]);
       balances.sort(([a1, a2], [b1, b2]) => {
         if (a2 === b2) return a1.localeCompare(b1);
         return b2 - a2;
       });
-      setHolders(balances.filter((el) => el[0] !== token.zeroAddress));
-      setTransactions(ret);
-    })();
-  }, [token, roundTimes]);
-  /*
-  React.useEffect(() => {
-    if (!transactions) return;
-    (async () => {
-      const addresses = Array.from(
-        new Set(transactions.map(([, from, to]) => [from, to]).flat())
-      );
-      let doReload = false;
-      for (const address of addresses) {
-        const nfd = NFDService.getNFDByAddress(address);
-        if (nfd?.owner === address) continue;
-        const res = NFDService.fetchNFDByAddress(address);
-        if (res) {
-          doReload = true;
-        }
-      }
-      if (doReload) {
-        setVersion(1);
-      }
-    })();
-  }, [transactions]);
-  */
-  React.useEffect(() => {
-    (async () => {
-      const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
-      const nonCirculating = (
-        await Promise.all([
-          ARC200Service.balanceOf(appId, tokenMetadata.zeroAddress),
-          ARC200Service.balanceOf(appId, tokenMetadata.manager),
-        ])
-      ).reduce((acc, val) => acc.add(val), bn(0));
-      const circulatingSupplyBn = bn(tokenMetadata.totalSupply).sub(
-        nonCirculating
-      );
-      const token = {
-        ...tokenMetadata,
-        appId,
-        circulatingSupply: fawd(circulatingSupplyBn, tokenMetadata.decimals),
-      };
-      setToken(token);
+      await NFDService.getNFDByAddressBatch(Array.from(addresses));
+      setToken({
+        ...token,
+        appId: appIdN,
+        decimals: Number(token.decimals),
+        circulatingSupply,
+      });
+      setEvents(events);
+      setHolders(balances);
+      setTransactions(txns.reverse());
+      setNfds(NFDService.getNFDs());
     })();
   }, []);
-  return (
+  return token && holders && transactions && nfds ? (
     <Token
-      version={version}
       token={token}
       transactions={transactions}
       holders={holders}
+      nfds={nfds}
     />
+  ) : (
+    <LoadingIndicator message={loading.message} progress={loading.progress} />
   );
 }
 

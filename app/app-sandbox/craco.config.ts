@@ -2,10 +2,13 @@ const path = require("path");
 import webpack, { Configuration } from "webpack";
 
 const config = {
+  babel: {
+    plugins: ["@babel/plugin-syntax-import-assertions"],
+  },
   webpack: {
     alias: {
       "@components": path.resolve(__dirname, "src/components/"),
-      "@images": path.resolve(__dirname, "src/assets/images/")
+      "@images": path.resolve(__dirname, "src/assets/images/"),
     },
     configure: (webpackConfig: Configuration): Configuration => {
       return {
@@ -20,8 +23,8 @@ const config = {
             // https: require.resolve("https-browserify"),
             // os: require.resolve("os-browserify/browser"),
             stream: require.resolve("stream-browserify"),
-            buffer: require.resolve("buffer")
-          }
+            buffer: require.resolve("buffer"),
+          },
         },
         module: {
           rules: [
@@ -29,25 +32,24 @@ const config = {
             {
               test: /\.m?js/,
               resolve: {
-                fullySpecified: false
-              }
-            }
-          ]
-        }
+                fullySpecified: false,
+              },
+            },
+          ],
+        },
       };
     },
     plugins: {
       add: [
         new webpack.ProvidePlugin({
-          Buffer: ["buffer", "Buffer"]
+          Buffer: ["buffer", "Buffer"],
         }),
         new webpack.ProvidePlugin({
-          process: "process/browser"
-        })
-      ]
-    }
-  }
+          process: "process/browser",
+        }),
+      ],
+    },
+  },
 };
 
 export default config;
-

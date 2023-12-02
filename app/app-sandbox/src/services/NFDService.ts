@@ -1,42 +1,11 @@
-import axios from "axios";
+import nfdjs from "nfdjs";
 
-const baseUrl = "https://api.nf.domains";
-
-const getNFDByName = async (name: string) => {
-  const response = await axios.get(`${baseUrl}/nfd/${name}`);
-  return response.data;
-};
-
-/*
-const getNFDByAddress = (address: string) => {
-  const stored = localStorage.getItem(`nfd-${address}`);
-  if (!stored) {
-    axios
-      .get(`${baseUrl}/nfd/lookup`, {
-        params: {
-          address,
-        },
-      })
-      .then((response) => {
-        localStorage.setItem(`nfd-${address}`, JSON.stringify(response.data));
-      });
-    return null;
-  } else {
-    return JSON.parse(stored);
-  }
-};
-*/
+const getNFDByName = nfdjs.getNFDByName;
 
 const requestNFDByAddress = async (address: string) => {
-  return axios
-    .get(`${baseUrl}/nfd/lookup`, {
-      params: {
-        address,
-      },
-    })
-    .then((response) => {
-      localStorage.setItem(`nfd-${address}`, JSON.stringify(response.data));
-    });
+  return nfdjs.getNFDByAddress(address).then((response: any) => {
+    localStorage.setItem(`nfd-${address}`, JSON.stringify(response.name));
+  });
 };
 
 /*
@@ -64,6 +33,29 @@ const getNFDByAddress = (address: string) => {
 export default {
   getNFDByName,
   getNFDByAddress,
+  getNFDByAddressBatch: nfdjs.getNFDByAddressBatch,
+  getNFDs: nfdjs.getNFDs,
+  fetchNFDByAddressBatch: async (data: string[]) => {
+    const reqData: string[] = [];
+    data.forEach((el) => {
+      const stored = localStorage.getItem(`nfd-${el}`);
+      if (!stored) {
+        reqData.push(el);
+      }
+    });
+    const nfds = await nfdjs.getNFDByAddressBatch(reqData);
+    const nfdsKeys = Object.keys(nfds);
+    // store to localStorage
+    Object.entries(nfds).forEach(([k, v]) => {
+      localStorage.setItem(`nfd-${k}`, JSON.stringify(v));
+    });
+    reqData
+      .filter((el) => !nfdsKeys.includes(el))
+      .forEach((el) => {
+        localStorage.setItem(`nfd-${el}`, JSON.stringify({ appId: 0 }));
+      });
+    return reqData.length > 0 && Object.keys(nfds).length > 0;
+  },
   fetchNFDByAddress,
-  requestNFDByAddress
+  requestNFDByAddress,
 };

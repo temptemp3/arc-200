@@ -1,3 +1,6 @@
+import algosdk from "algosdk";
+import { getCurrentNode, getCurrentNodeEnv } from "./reach";
+
 export const zeroAddress =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
 
@@ -7,7 +10,9 @@ export const zeroAddress =
 export const displayTokenValue = (token) => {
   const intermediateValue = [
     Number(Math.floor(token?.amount ?? 0)).toLocaleString(),
-    String(Number(token?.amount ?? 0).toFixed(token.decimals)).split(".")[1],
+    String(
+      Number(token?.amount ?? 0).toFixed(Number(token.decimals.toString()))
+    ).split(".")[1],
   ].filter((el) => !!el);
   if (intermediateValue.length === 1) return intermediateValue[0];
   // intermediate value is an array of length 2 or greater
@@ -48,3 +53,18 @@ export function isValidAlgorandAddress(address) {
   }
   return true;
 }
+
+export const getAlgorandClients = () => {
+  const { ALGO_SERVER: algodServer, ALGO_INDEXER_SERVER: indexerServer } =
+    getCurrentNodeEnv();
+  const algodToken = ""; // Your Algod API token
+  const algodPort = ""; // Port of your Algod node
+  const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
+  const token = "";
+  const port = "";
+  const indexerClient = new algosdk.Indexer(token, indexerServer, port);
+  return {
+    algodClient,
+    indexerClient,
+  };
+};
