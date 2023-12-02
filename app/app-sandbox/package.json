@@ -20,7 +20,8 @@
     "@walletconnect/modal-sign-html": "^2.5.5",
     "add": "^2.0.6",
     "algorand-walletconnect-qrcode-modal": "^1.8.0",
-    "algosdk": "^1.23.2",
+    "algosdk": "^2.7.0",
+    "arc200js": "^2.1.7",
     "axios": "^1.4.0",
     "moment": "^2.29.4",
     "nfdjs": "^1.1.0",
@@ -36,6 +37,7 @@
     "react-textra": "^0.2.0",
     "react-toastify": "^9.1.3",
     "stream-browserify": "^3.0.0",
+    "tweetnacl": "^1.0.3",
     "typescript": "^5.0.4",
     "use-debounce": "^9.0.4",
     "web-vitals": "^2.1.4",
@@ -67,6 +69,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-syntax-import-assertions": "^7.23.3",
     "@craco/craco": "^7.1.0",
     "@craco/types": "^7.1.0",
     "@types/react-copy-to-clipboard": "^5.0.4",
