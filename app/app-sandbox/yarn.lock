@@ -3884,17 +3884,18 @@ anymatch@^3.0.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-arc200js@^2.1.7:
-  version "2.1.7"
-  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.1.7.tgz#82aa90b36ae908a6ee1b920a9c9d1c8904eb23a1"
-  integrity sha512-D1J/sgWYoFQF92XHbaMjQoCpqHztFaBVCrg/xb8j2cciLIPDsjTyQO+bvC1ogkpR5r2CwtbFz2s+owCGPkzkbA==
+arc200js@^2.1.7, arc200js@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.2.0.tgz#c90b54adfbfc1c349707e07132dad728ec2549d9"
+  integrity sha512-iS7yMhJ/RRgCzC5GGnkw/fs+GlY0EI/gWSvS647pSuG9U6p2xop/KBFKtyDVl7Ai61NOn2jWt2bylB3U2u7pUA==
   dependencies:
+    arc200js "^2.1.7"
     arccjs "^2.1.0"
 
 arccjs@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.1.0.tgz#d49979768745294152f63750b2201e0fe4419233"
-  integrity sha512-Evo5B7hdOBChorbV6diceh4ZgC/NsrSqwyWODOMtbY7pbh8zcIEGErTqBle2N1QlKeoO+wZbXpTOEYjcN14CwQ==
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.2.0.tgz#4ebefa4298317761e8b100fe8da380122af2d9e9"
+  integrity sha512-tVf08m+09zKoy8uY/IrYoDVYv2TRrTpX3Jh1y+2RHB8conCuXbyudXxD5LZ6VWMMMfGEaglCSRbi7D53tr/Evw==
   dependencies:
     algosdk "^2.7.0"
     buffer "^6.0.3"

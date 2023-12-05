@@ -545,6 +545,7 @@ const TokenTransactions = ({
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
+                <StyledTableCell>TxID</StyledTableCell>
                 <StyledTableCell>Block</StyledTableCell>
                 <StyledTableCell>Timestamp</StyledTableCell>
                 <StyledTableCell align="left">Type</StyledTableCell>
@@ -564,32 +565,23 @@ const TokenTransactions = ({
                 ).map((row) => (
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
-                      {row[0]}
-                    </StyledTableCell>
-                    <StyledTableCell component="th" scope="row">
-                      {moment.unix(row[1]).format()}
-                    </StyledTableCell>
-                    <StyledTableCell component="th" scope="row" align="left">
-                      <Chip size="small" variant="outlined" label={row[5]} />
-                    </StyledTableCell>
-                    <StyledTableCell align="right">
                       <Link
-                        style={{
-                          fontWeight:
-                            (addresses ?? []).includes(row[2]) && "bold",
-                        }}
-                        onClick={() => {
-                          setAddresses(
-                            Array.from(new Set([...(addresses ?? []), row[2]]))
-                          );
-                        }}
+                        target="_blank"
+                        to={`https://voi.observer/explorer/transaction/${row[0]}`}
                       >
-                        {((address) =>
-                          nfds[address]?.name ||
-                          address.slice(0, 8) + "..." + address.slice(-8))(
-                          row[2]
+                        {((str) => str.slice(0, 4) + "..." + str.slice(-4))(
+                          row[0]
                         )}
                       </Link>
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {row[1]}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {moment.unix(row[2]).format()}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row" align="left">
+                      <Chip size="small" variant="outlined" label={row[6]} />
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link
@@ -611,8 +603,27 @@ const TokenTransactions = ({
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
+                      <Link
+                        style={{
+                          fontWeight:
+                            (addresses ?? []).includes(row[4]) && "bold",
+                        }}
+                        onClick={() => {
+                          setAddresses(
+                            Array.from(new Set([...(addresses ?? []), row[4]]))
+                          );
+                        }}
+                      >
+                        {((address) =>
+                          nfds[address]?.name ||
+                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          row[4]
+                        )}
+                      </Link>
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
                       {Number(
-                        fawd(bn(row[4].toString()), token.decimals)
+                        fawd(bn(row[5].toString()), token.decimals)
                       ).toFixed(token.decimals)}
                     </StyledTableCell>
                   </StyledTableRow>
@@ -698,12 +709,12 @@ const Token = ({
               <br />
               Date of creation:{" "}
               {transactions?.length > 0
-                ? moment.unix(transactions.slice(-1)[0][1]).format("LLL")
+                ? moment.unix(transactions.slice(-1)[0][2]).format("LLL")
                 : "-"}
               <br />
               Created at round:{" "}
               {transactions?.length > 0
-                ? Number(transactions.slice(-1)[0][0]).toLocaleString()
+                ? Number(transactions.slice(-1)[0][1]).toLocaleString()
                 : "-"}
             </code>
           </Stack>
@@ -845,7 +856,7 @@ function Page() {
       };
       const ttxns = transferEvent.events;
       const addresses = new Set();
-      for (const [, , from, to, amount] of ttxns) {
+      for (const [, , , from, to, amount] of ttxns) {
         addresses.add(from);
         addresses.add(to);
         if (holders[from]) holders[from] -= amount;
@@ -862,7 +873,7 @@ function Page() {
       });
       const atxns = approvalEvent.events;
       const approvalsM = new Map();
-      for (const [, , owner, spender, amount] of atxns) {
+      for (const [, , , owner, spender, amount] of atxns) {
         if (!approvalsM.has(owner)) approvalsM.set(owner, new Map());
         approvalsM.get(owner).set(spender, amount);
       }
