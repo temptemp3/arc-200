@@ -238,7 +238,8 @@ const MyAppBar = () => {
                   (provider) =>
                     ((provider.metadata.id !== "custom" &&
                       provider.metadata.id === activeAccount.providerId) ||
-                      provider.metadata.id === "custom") && (
+                      (provider.metadata.id === "custom" &&
+                        provider.metadata.name === activeAccount.name)) && (
                       <IconButton
                         size="large"
                         edge="end"
