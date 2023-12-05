@@ -15,6 +15,9 @@ import Stack from "@mui/material/Stack";
 
 import { toast } from "react-toastify";
 import { makeStdLib } from "../../utils/reach.js";
+import { getAlgorandClients } from "../../utils/algorand.js";
+
+import arc200 from "arc200js";
 
 function SendDialog(props) {
   const { providers, activeAccount } = useWallet();
@@ -50,12 +53,30 @@ function SendDialog(props) {
     (async () => {
       try {
         setPending(true);
-        const res = await ARC200Service.approve(
-          props.token,
-          activeAccount.address,
-          accountAddress,
-          tokenAmount
+
+        const { algodClient, indexerClient } = getAlgorandClients();
+        const ci = new arc200(token.appId, algodClient, indexerClient);
+        const amount = stdlib
+          .parseCurrency(tokenAmount, Number(token.decimals))
+          .toBigInt();
+        const res = await ci.arc200_approve(accountAddress, amount);
+        if (!res.success) return; // TODO: handle error
+        const result = await window.algorand.signTxns({
+          txns: res.txns.map((el) => {
+            return {
+              txn: el,
+            };
+          }),
+        });
+        let signedTransactionBytes;
+        // decode the base 64 encoded signed transactions
+        signedTransactionBytes = result.stxns.map(
+          (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
         );
+        // send to the network
+        const res2 = await algodClient
+          .sendRawTransaction(signedTransactionBytes)
+          .do();
         if (res) {
           props.reloadToken();
           toast(

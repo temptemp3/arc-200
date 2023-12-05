@@ -26,11 +26,11 @@ export const displayToken = (token) => {
   return (
     <div>
       {Number(Math.floor(token?.amount ?? 0)).toLocaleString()}
-      {token.decimals > 0
+      {token.decimals > 0n
         ? "." +
-          String(Number(token?.amount ?? 0).toFixed(token.decimals ?? 0)).split(
-            "."
-          )[1]
+          String(
+            Number(token?.amount ?? 0).toFixed(Number(token.decimals ?? 0n))
+          ).split(".")[1]
         : ""}
       &nbsp;
       {token.symbol}

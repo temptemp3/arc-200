@@ -15,7 +15,11 @@ import ARC200Service from "../../services/ARC200Service.ts";
 import { makeStdLib } from "../../utils/reach";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { displayToken, zeroAddress } from "../../utils/algorand.js";
+import {
+  displayToken,
+  getAlgorandClients,
+  zeroAddress,
+} from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
 import ApproveDialog from "../ApproveDialog/index.js";
 import SpendDialog from "../SpendDialog/index.js";
@@ -28,6 +32,8 @@ import defaultTokens from "../../config/defaultTokens.js";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import FireplaceIcon from "@mui/icons-material/Fireplace";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage.js";
+import arc200 from "arc200js";
+import LoadingIndicator from "../LoadingIndicator/index.js";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
@@ -77,11 +83,14 @@ function AccountBalance(props) {
   const reloadToken = useCallback(async () => {
     if (!activeAccount) return;
     if (props.token.assetType === "rc200") {
-      const meta = await ARC200Service.getTokenMetadata(token.appId);
-      const amount = fawd(
-        await ARC200Service.balanceOf(token.appId, activeAccount.address),
-        meta.decimals
-      );
+      const { algodClient, indexerClient } = getAlgorandClients();
+      const ci = new arc200(token.appId, algodClient, indexerClient);
+      const tokenR = await ci.getMetadata();
+      if (!tokenR.success) return; /// TODO handle error
+      const meta = tokenR.result;
+      const balanceR = await ci.arc200_balanceOf(activeAccount.address);
+      if (!balanceR.success) return; /// TODO handle error
+      const amount = fawd(balanceR.result, meta.decimals);
       const token = {
         tokenId: token.appId,
         amount,
@@ -153,12 +162,14 @@ function AccountBalance(props) {
             <br />
             <Link to={`/token/${token.appId}`}>Token Info</Link>
             <br />
-            <Link to={`/token/${token.appId}/address/${activeAccount.address}`}>
+            <Link to={`/token/${token.appId}?address=${activeAccount.address}`}>
               Transactions for {activeAccount.address.slice(0, 4)}...
               {activeAccount.address.slice(-4)}
             </Link>
           </TableCell>
-          <TableCell>{displayToken(token)}</TableCell>
+          <TableCell>
+            {displayToken({ ...token, decimals: Number(token.decimals) })}
+          </TableCell>
           <TableCell>
             <ButtonGroup variant="text">
               {/* TODO convert to dropdown with default send */}
@@ -247,8 +258,8 @@ function AccountBalances(props) {
   const [networkTokens, setNetworkTokens] = useState(null);
   const [nativeTokens, setNativeTokens] = useState([]);
   const [arc200Tokens, setArc200Tokens] = useState(null);
-  const [tokens, setTokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const loading = useMemo(() => !props.tokens, [props.tokens]);
   // EFFECT: lookup account info and set network tokens
   useEffect(() => {
     if (!activeAccount || networkTokens) return;
@@ -322,7 +333,7 @@ function AccountBalances(props) {
         });
       });
     tokens.sort((a, b) => a.tokenId - b.tokenId);
-    setTokens(tokens);
+    props.setTokens(tokens);
   }, [nativeTokens, arc200Tokens, networkTokens]);
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -340,20 +351,23 @@ function AccountBalances(props) {
   const reloadTokens = useCallback(async () => {
     if (!activeAccount) return;
     const tokens = [];
-    for (const appId of props.tokens) {
-      const meta = await ARC200Service.getTokenMetadata(appId);
-      const amount = fawd(
-        await ARC200Service.balanceOf(appId, activeAccount.address),
-        meta.decimals
-      );
+    const { algodClient, indexerClient } = getAlgorandClients();
+    for (const appId of props.tokenIds) {
+      const ci = new arc200(appId, algodClient, indexerClient);
+      const tokenR = await ci.getMetadata();
+      if (!tokenR.success) return; /// TODO handle error
+      const balanceR = await ci.arc200_balanceOf(activeAccount.address);
+      if (!balanceR.success) return; /// TODO handle error
+      const token = tokenR.returnValue;
+      const amount = fawd(balanceR.returnValue, Number(token.decimals));
       tokens.push({
+        ...token,
         appId,
         amount,
-        ...meta,
       });
     }
     setArc200Tokens(tokens);
-  }, [activeAccount, props.tokens]);
+  }, [activeAccount, props.tokensIds]);
   // -------------------------------------------
   // effect: reload tokens on account change
   // -------------------------------------------
@@ -363,7 +377,7 @@ function AccountBalances(props) {
   }, [activeAccount, arc200Tokens]);
   useEffect(() => {
     reloadTokens();
-  }, [props.tokens]);
+  }, [props.tokensIds]);
   // -------------------------------------------
   return (
     <div className="AccountBalances">
@@ -378,14 +392,13 @@ function AccountBalances(props) {
           />
           <TableHead>
             <TableRow>
-              {/*<StyledTableCell>ID</StyledTableCell>*/}
               <StyledTableCell>Name</StyledTableCell>
               <StyledTableCell>Balance</StyledTableCell>
               <StyledTableCell>Action</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {tokens?.map((token) => (
+            {props.tokens?.map((token) => (
               <AccountBalance
                 key={token.appId}
                 token={token}

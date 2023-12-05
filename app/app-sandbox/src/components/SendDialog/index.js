@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useWallet } from "@txnlab/use-wallet";
+import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
 import {
   Box,
   Button,
@@ -17,8 +17,10 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 
 import { toast } from "react-toastify";
-import { makeStdLib } from "../../utils/reach.js";
+import { getCurrentNode, getGenesisHash, makeStdLib } from "../../utils/reach.js";
 import ConfirmationComponent from "../ConfirmationComponent.js";
+import { getAlgorandClients } from "../../utils/algorand.js";
+import arc200 from "arc200js";
 
 function SendDialog(props) {
   const { providers, activeAccount } = useWallet();
@@ -40,14 +42,16 @@ function SendDialog(props) {
     (str) => {
       const num = Number(str.replace(/[, ]/g, ""));
       if (isNaN(num)) return "";
-  
+
       const formattedAmount = stdlib.formatWithDecimals(
-        stdlib.parseCurrency(num, token.decimals),
-        token.decimals
+        stdlib.parseCurrency(num, Number(token.decimals)),
+        Number(token.decimals)
       );
-  
+
       const [a, b] = formattedAmount.split(".");
-      return !!b ? `${Number(a).toLocaleString()}.${b}` : Number(a).toLocaleString();
+      return !!b
+        ? `${Number(a).toLocaleString()}.${b}`
+        : Number(a).toLocaleString();
     },
     [token, stdlib]
   );
@@ -65,10 +69,12 @@ function SendDialog(props) {
           amount = fawd(await stdlib.balanceOf(activeAccount), token.decimals);
           break;
         case "arc200":
-          amount = fawd(
-            await ARC200Service.balanceOf(token.appId, activeAccount.address),
-            token.decimals
-          );
+          const { algodClient, indexerClient } = getAlgorandClients();
+          const ci = new arc200(token.appId, algodClient, indexerClient);
+          const balanceR = await ci.arc200_balanceOf(activeAccount.address);
+          if (balanceR.success) return; // TODO: handle error
+          const balance = balanceR.returnValue;
+          amount = fawd(balance, Number(token.decimals));
           break;
       }
       setToken({ ...token, amount });
@@ -115,13 +121,55 @@ function SendDialog(props) {
           case "native":
             break;
           case "rc200": {
-            const res = await ARC200Service.transfer(
-              props.token,
-              activeAccount.address,
-              accountAddress,
-              prepareTokenAmount(tokenAmount).replace(/,/g, "")
-            );
-            if (res) {
+            const amount = stdlib
+              .parseCurrency(tokenAmount, Number(token.decimals))
+              .toBigInt();
+            let res2;
+            if (
+              activeAccount.providerId === PROVIDER_ID.CUSTOM &&
+              activeAccount.name === "kibisis"
+            ) {
+              const algorand = window.algorand;
+              if (!algorand) {
+                throw new Error("no wallets are installed!");
+              }
+              const [node] = getCurrentNode();
+              const wallets = algorand.getWallets();
+              const wallet = await algorand.enable({
+                genesisHash: getGenesisHash
+                (node),
+              });
+              const { algodClient, indexerClient } = getAlgorandClients();
+              const ci = new arc200(token.appId, algodClient, indexerClient, {
+                acc: { addr: activeAccount.address },
+                simulate: true,
+                formatBytes: true,
+              });
+              const res = await ci.arc200_transfer(accountAddress, amount);
+              if (!res.success) return;
+              const result = await window.algorand.signTxns({
+                txns: res.txns.map((el) => {
+                  return {
+                    txn: el,
+                  };
+                }),
+              });
+              let signedTransactionBytes;
+              signedTransactionBytes = result.stxns.map(
+                (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
+              );
+              res2 = await algodClient
+                .sendRawTransaction(signedTransactionBytes)
+                .do();
+            } else {
+              res2 = await ARC200Service.transfer(
+                props.token,
+                activeAccount.address,
+                accountAddress,
+                prepareTokenAmount(tokenAmount).replace(/,/g, "")
+              );
+            }
+            if (res2) {
               props.reloadToken();
               toast(
                 <div>

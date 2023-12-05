@@ -1,6 +1,14 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { Skeleton, Stack, Typography } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Chip,
+  Skeleton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -19,13 +27,14 @@ import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import { makeStdLib } from "../../utils/reach";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getAlgorandClients, zeroAddress } from "../../utils/algorand";
 
 import NFDService from "../../services/NFDService";
 
 import moment from "moment";
 import LoadingIndicator from "../../components/LoadingIndicator";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import arc200 from "arc200js";
 
@@ -127,9 +136,280 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const TokenHolders = ({ token, holders, nfds }) => {
+// Token Approval Sums
+const TokenApprovals = ({
+  addresses,
+  setAddresses,
+  token,
+  approvals,
+  nfds,
+}) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  if (approvals?.length === 0) return null;
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - approvals?.length) : 0;
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  return (
+    token && (
+      <Box sx={{ textAlign: "left", margin: 1 }}>
+        <h2>
+          Approvals <small>by owner</small> [
+          {approvals?.length > 0 ? approvals?.length : "..."}]
+        </h2>
+        {approvals?.length > 0 ? (
+          <TableContainer component={Paper}>
+            <Table
+              sx={{ minWidth: 700 }}
+              aria-label="customized pagination table"
+            >
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>Owner</StyledTableCell>
+                  <StyledTableCell>Spender</StyledTableCell>
+                  <StyledTableCell align="right">Amount</StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {approvals?.length > 0 ? (
+                  (rowsPerPage > 0
+                    ? approvals?.slice(
+                        page * rowsPerPage,
+                        page * rowsPerPage + rowsPerPage
+                      )
+                    : approvals
+                  ).map((row) => (
+                    <StyledTableRow key={`approval-owner-${row[0]}`}>
+                      <StyledTableCell>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[0]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[0]])
+                              )
+                            );
+                          }}
+                        >
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[0]
+                          )}
+                        </Link>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[1]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[1]])
+                              )
+                            );
+                          }}
+                        >
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[1]
+                          )}
+                        </Link>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        {(([a, b]) =>
+                          [Number(a).toLocaleString(), b].join("."))(
+                          Number(row[2]).toFixed(token.decimals).split(".")
+                        )}
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  ))
+                ) : (
+                  <StyledTableRow style={{ height: 184 }}>
+                    <StyledTableCell colSpan={3} align="center">
+                      Loading...
+                    </StyledTableCell>
+                  </StyledTableRow>
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[
+                      5,
+                      10,
+                      25,
+                      { label: "All", value: -1 },
+                    ]}
+                    colSpan={3}
+                    count={approvals?.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    SelectProps={{
+                      inputProps: {
+                        "aria-label": "rows per page",
+                      },
+                      native: true,
+                    }}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    ActionsComponent={TablePaginationActions}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Paper sx={{ width: "100%", overflow: "hidden" }}>
+            <Skeleton variant="rounded" width="100%" height={278} />
+          </Paper>
+        )}
+      </Box>
+    )
+  );
+};
+
+// Token Approval Sums
+const TokenApprovalSums = ({
+  addresses,
+  setAddresses,
+  token,
+  approvals,
+  nfds,
+}) => {
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  if (approvals?.length === 0) return null;
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - approvals?.length) : 0;
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  return (
+    token && (
+      <Box sx={{ textAlign: "left", margin: 1 }}>
+        <h2>
+          Approvals <small>for spending</small> [
+          {approvals?.length > 0 ? approvals?.length : "..."}]
+        </h2>
+        {approvals?.length > 0 ? (
+          <TableContainer component={Paper}>
+            <Table
+              sx={{ minWidth: 700 }}
+              aria-label="customized pagination table"
+            >
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>Spender</StyledTableCell>
+                  <StyledTableCell align="right">Amount</StyledTableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {approvals?.length > 0 ? (
+                  (rowsPerPage > 0
+                    ? approvals?.slice(
+                        page * rowsPerPage,
+                        page * rowsPerPage + rowsPerPage
+                      )
+                    : approvals
+                  ).map((row) => (
+                    <StyledTableRow key={`approval-owner-${row[0]}`}>
+                      <StyledTableCell>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[0]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[0]])
+                              )
+                            );
+                          }}
+                        >
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[0]
+                          )}
+                        </Link>
+                      </StyledTableCell>
+                      <StyledTableCell align="right">
+                        {(([a, b]) =>
+                          [Number(a).toLocaleString(), b].join("."))(
+                          Number(row[1]).toFixed(token.decimals).split(".")
+                        )}
+                      </StyledTableCell>
+                    </StyledTableRow>
+                  ))
+                ) : (
+                  <StyledTableRow style={{ height: 184 }}>
+                    <StyledTableCell colSpan={3} align="center">
+                      Loading...
+                    </StyledTableCell>
+                  </StyledTableRow>
+                )}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[
+                      5,
+                      10,
+                      25,
+                      { label: "All", value: -1 },
+                    ]}
+                    colSpan={3}
+                    count={approvals?.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    SelectProps={{
+                      inputProps: {
+                        "aria-label": "rows per page",
+                      },
+                      native: true,
+                    }}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    ActionsComponent={TablePaginationActions}
+                  />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Paper sx={{ width: "100%", overflow: "hidden" }}>
+            <Skeleton variant="rounded" width="100%" height={278} />
+          </Paper>
+        )}
+      </Box>
+    )
+  );
+};
+
+const TokenHolders = ({ addresses, setAddresses, token, holders, nfds }) => {
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  if (holders?.length === 0) return null;
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - holders?.length) : 0;
@@ -143,21 +423,7 @@ const TokenHolders = ({ token, holders, nfds }) => {
   return (
     token && (
       <Box sx={{ textAlign: "left", margin: 1 }}>
-        <h2>
-          Holders [{holders?.length > 0 ? holders?.length : "..."}]
-          {/*[
-          {<CSVLink
-            data={holders.map(([address, amount]) => ({ address, amount }))}
-            headers={[
-              { label: "Address", key: "address" },
-              { label: "Amount", key: "amount" },
-            ]}
-          >
-            Download
-          </CSVLink>}
-          ]
-        */}
-        </h2>
+        <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
         {holders?.length > 0 ? (
           <TableContainer component={Paper}>
             <Table
@@ -181,7 +447,19 @@ const TokenHolders = ({ token, holders, nfds }) => {
                   ).map((row) => (
                     <StyledTableRow key={row[0]}>
                       <StyledTableCell>
-                        <Link to={`/token/${token.appId}/address/${row[0]}`}>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[0]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[0]])
+                              )
+                            );
+                          }}
+                        >
                           {((address) =>
                             nfds[address]?.name ||
                             address.slice(0, 8) + "..." + address.slice(-8))(
@@ -191,10 +469,6 @@ const TokenHolders = ({ token, holders, nfds }) => {
                       </StyledTableCell>
                       <StyledTableCell align="right">
                         {Number(row[1]).toFixed(token.decimals)}
-                        {/*displayTokenValue({
-                          ...token,
-                          amount: fawd(row[1], token.decimals),
-                        })*/}
                       </StyledTableCell>
                     </StyledTableRow>
                   ))
@@ -243,9 +517,16 @@ const TokenHolders = ({ token, holders, nfds }) => {
   );
 };
 
-const TokenTransactions = ({ token, transactions, nfds }) => {
+const TokenTransactions = ({
+  addresses,
+  setAddresses,
+  token,
+  transactions,
+  nfds,
+}) => {
   const [pageTx, setTxPage] = React.useState(0);
   const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
+  if ((transactions?.length ?? 0) === 0) return null;
   const handleTxChangePage = (event, newPage) => {
     setTxPage(newPage);
   };
@@ -266,6 +547,7 @@ const TokenTransactions = ({ token, transactions, nfds }) => {
               <TableRow>
                 <StyledTableCell>Block</StyledTableCell>
                 <StyledTableCell>Timestamp</StyledTableCell>
+                <StyledTableCell align="left">Type</StyledTableCell>
                 <StyledTableCell align="right">From</StyledTableCell>
                 <StyledTableCell align="right">To</StyledTableCell>
                 <StyledTableCell align="right">Amount</StyledTableCell>
@@ -287,8 +569,21 @@ const TokenTransactions = ({ token, transactions, nfds }) => {
                     <StyledTableCell component="th" scope="row">
                       {moment.unix(row[1]).format()}
                     </StyledTableCell>
+                    <StyledTableCell component="th" scope="row" align="left">
+                      <Chip size="small" variant="outlined" label={row[5]} />
+                    </StyledTableCell>
                     <StyledTableCell align="right">
-                      <Link to={`/token/${token.appId}/address/${row[2]}`}>
+                      <Link
+                        style={{
+                          fontWeight:
+                            (addresses ?? []).includes(row[2]) && "bold",
+                        }}
+                        onClick={() => {
+                          setAddresses(
+                            Array.from(new Set([...(addresses ?? []), row[2]]))
+                          );
+                        }}
+                      >
                         {((address) =>
                           nfds[address]?.name ||
                           address.slice(0, 8) + "..." + address.slice(-8))(
@@ -297,7 +592,17 @@ const TokenTransactions = ({ token, transactions, nfds }) => {
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      <Link to={`/token/${token.appId}/address/${row[3]}`}>
+                      <Link
+                        style={{
+                          fontWeight:
+                            (addresses ?? []).includes(row[3]) && "bold",
+                        }}
+                        onClick={() => {
+                          setAddresses(
+                            Array.from(new Set([...(addresses ?? []), row[3]]))
+                          );
+                        }}
+                      >
                         {((address) =>
                           nfds[address]?.name ||
                           address.slice(0, 8) + "..." + address.slice(-8))(
@@ -347,7 +652,25 @@ const TokenTransactions = ({ token, transactions, nfds }) => {
   );
 };
 
-const Token = ({ token, transactions, holders, nfds }) => {
+const Token = ({
+  addresses,
+  setAddresses,
+  token,
+  transactions,
+  holders,
+  nfds,
+  approvals,
+}) => {
+  // total amount approved for each spender
+  const approvalsSum = new Map();
+  for (const [owner, spender, amount] of approvals) {
+    if (!approvalsSum.has(spender)) approvalsSum.set(spender, 0n);
+    approvalsSum.set(
+      spender,
+      Number(approvalsSum.get(spender)) + Number(amount)
+    );
+  }
+
   return (
     // Token Info
     <Stack sx={{ margin: 1 }}>
@@ -386,10 +709,84 @@ const Token = ({ token, transactions, holders, nfds }) => {
           </Stack>
         </Stack>
       )}
-      <TokenHolders token={token} holders={holders} nfds={nfds} />
-      <TokenTransactions
+      <Box
+        direction="row"
+        gap="1em"
+        style={{ textAlign: "left" }}
+        sx={{ mt: 5 }}
+      >
+        {/* deletable chips holding addresses without link style */}
+        {addresses?.map((address, index) => (
+          <Chip
+            key={`address-${index}`}
+            sx={{ m: 1 }}
+            onDelete={() => {
+              if (addresses.length > 1) {
+                setAddresses(addresses.filter((a) => a !== address));
+              } else {
+                setAddresses(null);
+              }
+            }}
+            label={((address) =>
+              nfds[address]?.name ||
+              address.slice(0, 8) + "..." + address.slice(-8))(address)}
+          />
+        ))}
+        {addresses?.length > 1 && (
+          <Chip label="Clear" onClick={() => setAddresses(null)} />
+        )}
+      </Box>
+      <TokenHolders
+        addresses={addresses}
+        setAddresses={setAddresses}
         token={token}
-        transactions={transactions}
+        holders={
+          addresses ? holders.filter((h) => addresses.includes(h[0])) : holders
+        }
+        nfds={nfds}
+      />
+      <TokenApprovalSums
+        addresses={addresses}
+        setAddresses={setAddresses}
+        token={token}
+        approvals={((approvals) =>
+          addresses
+            ? approvals.filter((h) => addresses.includes(h[0]))
+            : approvals)(
+          Array.from(approvalsSum)
+            .filter(([spender, amount]) => amount > 0n)
+            .sort((a, b) => b[1] - a[1])
+        )}
+        nfds={nfds}
+      />
+      <TokenApprovals
+        addresses={addresses}
+        setAddresses={setAddresses}
+        token={token}
+        approvals={((approvals) =>
+          addresses
+            ? approvals.filter(
+                (h) => addresses.includes(h[0]) || addresses.includes(h[1])
+              )
+            : approvals)(
+          approvals
+            .filter(([owner, spender, amount]) => amount > 0n)
+            .sort((a, b) => b[2] - a[2])
+        )}
+        nfds={nfds}
+      />
+
+      <TokenTransactions
+        addresses={addresses}
+        setAddresses={setAddresses}
+        token={token}
+        transactions={
+          addresses
+            ? transactions.filter(
+                (t) => addresses.includes(t[2]) || addresses.includes(t[3])
+              )
+            : transactions
+        }
         nfds={nfds}
       />
     </Stack>
@@ -403,6 +800,13 @@ function Page() {
   const [holders, setHolders] = React.useState(null);
   const [nfds, setNfds] = React.useState(null);
   const [events, setEvents] = React.useState(null);
+  const [approvals, setApprovals] = React.useState(null);
+  const [addresses, setAddresses] = React.useState(null);
+  const [searchParams] = useSearchParams();
+  const paramAddr = searchParams.get("address");
+  React.useEffect(() => {
+    if (paramAddr) setAddresses(paramAddr.split(","));
+  }, [paramAddr]);
   const loading = React.useMemo(() => {
     if (!events) return { message: "Loading token info...", progress: 0 };
     return null;
@@ -412,8 +816,11 @@ function Page() {
       const appIdN = Number(appId);
       const { algodClient, indexerClient } = getAlgorandClients();
       const ci = new arc200(appIdN, algodClient, indexerClient);
+
       const events = await ci.getEvents();
       const transferEvent = events.find((el) => el.name === "arc200_Transfer");
+      const approvalEvent = events.find((el) => el.name === "arc200_Approval");
+
       let state;
       const stateR = await ci.state();
       if (stateR.success) {
@@ -436,9 +843,9 @@ function Page() {
       const holders = {
         [zeroAddress]: token.totalSupply,
       };
-      const txns = transferEvent.events;
+      const ttxns = transferEvent.events;
       const addresses = new Set();
-      for (const [, , from, to, amount] of txns) {
+      for (const [, , from, to, amount] of ttxns) {
         addresses.add(from);
         addresses.add(to);
         if (holders[from]) holders[from] -= amount;
@@ -453,6 +860,27 @@ function Page() {
         if (a2 === b2) return a1.localeCompare(b1);
         return b2 - a2;
       });
+      const atxns = approvalEvent.events;
+      const approvalsM = new Map();
+      for (const [, , owner, spender, amount] of atxns) {
+        if (!approvalsM.has(owner)) approvalsM.set(owner, new Map());
+        approvalsM.get(owner).set(spender, amount);
+      }
+      // flatten map to array containing [owner, spender, amount]
+      const approvals = Array.from(approvalsM.entries()).flatMap(
+        ([owner, spenderMap]) =>
+          Array.from(spenderMap.entries()).map(([spender, amount]) => [
+            owner,
+            spender,
+            fawd(amount, token.decimals),
+          ])
+      );
+      const ctxns = [
+        ...ttxns.map((data) => [...data, "Transfer"]),
+        ...atxns.map((data) => [...data, "Approval"]),
+      ];
+      ctxns.sort((a, b) => b[1] - a[1]);
+
       await NFDService.getNFDByAddressBatch(Array.from(addresses));
       setToken({
         ...token,
@@ -462,16 +890,20 @@ function Page() {
       });
       setEvents(events);
       setHolders(balances);
-      setTransactions(txns.reverse());
+      setTransactions(ctxns);
+      setApprovals(approvals);
       setNfds(NFDService.getNFDs());
     })();
   }, []);
-  return token && holders && transactions && nfds ? (
+  return token && holders && transactions && nfds && approvals ? (
     <Token
+      addresses={addresses}
+      setAddresses={setAddresses}
       token={token}
       transactions={transactions}
       holders={holders}
       nfds={nfds}
+      approvals={approvals}
     />
   ) : (
     <LoadingIndicator message={loading.message} progress={loading.progress} />

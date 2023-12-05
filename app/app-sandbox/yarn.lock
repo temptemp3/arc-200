@@ -7,6 +7,13 @@
   resolved "https://registry.npmjs.org/@adobe/css-tools/-/css-tools-4.2.0.tgz"
   integrity sha512-E09FiIft46CmH5Qnjb0wsW54/YQd69LsxeKUOWawmws1XWvyFGURnAChH0mlr7YPFR1ofwvUQfcL0J3lMxXqPA==
 
+"@agoralabs-sh/algorand-provider@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@agoralabs-sh/algorand-provider/-/algorand-provider-1.1.0.tgz#4bab3668715131692b37882231d3d023b9c8cd78"
+  integrity sha512-BKXkA7fc7/gE9Vrp6ZBee3QTQfKo+fTNZ0RtfY0gPHw32zLwkMmJCsxtmQwXGJybsNetsMglJT3DCgUPbVlIQA==
+  dependencies:
+    algosdk "^2.1.0"
+
 "@ampproject/remapping@^2.2.0":
   version "2.2.1"
   resolved "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.2.1.tgz"
@@ -2734,10 +2741,10 @@
   resolved "https://registry.npmjs.org/@tsconfig/node16/-/node16-1.0.4.tgz"
   integrity sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==
 
-"@txnlab/use-wallet@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@txnlab/use-wallet/-/use-wallet-2.0.0.tgz"
-  integrity sha512-VJ47JT+s6VYAv1rCYYmFv/DrQd+KXDn0IAWvUkBiMVQniYoxt/XrfN8vZ1xnrsF7sVlZpDFPbQiK4TCrmTjncQ==
+"@txnlab/use-wallet@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@txnlab/use-wallet/-/use-wallet-2.3.0.tgz#d118f85ff60565cfc079ce795836da696e924b2c"
+  integrity sha512-nOY8tMnOsXjBqMOUeJdub/l+7Eu9GyURnsR99wVYyEOVP6OjpLyFLGGluITTCjPme6t+h/G58m1KkUz1qNHErQ==
   dependencies:
     immer "^9.0.15"
     zustand "^4.3.8"
@@ -3803,7 +3810,7 @@ algosdk@^1.23.2:
     tweetnacl "^1.0.3"
     vlq "^2.0.4"
 
-algosdk@^2.7.0:
+algosdk@^2.1.0, algosdk@^2.7.0:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/algosdk/-/algosdk-2.7.0.tgz#6ebab130d25fc3cb4c74dce4d8753c7e86db1404"
   integrity sha512-sBE9lpV7bup3rZ+q2j3JQaFAE9JwZvjWKX00vPlG8e9txctXbgLL56jZhSWZndqhDI9oI+0P4NldkuQIWdrUyg==
@@ -9579,11 +9586,6 @@ react-app-polyfill@^3.0.0:
     regenerator-runtime "^0.13.9"
     whatwg-fetch "^3.6.2"
 
-react-blink-text@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/react-blink-text/-/react-blink-text-1.0.5.tgz"
-  integrity sha512-mcexEyw3lvIqONpW4Z17sENXuR0Zydv/kWaCSyM0wA2yyxjSzAnlfiljYNAS3CGN7JH849GCKDvJn1rFaIvzqQ==
-
 react-copy-to-clipboard@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npmjs.org/react-copy-to-clipboard/-/react-copy-to-clipboard-5.1.0.tgz"
@@ -11857,8 +11859,8 @@ yocto-queue@^0.1.0:
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
 zustand@^4.3.8:
-  version "4.3.8"
-  resolved "https://registry.npmjs.org/zustand/-/zustand-4.3.8.tgz"
-  integrity sha512-4h28KCkHg5ii/wcFFJ5Fp+k1J3gJoasaIbppdgZFO4BPJnsNxL0mQXBSFgOgAdCdBj35aDTPvdAJReTMntFPGg==
+  version "4.4.7"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-4.4.7.tgz#355406be6b11ab335f59a66d2cf9815e8f24038c"
+  integrity sha512-QFJWJMdlETcI69paJwhSMJz7PPWjVP8Sjhclxmxmxv/RYI7ZOvR5BHX+ktH0we9gTWQMxcne8q1OY8xxz604gw==
   dependencies:
     use-sync-external-store "1.2.0"
