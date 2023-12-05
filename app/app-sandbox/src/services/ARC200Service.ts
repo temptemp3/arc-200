@@ -158,27 +158,24 @@ const approve = async (
   addrSpender: string,
   amount: any
 ) => {
-  console.log({
-    token,
-    addrFrom,
-    addrSpender,
-    amount,
-  });
   const acc = await stdlib.connectAccount({ addr: addrFrom });
-  console.log({ acc });
   const ctc = acc.contract(backend, token.appId);
   if (ib(amount)) {
-    return await ctc.a.arc200_approve(addrSpender, amount);
+    return await ctc.a.arc200_approve(addrSpender, amount.toString);
   } else {
     const acc = await stdlib.connectAccount({ addr: addrFrom });
     const [lhs, rhs, rst] = amount.split(".");
     if (rst) throw Error("Invalid amount");
-    const lhsBn = bn(parseInt(lhs)).mul(bn(10).pow(bn(token.decimals)));
+    const lhsBn = bn(parseInt(lhs)).mul(bn(10).pow(bn(Number(token.decimals))));
     const rhsBn =
-      token.decimals > 0
-        ? bn((rhs ?? "0").slice(0, token.decimals).padEnd(token.decimals, "0"))
+      Number(token.decimals) > 0
+        ? bn(
+            (rhs ?? "0")
+              .slice(0, Number(token.decimals))
+              .padEnd(Number(token.decimals), "0")
+          )
         : bn(0);
-    const amountBn = token.decimals > 0 ? lhsBn.add(rhsBn) : lhsBn;
+    const amountBn = Number(token.decimals) > 0 ? lhsBn.add(rhsBn) : lhsBn;
     return await ctc.a.arc200_approve(addrSpender, amountBn);
   }
 };

@@ -65,11 +65,20 @@ const stdlib = makeStdLib();
 const MyAppBar = () => {
   const navigate = useNavigate();
   const { providers, activeAccount } = useWallet();
+  const [algorand, setAlgorand] = React.useState<any>(null);
   const { CopyToClipboard } = Copy;
   const notify = (msg: string) => toast(msg);
   const menuId = "primary-search-account-menu";
 
   const [displayName, setDisplayName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const algorand = (window as any).algorand;
+    if (!algorand) {
+      throw new Error("no wallets are installed!");
+    }
+    setAlgorand(algorand);
+  }, []);
 
   React.useEffect(() => {
     if (!activeAccount) return;
@@ -117,9 +126,15 @@ const MyAppBar = () => {
           activeAccount &&
             providers &&
             providers
-              .find((p) => p.metadata.id === activeAccount?.providerId)
+              .find(
+                (p) =>
+                  (p.metadata.id !== "custom" &&
+                    p.metadata.id === activeAccount?.providerId) ||
+                  p.metadata.id === "custom"
+              )
               .disconnect();
           handleMenuClose();
+          window.location.reload();
         }}
       >
         Disconnect
@@ -221,7 +236,9 @@ const MyAppBar = () => {
                 activeAccount &&
                 providers.map(
                   (provider) =>
-                    provider.metadata.id === activeAccount.providerId && (
+                    ((provider.metadata.id !== "custom" &&
+                      provider.metadata.id === activeAccount.providerId) ||
+                      provider.metadata.id === "custom") && (
                       <IconButton
                         size="large"
                         edge="end"
@@ -235,7 +252,10 @@ const MyAppBar = () => {
                           style={{
                             height: "30px",
                             filter:
-                              provider.metadata.id === activeAccount.providerId
+                              (provider.metadata.id !== "custom" &&
+                                provider.metadata.id ===
+                                  activeAccount.providerId) ||
+                              provider.metadata.id === "custom"
                                 ? ""
                                 : "grayscale(1)",
                           }}

@@ -9,6 +9,8 @@ import defaultTokens from "../../config/defaultTokens";
 import { useNavigate, useParams } from "react-router-dom";
 import { makeStdLib } from "../../utils/reach";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
+import { getAlgorandClients } from "../../utils/algorand";
+import arc200 from "arc200js";
 
 const stdlib = makeStdLib();
 
@@ -17,7 +19,8 @@ const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
 function Balances(props) {
   const navigate = useNavigate();
   const params = useParams();
-  const [tokens, setTokens] = React.useState(props.tokens);
+  const [tokenIds, setTokenIds] = React.useState(props.tokens);
+  const [tokens, setTokens] = React.useState(null);
   const [, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
   const { activeAccount } = useWallet();
@@ -56,14 +59,45 @@ function Balances(props) {
           variant="outlined"
           sx={{ ml: 1 }}
           onClick={async () => {
-            const assetIdStr = window.prompt("Enter assetId");
-            if (!assetIdStr) return;
-            const assetId = parseInt(assetIdStr);
-            const acc = await stdlib.connectAccount({ addr: activeAccount.address });
-            await acc.tokenAccepted(assetId);
+            const tokenIdStr = window.prompt("Enter token id");
+            if (!tokenIdStr) return;
+            const tokenId = parseInt(tokenIdStr);
+
+            const { algodClient, indexerClient } = getAlgorandClients();
+            const ci = new arc200(tokenId, algodClient, indexerClient);
+            const tokenR = await ci.getMetadata();
+
+            if (tokenR.success) {
+              const newTokenIds = Array.from(new Set([...tokenIds, tokenId]));
+              setTokenIds(newTokenIds);
+              const storedTokens = JSON.parse(
+                localStorage.getItem("tokens") ||
+                  `${JSON.stringify(defaultTokens)}`
+              );
+              localStorage.setItem(
+                "tokens",
+                JSON.stringify({
+                  ...storedTokens,
+                  [node]: newTokenIds,
+                })
+              );
+              return;
+            }
+            const asset = await indexerClient
+              .lookupAssetByID(tokenId)
+              .do()
+              .catch(() => {});
+            if (asset) {
+              const acc = await stdlib.connectAccount({
+                addr: activeAccount.address,
+              });
+              await acc.tokenAccepted(tokenId);
+              return;
+            }
+            return alert(`Token '${tokenId}' not found`);
           }}
         >
-          Add VSA
+          Add
         </Button>
         <Button
           variant="outlined"
@@ -72,8 +106,8 @@ function Balances(props) {
             try {
               const token = parseInt(window.prompt("Enter appId"));
               if (!token) return;
-              const newTokens = Array.from(new Set([...tokens, token]));
-              setTokens(newTokens);
+              const newTokens = Array.from(new Set([...tokenIds, token]));
+              setTokenIds(newTokens);
               const storedTokens = JSON.parse(
                 localStorage.getItem("tokens") ||
                   `${JSON.stringify(defaultTokens)}`
@@ -113,7 +147,9 @@ function Balances(props) {
         <Box sx={{ ml: 1 }}>
           <AccountBalances
             manage={manage}
+            tokenIds={tokenIds}
             tokens={tokens}
+            setTokens={setTokens}
             onSetAppId={setAppId}
           />
         </Box>

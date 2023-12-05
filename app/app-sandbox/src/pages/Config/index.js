@@ -14,6 +14,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
+import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
 
 const [initialNode, initialCustomNode, initialCustomIndexer] = (
   localStorage.getItem("node") || DEFAULT_NODE
@@ -30,6 +31,7 @@ function NodeSelection() {
   const [customIndexer, setCustomIndexer] = React.useState(
     initialNode.indexOf("custom") === 0 ? initialCustomIndexer : ""
   );
+  const { activeAccount, providers } = useWallet();
   return (
     <Stack gap={2}>
       <FormControl>
@@ -99,7 +101,21 @@ function NodeSelection() {
               node === "custom" ? customIndexer : "",
             ].join(":")
           );
-          window.location.reload();
+          const specialProviderIds = ["custom-kibisis"];
+          const activeProviderId =
+            activeAccount?.providerId === PROVIDER_ID.CUSTOM
+              ? `${activeAccount?.providerId}-${activeAccount?.name}`
+              : activeAccount?.providerId;
+          if (activeAccount && !specialProviderIds.includes(activeProviderId)) {
+            providers
+              .find((p) =>
+                [p.metadata.id, p.metadata.name].includes(
+                  activeAccount.providerId
+                )
+              )
+              .disconnect();
+          }
+          window.location.href = "/";
         }}
       >
         Update

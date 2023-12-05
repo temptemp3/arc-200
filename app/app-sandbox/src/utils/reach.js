@@ -62,6 +62,18 @@ function ALGO_MakePeraConnect(PeraWalletConnect) {
   };
 }
 
+export const getGenesisHash = (node) => {
+  switch (node) {
+    default:
+    case "voi":
+    case "voi-testnet":
+      return "IXnoWtviVVJW5LGivNFc0Dq14V3kqaXuK2u5OQrdVZo=";
+    case "algorand":
+    case "algorand-testnet":
+      return "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=";
+  }
+};
+
 export const getCurrentNode = () => {
   const [node, customNode, customIndexer] = (
     localStorage.getItem("node") || DEFAULT_NODE
@@ -102,9 +114,12 @@ export const getCurrentNodeEnv = () => {
 export const makeStdLib = () => {
   const wallet = JSON.parse(localStorage.getItem("txnlab-use-wallet") || "{}");
   const baseProviderId = wallet?.state?.activeAccount?.providerId;
+  const baseProviderName = wallet?.state?.activeAccount?.name;
   const providedId =
     baseProviderId === "pera"
       ? JSON.parse(localStorage.getItem("PeraWallet.Wallet") || "{}")?.type
+      : baseProviderId === "custom"
+      ? baseProviderName
       : baseProviderId;
 
   const { ALGO_SERVER, ALGO_INDEXER_SERVER } = getCurrentNodeEnv();
@@ -128,8 +143,16 @@ export const makeStdLib = () => {
   };
 
   switch (providedId) {
+    case "kibisis":
+      stdlib.setWalletFallback(
+        stdlib.walletFallback({
+          providerEnv,
+        })
+      );
+      break;
     case "pera-wallet":
     case "pera-wallet-web":
+      if (window.algorand) delete window.algorand;
       stdlib.setWalletFallback(
         stdlib.walletFallback({
           providerEnv,
@@ -156,6 +179,7 @@ export const makeStdLib = () => {
     // case daffi sorta works
     // case defly
     default:
+      if (window.algorand) delete window.algorand;
       stdlib.setWalletFallback(
         stdlib.walletFallback({
           providerEnv,
