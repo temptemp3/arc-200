@@ -29,6 +29,7 @@ import LastPageIcon from "@mui/icons-material/LastPage";
 import { makeStdLib } from "../../utils/reach";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getAlgorandClients, zeroAddress } from "../../utils/algorand";
+import { Chart } from "react-google-charts";
 
 import NFDService from "../../services/NFDService";
 
@@ -284,6 +285,7 @@ const TokenApprovals = ({
 
 // Token Approval Sums
 const TokenApprovalSums = ({
+  chart,
   addresses,
   setAddresses,
   token,
@@ -306,6 +308,7 @@ const TokenApprovalSums = ({
   return (
     token && (
       <Box sx={{ textAlign: "left", margin: 1 }}>
+        {chart}
         <h2>
           Approvals <small>for spending</small> [
           {approvals?.length > 0 ? approvals?.length : "..."}]
@@ -545,6 +548,7 @@ const TokenTransactions = ({
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
+                <StyledTableCell>TxID</StyledTableCell>
                 <StyledTableCell>Block</StyledTableCell>
                 <StyledTableCell>Timestamp</StyledTableCell>
                 <StyledTableCell align="left">Type</StyledTableCell>
@@ -564,32 +568,23 @@ const TokenTransactions = ({
                 ).map((row) => (
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
-                      {row[0]}
-                    </StyledTableCell>
-                    <StyledTableCell component="th" scope="row">
-                      {moment.unix(row[1]).format()}
-                    </StyledTableCell>
-                    <StyledTableCell component="th" scope="row" align="left">
-                      <Chip size="small" variant="outlined" label={row[5]} />
-                    </StyledTableCell>
-                    <StyledTableCell align="right">
                       <Link
-                        style={{
-                          fontWeight:
-                            (addresses ?? []).includes(row[2]) && "bold",
-                        }}
-                        onClick={() => {
-                          setAddresses(
-                            Array.from(new Set([...(addresses ?? []), row[2]]))
-                          );
-                        }}
+                        target="_blank"
+                        to={`https://voi.observer/explorer/transaction/${row[0]}`}
                       >
-                        {((address) =>
-                          nfds[address]?.name ||
-                          address.slice(0, 8) + "..." + address.slice(-8))(
-                          row[2]
+                        {((str) => str.slice(0, 4) + "..." + str.slice(-4))(
+                          row[0]
                         )}
                       </Link>
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {row[1]}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row">
+                      {moment.unix(row[2]).format()}
+                    </StyledTableCell>
+                    <StyledTableCell component="th" scope="row" align="left">
+                      <Chip size="small" variant="outlined" label={row[6]} />
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       <Link
@@ -611,8 +606,27 @@ const TokenTransactions = ({
                       </Link>
                     </StyledTableCell>
                     <StyledTableCell align="right">
+                      <Link
+                        style={{
+                          fontWeight:
+                            (addresses ?? []).includes(row[4]) && "bold",
+                        }}
+                        onClick={() => {
+                          setAddresses(
+                            Array.from(new Set([...(addresses ?? []), row[4]]))
+                          );
+                        }}
+                      >
+                        {((address) =>
+                          nfds[address]?.name ||
+                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          row[4]
+                        )}
+                      </Link>
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
                       {Number(
-                        fawd(bn(row[4].toString()), token.decimals)
+                        fawd(bn(row[5].toString()), token.decimals)
                       ).toFixed(token.decimals)}
                     </StyledTableCell>
                   </StyledTableRow>
@@ -661,15 +675,91 @@ const Token = ({
   nfds,
   approvals,
 }) => {
+  const renderHoldersChart = (
+    <Chart
+      chartType="PieChart"
+      width="100%"
+      height="400px"
+      data={[
+        ["Account", "Amount"],
+        ...(addresses
+          ? holders.filter((h) => addresses.includes(h[0]))
+          : holders
+        )
+          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+          .filter(([address, amount]) => amount > 0),
+      ]}
+      options={{
+        title: "Token Holders",
+        pieHole: 0.4,
+        is3D: false,
+      }}
+    />
+  );
+
   // total amount approved for each spender
-  const approvalsSum = new Map();
+  const approvalsSpender = new Map();
   for (const [owner, spender, amount] of approvals) {
-    if (!approvalsSum.has(spender)) approvalsSum.set(spender, 0n);
-    approvalsSum.set(
+    if (!approvalsSpender.has(spender)) approvalsSpender.set(spender, 0n);
+    approvalsSpender.set(
       spender,
-      Number(approvalsSum.get(spender)) + Number(amount)
+      Number(approvalsSpender.get(spender)) + Number(amount)
     );
   }
+
+  const renderApprovalsSpenderChart = (
+    <Chart
+      chartType="PieChart"
+      width="100%"
+      height="400px"
+      data={((approvals) => [
+        ["Spender", "Amount"],
+        ...(addresses
+          ? approvals.filter((h) => addresses.includes(h[0]))
+          : approvals
+        )
+          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+          .filter(([address, amount]) => amount > 0),
+      ])(Array.from(approvalsSpender))}
+      options={{
+        title: "Approvals by Spender (total)",
+        pieHole: 0.4,
+        is3D: false,
+      }}
+    />
+  );
+
+  // total amount approved fro each owner
+  const approvalsOwner = new Map();
+  for (const [owner, spender, amount] of approvals) {
+    if (!approvalsOwner.has(owner)) approvalsOwner.set(owner, 0n);
+    approvalsOwner.set(
+      owner,
+      Number(approvalsOwner.get(owner)) + Number(amount)
+    );
+  }
+
+  const renderApprovalsOwnerChart = (
+    <Chart
+      chartType="PieChart"
+      width="100%"
+      height="400px"
+      data={((approvals) => [
+        ["Owner", "Amount"],
+        ...(addresses
+          ? approvals.filter((h) => addresses.includes(h[0]))
+          : approvals
+        )
+          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+          .filter(([address, amount]) => amount > 0),
+      ])(Array.from(approvalsOwner))}
+      options={{
+        title: "Approvals by Owner (total)",
+        pieHole: 0.4,
+        is3D: false,
+      }}
+    />
+  );
 
   return (
     // Token Info
@@ -698,12 +788,12 @@ const Token = ({
               <br />
               Date of creation:{" "}
               {transactions?.length > 0
-                ? moment.unix(transactions.slice(-1)[0][1]).format("LLL")
+                ? moment.unix(transactions.slice(-1)[0][2]).format("LLL")
                 : "-"}
               <br />
               Created at round:{" "}
               {transactions?.length > 0
-                ? Number(transactions.slice(-1)[0][0]).toLocaleString()
+                ? Number(transactions.slice(-1)[0][1]).toLocaleString()
                 : "-"}
             </code>
           </Stack>
@@ -736,6 +826,7 @@ const Token = ({
           <Chip label="Clear" onClick={() => setAddresses(null)} />
         )}
       </Box>
+      {renderHoldersChart}
       <TokenHolders
         addresses={addresses}
         setAddresses={setAddresses}
@@ -746,6 +837,7 @@ const Token = ({
         nfds={nfds}
       />
       <TokenApprovalSums
+        chart={renderApprovalsSpenderChart}
         addresses={addresses}
         setAddresses={setAddresses}
         token={token}
@@ -753,12 +845,28 @@ const Token = ({
           addresses
             ? approvals.filter((h) => addresses.includes(h[0]))
             : approvals)(
-          Array.from(approvalsSum)
+          Array.from(approvalsSpender)
             .filter(([spender, amount]) => amount > 0n)
             .sort((a, b) => b[1] - a[1])
         )}
         nfds={nfds}
       />
+      <TokenApprovalSums
+        chart={renderApprovalsOwnerChart}
+        addresses={addresses}
+        setAddresses={setAddresses}
+        token={token}
+        approvals={((approvals) =>
+          addresses
+            ? approvals.filter((h) => addresses.includes(h[0]))
+            : approvals)(
+          Array.from(approvalsOwner)
+            .filter(([spender, amount]) => amount > 0n)
+            .sort((a, b) => b[1] - a[1])
+        )}
+        nfds={nfds}
+      />
+
       <TokenApprovals
         addresses={addresses}
         setAddresses={setAddresses}
@@ -845,7 +953,7 @@ function Page() {
       };
       const ttxns = transferEvent.events;
       const addresses = new Set();
-      for (const [, , from, to, amount] of ttxns) {
+      for (const [, , , from, to, amount] of ttxns) {
         addresses.add(from);
         addresses.add(to);
         if (holders[from]) holders[from] -= amount;
@@ -862,7 +970,7 @@ function Page() {
       });
       const atxns = approvalEvent.events;
       const approvalsM = new Map();
-      for (const [, , owner, spender, amount] of atxns) {
+      for (const [, , , owner, spender, amount] of atxns) {
         if (!approvalsM.has(owner)) approvalsM.set(owner, new Map());
         approvalsM.get(owner).set(spender, amount);
       }
