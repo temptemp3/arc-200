@@ -5,8 +5,11 @@ import {
   AccordionDetails,
   AccordionSummary,
   Chip,
+  Modal,
   Skeleton,
   Stack,
+  Tab,
+  Tabs,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -30,6 +33,7 @@ import { makeStdLib } from "../../utils/reach";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getAlgorandClients, zeroAddress } from "../../utils/algorand";
 import { Chart } from "react-google-charts";
+import PieChartIcon from "@mui/icons-material/PieChart";
 
 import NFDService from "../../services/NFDService";
 
@@ -39,6 +43,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import arc200 from "arc200js";
 
+import ScrollableTabsButtonAuto from "../../components/ScrollableTabsButtonAuto";
+
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
 const fa = stdlib.formatAddress;
@@ -46,6 +52,17 @@ const fawd = (amt, dec) => stdlib.formatWithDecimals(amt, Number(dec));
 const bn2n = stdlib.bigNumberToNumber;
 const bn2bi = stdlib.bigNumberToBigInt;
 
+const modalBoxStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: "90%",
+  bgcolor: "background.paper",
+  border: "2px solid #000",
+  boxShadow: 24,
+  p: 4,
+};
 function TablePaginationActions(props) {
   const theme = useTheme();
   const { count, page, rowsPerPage, onPageChange } = props;
@@ -160,125 +177,133 @@ const TokenApprovals = ({
   };
   return (
     token && (
-      <Box sx={{ textAlign: "left", margin: 1 }}>
-        <h2>
-          Approvals <small>by owner</small> [
-          {approvals?.length > 0 ? approvals?.length : "..."}]
-        </h2>
-        {approvals?.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 700 }}
-              aria-label="customized pagination table"
-            >
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell>Owner</StyledTableCell>
-                  <StyledTableCell>Spender</StyledTableCell>
-                  <StyledTableCell align="right">Amount</StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {approvals?.length > 0 ? (
-                  (rowsPerPage > 0
-                    ? approvals?.slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                    : approvals
-                  ).map((row) => (
-                    <StyledTableRow key={`approval-owner-${row[0]}`}>
-                      <StyledTableCell>
-                        <Link
-                          style={{
-                            fontWeight:
-                              (addresses ?? []).includes(row[0]) && "bold",
-                          }}
-                          onClick={() => {
-                            setAddresses(
-                              Array.from(
-                                new Set([...(addresses ?? []), row[0]])
-                              )
-                            );
-                          }}
-                        >
-                          {((address) =>
-                            nfds[address]?.name ||
-                            address.slice(0, 8) + "..." + address.slice(-8))(
-                            row[0]
+      <>
+        <Box sx={{ textAlign: "left", margin: 1 }}>
+          <Stack
+            direction="row"
+            gap={1}
+            style={{ alignItems: "center", justifyContent: "flex-start" }}
+          >
+            <h2>
+              Approvals <small>by owner</small> [
+              {approvals?.length > 0 ? approvals?.length : "..."}]
+            </h2>
+          </Stack>
+          {approvals?.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table
+                sx={{ minWidth: 700 }}
+                aria-label="customized pagination table"
+              >
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Owner</StyledTableCell>
+                    <StyledTableCell>Spender</StyledTableCell>
+                    <StyledTableCell align="right">Amount</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {approvals?.length > 0 ? (
+                    (rowsPerPage > 0
+                      ? approvals?.slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                      : approvals
+                    ).map((row) => (
+                      <StyledTableRow key={`approval-owner-${row[0]}`}>
+                        <StyledTableCell>
+                          <Link
+                            style={{
+                              fontWeight:
+                                (addresses ?? []).includes(row[0]) && "bold",
+                            }}
+                            onClick={() => {
+                              setAddresses(
+                                Array.from(
+                                  new Set([...(addresses ?? []), row[0]])
+                                )
+                              );
+                            }}
+                          >
+                            {((address) =>
+                              nfds[address]?.name ||
+                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              row[0]
+                            )}
+                          </Link>
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <Link
+                            style={{
+                              fontWeight:
+                                (addresses ?? []).includes(row[1]) && "bold",
+                            }}
+                            onClick={() => {
+                              setAddresses(
+                                Array.from(
+                                  new Set([...(addresses ?? []), row[1]])
+                                )
+                              );
+                            }}
+                          >
+                            {((address) =>
+                              nfds[address]?.name ||
+                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              row[1]
+                            )}
+                          </Link>
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {(([a, b]) =>
+                            [Number(a).toLocaleString(), b].join("."))(
+                            Number(row[2]).toFixed(token.decimals).split(".")
                           )}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Link
-                          style={{
-                            fontWeight:
-                              (addresses ?? []).includes(row[1]) && "bold",
-                          }}
-                          onClick={() => {
-                            setAddresses(
-                              Array.from(
-                                new Set([...(addresses ?? []), row[1]])
-                              )
-                            );
-                          }}
-                        >
-                          {((address) =>
-                            nfds[address]?.name ||
-                            address.slice(0, 8) + "..." + address.slice(-8))(
-                            row[1]
-                          )}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell align="right">
-                        {(([a, b]) =>
-                          [Number(a).toLocaleString(), b].join("."))(
-                          Number(row[2]).toFixed(token.decimals).split(".")
-                        )}
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    ))
+                  ) : (
+                    <StyledTableRow style={{ height: 184 }}>
+                      <StyledTableCell colSpan={3} align="center">
+                        Loading...
                       </StyledTableCell>
                     </StyledTableRow>
-                  ))
-                ) : (
-                  <StyledTableRow style={{ height: 184 }}>
-                    <StyledTableCell colSpan={3} align="center">
-                      Loading...
-                    </StyledTableCell>
-                  </StyledTableRow>
-                )}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TablePagination
-                    rowsPerPageOptions={[
-                      5,
-                      10,
-                      25,
-                      { label: "All", value: -1 },
-                    ]}
-                    colSpan={3}
-                    count={approvals?.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    SelectProps={{
-                      inputProps: {
-                        "aria-label": "rows per page",
-                      },
-                      native: true,
-                    }}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    ActionsComponent={TablePaginationActions}
-                  />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Paper sx={{ width: "100%", overflow: "hidden" }}>
-            <Skeleton variant="rounded" width="100%" height={278} />
-          </Paper>
-        )}
-      </Box>
+                  )}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TablePagination
+                      rowsPerPageOptions={[
+                        5,
+                        10,
+                        25,
+                        { label: "All", value: -1 },
+                      ]}
+                      colSpan={3}
+                      count={approvals?.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      SelectProps={{
+                        inputProps: {
+                          "aria-label": "rows per page",
+                        },
+                        native: true,
+                      }}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      ActionsComponent={TablePaginationActions}
+                    />
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Paper sx={{ width: "100%", overflow: "hidden" }}>
+              <Skeleton variant="rounded" width="100%" height={278} />
+            </Paper>
+          )}
+        </Box>
+      </>
     )
   );
 };
@@ -294,6 +319,7 @@ const TokenApprovalSums = ({
 }) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [showModal, setShowModal] = React.useState(false);
   if (approvals?.length === 0) return null;
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -307,111 +333,135 @@ const TokenApprovalSums = ({
   };
   return (
     token && (
-      <Box sx={{ textAlign: "left", margin: 1 }}>
-        {chart}
-        <h2>
-          Approvals <small>for spending</small> [
-          {approvals?.length > 0 ? approvals?.length : "..."}]
-        </h2>
-        {approvals?.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 700 }}
-              aria-label="customized pagination table"
-            >
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell>Spender</StyledTableCell>
-                  <StyledTableCell align="right">Amount</StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {approvals?.length > 0 ? (
-                  (rowsPerPage > 0
-                    ? approvals?.slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                    : approvals
-                  ).map((row) => (
-                    <StyledTableRow key={`approval-owner-${row[0]}`}>
-                      <StyledTableCell>
-                        <Link
-                          style={{
-                            fontWeight:
-                              (addresses ?? []).includes(row[0]) && "bold",
-                          }}
-                          onClick={() => {
-                            setAddresses(
-                              Array.from(
-                                new Set([...(addresses ?? []), row[0]])
-                              )
-                            );
-                          }}
-                        >
-                          {((address) =>
-                            nfds[address]?.name ||
-                            address.slice(0, 8) + "..." + address.slice(-8))(
-                            row[0]
+      <>
+        <Box sx={{ textAlign: "left", margin: 1 }}>
+          <Stack
+            direction="row"
+            gap={1}
+            style={{ alignItems: "center", justifyContent: "flex-start" }}
+          >
+            <h2>
+              Approvals <small>for spending</small> [
+              {approvals?.length > 0 ? approvals?.length : "..."}]
+            </h2>
+            <PieChartIcon color="primary" onClick={() => setShowModal(true)} />
+          </Stack>
+          {approvals?.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table
+                sx={{ minWidth: 700 }}
+                aria-label="customized pagination table"
+              >
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Spender</StyledTableCell>
+                    <StyledTableCell align="right">Amount</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {approvals?.length > 0 ? (
+                    (rowsPerPage > 0
+                      ? approvals?.slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                      : approvals
+                    ).map((row) => (
+                      <StyledTableRow key={`approval-owner-${row[0]}`}>
+                        <StyledTableCell>
+                          <Link
+                            style={{
+                              fontWeight:
+                                (addresses ?? []).includes(row[0]) && "bold",
+                            }}
+                            onClick={() => {
+                              setAddresses(
+                                Array.from(
+                                  new Set([...(addresses ?? []), row[0]])
+                                )
+                              );
+                            }}
+                          >
+                            {((address) =>
+                              nfds[address]?.name ||
+                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              row[0]
+                            )}
+                          </Link>
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {(([a, b]) =>
+                            [Number(a).toLocaleString(), b].join("."))(
+                            Number(row[1]).toFixed(token.decimals).split(".")
                           )}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell align="right">
-                        {(([a, b]) =>
-                          [Number(a).toLocaleString(), b].join("."))(
-                          Number(row[1]).toFixed(token.decimals).split(".")
-                        )}
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    ))
+                  ) : (
+                    <StyledTableRow style={{ height: 184 }}>
+                      <StyledTableCell colSpan={3} align="center">
+                        Loading...
                       </StyledTableCell>
                     </StyledTableRow>
-                  ))
-                ) : (
-                  <StyledTableRow style={{ height: 184 }}>
-                    <StyledTableCell colSpan={3} align="center">
-                      Loading...
-                    </StyledTableCell>
-                  </StyledTableRow>
-                )}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TablePagination
-                    rowsPerPageOptions={[
-                      5,
-                      10,
-                      25,
-                      { label: "All", value: -1 },
-                    ]}
-                    colSpan={3}
-                    count={approvals?.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    SelectProps={{
-                      inputProps: {
-                        "aria-label": "rows per page",
-                      },
-                      native: true,
-                    }}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    ActionsComponent={TablePaginationActions}
-                  />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Paper sx={{ width: "100%", overflow: "hidden" }}>
-            <Skeleton variant="rounded" width="100%" height={278} />
-          </Paper>
-        )}
-      </Box>
+                  )}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TablePagination
+                      rowsPerPageOptions={[
+                        5,
+                        10,
+                        25,
+                        { label: "All", value: -1 },
+                      ]}
+                      colSpan={3}
+                      count={approvals?.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      SelectProps={{
+                        inputProps: {
+                          "aria-label": "rows per page",
+                        },
+                        native: true,
+                      }}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      ActionsComponent={TablePaginationActions}
+                    />
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Paper sx={{ width: "100%", overflow: "hidden" }}>
+              <Skeleton variant="rounded" width="100%" height={278} />
+            </Paper>
+          )}
+        </Box>
+        <Modal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        >
+          <Box style={modalBoxStyle}>{chart}</Box>
+        </Modal>
+      </>
     )
   );
 };
 
-const TokenHolders = ({ addresses, setAddresses, token, holders, nfds }) => {
+const TokenHolders = ({
+  chart,
+  addresses,
+  setAddresses,
+  token,
+  holders,
+  nfds,
+}) => {
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [showModal, setShowModal] = React.useState(false);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
   if (holders?.length === 0) return null;
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -425,97 +475,114 @@ const TokenHolders = ({ addresses, setAddresses, token, holders, nfds }) => {
   };
   return (
     token && (
-      <Box sx={{ textAlign: "left", margin: 1 }}>
-        <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
-        {holders?.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table
-              sx={{ minWidth: 700 }}
-              aria-label="customized pagination table"
-            >
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell>Address</StyledTableCell>
-                  <StyledTableCell align="right">Balance</StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {holders?.length > 0 ? (
-                  (rowsPerPage > 0
-                    ? holders?.slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                    : holders
-                  ).map((row) => (
-                    <StyledTableRow key={row[0]}>
-                      <StyledTableCell>
-                        <Link
-                          style={{
-                            fontWeight:
-                              (addresses ?? []).includes(row[0]) && "bold",
-                          }}
-                          onClick={() => {
-                            setAddresses(
-                              Array.from(
-                                new Set([...(addresses ?? []), row[0]])
-                              )
-                            );
-                          }}
-                        >
-                          {((address) =>
-                            nfds[address]?.name ||
-                            address.slice(0, 8) + "..." + address.slice(-8))(
-                            row[0]
-                          )}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell align="right">
-                        {Number(row[1]).toFixed(token.decimals)}
+      <>
+        <Box sx={{ textAlign: "left", margin: 1 }}>
+          <Stack
+            direction="row"
+            gap={1}
+            style={{ alignItems: "center", justifyContent: "flex-start" }}
+          >
+            <h2>Holders [{holders?.length > 0 ? holders?.length : "..."}]</h2>
+            <PieChartIcon color="primary" onClick={() => setShowModal(true)} />
+          </Stack>
+          {holders?.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table
+                sx={{ minWidth: 700 }}
+                aria-label="customized pagination table"
+              >
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Address</StyledTableCell>
+                    <StyledTableCell align="right">Balance</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {holders?.length > 0 ? (
+                    (rowsPerPage > 0
+                      ? holders?.slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                      : holders
+                    ).map((row) => (
+                      <StyledTableRow key={row[0]}>
+                        <StyledTableCell>
+                          <Link
+                            style={{
+                              fontWeight:
+                                (addresses ?? []).includes(row[0]) && "bold",
+                            }}
+                            onClick={() => {
+                              setAddresses(
+                                Array.from(
+                                  new Set([...(addresses ?? []), row[0]])
+                                )
+                              );
+                            }}
+                          >
+                            {((address) =>
+                              nfds[address]?.name ||
+                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              row[0]
+                            )}
+                          </Link>
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {Number(row[1]).toFixed(token.decimals)}
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    ))
+                  ) : (
+                    <StyledTableRow style={{ height: 184 }}>
+                      <StyledTableCell colSpan={2} align="center">
+                        Loading...
                       </StyledTableCell>
                     </StyledTableRow>
-                  ))
-                ) : (
-                  <StyledTableRow style={{ height: 184 }}>
-                    <StyledTableCell colSpan={2} align="center">
-                      Loading...
-                    </StyledTableCell>
-                  </StyledTableRow>
-                )}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TablePagination
-                    rowsPerPageOptions={[
-                      5,
-                      10,
-                      25,
-                      { label: "All", value: -1 },
-                    ]}
-                    colSpan={3}
-                    count={holders?.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    SelectProps={{
-                      inputProps: {
-                        "aria-label": "rows per page",
-                      },
-                      native: true,
-                    }}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    ActionsComponent={TablePaginationActions}
-                  />
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Paper sx={{ width: "100%", overflow: "hidden" }}>
-            <Skeleton variant="rounded" width="100%" height={278} />
-          </Paper>
-        )}
-      </Box>
+                  )}
+                </TableBody>
+                <TableFooter>
+                  <TableRow>
+                    <TablePagination
+                      rowsPerPageOptions={[
+                        5,
+                        10,
+                        25,
+                        { label: "All", value: -1 },
+                      ]}
+                      colSpan={3}
+                      count={holders?.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      SelectProps={{
+                        inputProps: {
+                          "aria-label": "rows per page",
+                        },
+                        native: true,
+                      }}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      ActionsComponent={TablePaginationActions}
+                    />
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Paper sx={{ width: "100%", overflow: "hidden" }}>
+              <Skeleton variant="rounded" width="100%" height={278} />
+            </Paper>
+          )}
+        </Box>
+        <Modal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+        >
+          <Box style={modalBoxStyle}>{chart}</Box>
+        </Modal>
+      </>
     )
   );
 };
@@ -528,7 +595,7 @@ const TokenTransactions = ({
   nfds,
 }) => {
   const [pageTx, setTxPage] = React.useState(0);
-  const [rowsTxPerPage, setTxRowsPerPage] = React.useState(5);
+  const [rowsTxPerPage, setTxRowsPerPage] = React.useState(10);
   if ((transactions?.length ?? 0) === 0) return null;
   const handleTxChangePage = (event, newPage) => {
     setTxPage(newPage);
@@ -666,6 +733,11 @@ const TokenTransactions = ({
   );
 };
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+  return value == index && children;
+}
+
 const Token = ({
   addresses,
   setAddresses,
@@ -675,63 +747,29 @@ const Token = ({
   nfds,
   approvals,
 }) => {
-  const renderHoldersChart = (
-    <Chart
-      chartType="PieChart"
-      width="100%"
-      height="400px"
-      data={[
-        ["Account", "Amount"],
-        ...(addresses
-          ? holders.filter((h) => addresses.includes(h[0]))
-          : holders
-        )
-          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-          .filter(([address, amount]) => amount > 0),
-      ]}
-      options={{
-        title: "Token Holders",
-        pieHole: 0.4,
-        is3D: false,
-      }}
-    />
+  const [value, setValue] = React.useState(2);
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+  const filteredHolders = React.useMemo(
+    () =>
+      addresses ? holders.filter((h) => addresses.includes(h[0])) : holders,
+    [addresses]
   );
 
   // total amount approved for each spender
   const approvalsSpender = new Map();
-  for (const [owner, spender, amount] of approvals) {
+  for (const [, spender, amount] of approvals) {
     if (!approvalsSpender.has(spender)) approvalsSpender.set(spender, 0n);
     approvalsSpender.set(
       spender,
       Number(approvalsSpender.get(spender)) + Number(amount)
     );
   }
-
-  const renderApprovalsSpenderChart = (
-    <Chart
-      chartType="PieChart"
-      width="100%"
-      height="400px"
-      data={((approvals) => [
-        ["Spender", "Amount"],
-        ...(addresses
-          ? approvals.filter((h) => addresses.includes(h[0]))
-          : approvals
-        )
-          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-          .filter(([address, amount]) => amount > 0),
-      ])(Array.from(approvalsSpender))}
-      options={{
-        title: "Approvals by Spender (total)",
-        pieHole: 0.4,
-        is3D: false,
-      }}
-    />
-  );
-
   // total amount approved fro each owner
   const approvalsOwner = new Map();
-  for (const [owner, spender, amount] of approvals) {
+  for (const [owner, , amount] of approvals) {
     if (!approvalsOwner.has(owner)) approvalsOwner.set(owner, 0n);
     approvalsOwner.set(
       owner,
@@ -739,26 +777,52 @@ const Token = ({
     );
   }
 
-  const renderApprovalsOwnerChart = (
-    <Chart
-      chartType="PieChart"
-      width="100%"
-      height="400px"
-      data={((approvals) => [
-        ["Owner", "Amount"],
-        ...(addresses
-          ? approvals.filter((h) => addresses.includes(h[0]))
-          : approvals
-        )
-          .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-          .filter(([address, amount]) => amount > 0),
-      ])(Array.from(approvalsOwner))}
-      options={{
-        title: "Approvals by Owner (total)",
-        pieHole: 0.4,
-        is3D: false,
-      }}
-    />
+  const renderPieChart = (title, data) => {
+    return (
+      <Chart
+        chartType="PieChart"
+        width="100%"
+        height="400px"
+        data={data}
+        options={{
+          title: title,
+          pieHole: 0.4,
+          is3D: false,
+        }}
+      />
+    );
+  };
+  const holdersChart = renderPieChart("Token Holders", [
+    ["Account", "Amount"],
+    ...(addresses ? filteredHolders : holders)
+      .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+      .filter(([address, amount]) => amount > 0),
+  ]);
+
+  const approvalsSpenderChart = renderPieChart(
+    "Approvals for spending (total)",
+    ((approvals) => [
+      ["Spender", "Amount"],
+      ...(addresses
+        ? approvals.filter((h) => addresses.includes(h[0]))
+        : approvals
+      )
+        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+        .filter(([address, amount]) => amount > 0),
+    ])(Array.from(approvalsSpender))
+  );
+
+  const approvalsOwnerChart = renderPieChart(
+    "Approvals by Owner (total)",
+    ((approvals) => [
+      ["Owner", "Amount"],
+      ...(addresses
+        ? approvals.filter((h) => addresses.includes(h[0]))
+        : approvals
+      )
+        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
+        .filter(([address, amount]) => amount > 0),
+    ])(Array.from(approvalsOwner))
   );
 
   return (
@@ -799,6 +863,19 @@ const Token = ({
           </Stack>
         </Stack>
       )}
+      <Tabs
+        sx={{ m: 0 }}
+        value={value}
+        onChange={handleChange}
+        variant="scrollable"
+        scrollButtons
+        allowScrollButtonsMobile
+        aria-label="scrollable force tabs example"
+      >
+        <Tab label="Holders" />
+        <Tab label="Approvals" />
+        <Tab label="Transactions" />
+      </Tabs>
       <Box
         direction="row"
         gap="1em"
@@ -826,77 +903,83 @@ const Token = ({
           <Chip label="Clear" onClick={() => setAddresses(null)} />
         )}
       </Box>
-      {renderHoldersChart}
-      <TokenHolders
-        addresses={addresses}
-        setAddresses={setAddresses}
-        token={token}
-        holders={
-          addresses ? holders.filter((h) => addresses.includes(h[0])) : holders
-        }
-        nfds={nfds}
-      />
-      <TokenApprovalSums
-        chart={renderApprovalsSpenderChart}
-        addresses={addresses}
-        setAddresses={setAddresses}
-        token={token}
-        approvals={((approvals) =>
-          addresses
-            ? approvals.filter((h) => addresses.includes(h[0]))
-            : approvals)(
-          Array.from(approvalsSpender)
-            .filter(([spender, amount]) => amount > 0n)
-            .sort((a, b) => b[1] - a[1])
-        )}
-        nfds={nfds}
-      />
-      <TokenApprovalSums
-        chart={renderApprovalsOwnerChart}
-        addresses={addresses}
-        setAddresses={setAddresses}
-        token={token}
-        approvals={((approvals) =>
-          addresses
-            ? approvals.filter((h) => addresses.includes(h[0]))
-            : approvals)(
-          Array.from(approvalsOwner)
-            .filter(([spender, amount]) => amount > 0n)
-            .sort((a, b) => b[1] - a[1])
-        )}
-        nfds={nfds}
-      />
-
-      <TokenApprovals
-        addresses={addresses}
-        setAddresses={setAddresses}
-        token={token}
-        approvals={((approvals) =>
-          addresses
-            ? approvals.filter(
-                (h) => addresses.includes(h[0]) || addresses.includes(h[1])
-              )
-            : approvals)(
-          approvals
-            .filter(([owner, spender, amount]) => amount > 0n)
-            .sort((a, b) => b[2] - a[2])
-        )}
-        nfds={nfds}
-      />
-
-      <TokenTransactions
-        addresses={addresses}
-        setAddresses={setAddresses}
-        token={token}
-        transactions={
-          addresses
-            ? transactions.filter(
-                (t) => addresses.includes(t[2]) || addresses.includes(t[3])
-              )
-            : transactions
-        }
-        nfds={nfds}
-      />
+      <TabPanel value={value} index={0}>
+        <TokenHolders
+          chart={holdersChart}
+          addresses={addresses}
+          setAddresses={setAddresses}
+          token={token}
+          holders={
+            addresses
+              ? holders.filter((h) => addresses.includes(h[0]))
+              : holders
+          }
+          nfds={nfds}
+        />
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+        <TokenApprovalSums
+          chart={approvalsSpenderChart}
+          addresses={addresses}
+          setAddresses={setAddresses}
+          token={token}
+          approvals={((approvals) =>
+            addresses
+              ? approvals.filter((h) => addresses.includes(h[0]))
+              : approvals)(
+            Array.from(approvalsSpender)
+              .filter(([spender, amount]) => amount > 0n)
+              .sort((a, b) => b[1] - a[1])
+          )}
+          nfds={nfds}
+        />
+        <TokenApprovalSums
+          chart={approvalsOwnerChart}
+          addresses={addresses}
+          setAddresses={setAddresses}
+          token={token}
+          approvals={((approvals) =>
+            addresses
+              ? approvals.filter((h) => addresses.includes(h[0]))
+              : approvals)(
+            Array.from(approvalsOwner)
+              .filter(([spender, amount]) => amount > 0n)
+              .sort((a, b) => b[1] - a[1])
+          )}
+          nfds={nfds}
+        />
+        <TokenApprovals
+          addresses={addresses}
+          setAddresses={setAddresses}
+          token={token}
+          approvals={((approvals) =>
+            addresses
+              ? approvals.filter(
+                  (h) => addresses.includes(h[0]) || addresses.includes(h[1])
+                )
+              : approvals)(
+            approvals
+              .filter(([owner, spender, amount]) => amount > 0n)
+              .sort((a, b) => b[2] - a[2])
+          )}
+          nfds={nfds}
+        />
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        <TokenTransactions
+          addresses={addresses}
+          setAddresses={setAddresses}
+          token={token}
+          transactions={
+            addresses
+              ? transactions.filter(
+                  (t) => addresses.includes(t[2]) || addresses.includes(t[3])
+                )
+              : transactions
+          }
+          nfds={nfds}
+        />
+      </TabPanel>
     </Stack>
   );
 };
