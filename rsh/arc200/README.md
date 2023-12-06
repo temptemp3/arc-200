@@ -16,6 +16,7 @@ v1.x.y
 - *Add: generate contract.json file in test script, index.mjs*
 - *Add: manager readonly method*
 - *Improvement: complete test script*
+- *Add: contract factory method for each version*
 
 **31 Oct 2023**  
 
