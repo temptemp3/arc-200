@@ -92,7 +92,7 @@ export const ARC200 = Reach.App(() => {
     );
     check(
       meta.decimals <= MAX_DECIMALS,
-      "ARC200: Decimals must be less than 256" 
+      "ARC200: Decimals must be less than 256"
     );
   });
 
@@ -141,6 +141,7 @@ export const ARC200 = Reach.App(() => {
     .while(!s.closed)
     .define(() => {
       const transfer_ = (from_, to, amount) => {
+        assert(from_ != to, "ARC200: Transfer to self");
         balances[from_] = balanceOf(from_) - amount;
         balances[to] = balanceOf(to) + amount;
         E.arc200_Transfer(from_, to, amount);
@@ -167,14 +168,15 @@ export const ARC200 = Reach.App(() => {
       return [
         (k) => {
           k(null);
-          return [{...s, manager: addr}];
+          return [{ ...s, manager: addr }];
         },
       ];
-    })      
+    })
     // api: transfer
     // - transfer from this to address
     // + may transfer to zero address (burn) if zero address burn enabled
     .api_(A.arc200_transfer, (to, amount) => {
+      check(this != to, "ARC200: Transfer to self");
       check(
         enableZeroAddressBurn || to != zeroAddress,
         "ARC200: Transfer to zero address"
@@ -196,6 +198,7 @@ export const ARC200 = Reach.App(() => {
     // + may not transfer to and from zero address
     // + requires allowance from spender to this
     .api_(A.arc200_transferFrom, (from_, to, amount) => {
+      check(from_ != to, "ARC200: Transfer to self");
       check(from_ != zeroAddress, "ARC200: Transfer from zero address");
       check(to != zeroAddress, "ARC200: Transfer to zero address");
       check(

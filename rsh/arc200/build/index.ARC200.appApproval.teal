@@ -20,71 +20,69 @@ byte base64(Ag==)
 app_global_get
 concat
 preamble:
-pushbytess base64(BLqv0A==) base64(tUIhJQ==) base64(V2Dl+g==) base64(hOwT1Q==) base64(ZX0T7A==) base64(akO2BQ==) base64(efWwjQ==) base64(guVzxA==) base64(nIahhQ==) base64(tq4aJQ==) base64(u7MZ8w==) base64(vDwVbw==) base64(yzpMkQ==) base64(SpaPjw==) base64(4z2AUg==) base64(6KxXuA==) base64(7JlgQQ==) base64(2nAluQ==) base64(/DC2pA==)
+pushbytess base64(BLqv0A==) base64(HFN4rQ==) base64(V2Dl+g==) base64(ZDbc4A==) base64(ZX0T7A==) base64(akO2BQ==) base64(efWwjQ==) base64(guVzxA==) base64(nIahhQ==) base64(tq4aJQ==) base64(u7MZ8w==) base64(vDwVbw==) base64(yzpMkQ==) base64(0KHMFQ==) base64(4z2AUg==) base64(6KxXuA==) base64(7JlgQQ==) base64(82tNvw==) base64(/DC2pA==)
 txna ApplicationArgs 0
 match deleteBalanceBoxHBBZgGrzWMOWl0OIpQz_b5RkO7RW9VDfjoXEXumYBYk_ arc200_approve_aB7vxbW4PSDQsylrpf8z0pJ5DG0KY_ArfOZuMRX9a63o_ deleteAllowanceBwW_6j_WUL0rkLmgjbujZC5C5QUg6KUnu_PXF9qBLlcA_ arc200_decimals_0i3zaAdWGk8HTrh900e3z__BopVJHiDErU4VQKq4WR4_ arc200_name__bytiUdKDeBB_7Wod3lAotr0fjTghvzrL3y_c3feTU4zUwo_ _reachp_0 grant_address_voB0P2GtSPgk8keWQFFrigNPpqwOzZufpkaNLj5BW3NLk_ arc200_balanceOfAuLlni3r2JwN05I0cJndHjbQh_B7u8HtXeT2u87KRQA_ destroy__voidyQs01swZ_UAEgoudVZNc2fO1ReK4LXRCsQSyR_cTRkI_ arc200_symbol__bRs3rJdpYyd5U9jg4y_u6hZgTc3UoO_SmNhgJJ2m0lrY_ arc200_allowanceAcq4c8hE24gt_EoooVBPqZqn0ii698pjkLnoeezacoY_ _reachp_2 hasAllowance_add8MigYkFtGyiY_nwrKWhHmCnIsjROuTjO4Faff7edDW0_ arc200_transferF8dq513jzwlGNyuNOIzPPYDtVSgiLxnp3MTKwA15nTo4_ touch__voidEkbxPNS0TlwGEDIZMOtAHO_dP7h7WaJG_1ivVKyjxi8_ hasBalance_addreiUYh5_XlPYmV0QW7Va5b0smQFFe3ff7oqyFvTefxscI_ arc200_totalSupp2vgBT0Wqe9Jv1e5PQOIiaRDt7ILIY6S8h4wVn48Sh2s_ arc200_transfer_mW6YBiBj2tVEDo94HJlsKqWJTJtaEhfhx1b4rELoCvQ_ state___byte_32_Ht0jmphvDcy9ubqKBL80A2jiDOOsjFXX7wE_xU1x_j4_
 errl:
 err
 _api_arc200_approve2:
-load 11 // data_id/1898
+load 11 // data_id/2018
 extract 0 32
-store 13 // spender/1911
-load 11 // data_id/1898
+store 13 // spender/2031
+load 11 // data_id/2018
 extract 32 32
-store 12 // amount/1912
+store 12 // amount/2032
 txn Sender
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Approve this to zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:225:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:228:13:application call to [unknown function] (defined at: ./index.rsh:228:13:function exp)
-load 13 // spender/1911
-load 21 // zeroAddress/1656
+// at ./index.rsh:228:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:231:13:application call to [unknown function] (defined at: ./index.rsh:231:13:function exp)
+load 13 // spender/2031
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Approve to zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:226:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:228:13:application call to [unknown function] (defined at: ./index.rsh:228:13:function exp)
+// at ./index.rsh:229:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:231:13:application call to [unknown function] (defined at: ./index.rsh:231:13:function exp)
 // resource: R_Box
 int 28100
 byte base64(AAAAAAAAAAE=)
 txn Sender
-load 13 // spender/1911
+load 13 // spender/2031
 concat
 concat
 sha256
-load 12 // amount/1912
+load 12 // amount/2032
 callsub l6_LF_mapSet
 byte base64(GWn4ZQ==)
 txn Sender
 concat
-load 13 // spender/1911
+load 13 // spender/2031
 concat
-load 12 // amount/1912
+load 12 // amount/2032
 concat
 log // up to 100 bytes
-// ^ log: "arc200_Approval" [this/1894,spender/1911,amount/1912] "arc200_Approval(address,address,uint256)"
+// ^ log: "arc200_Approval" [this/2014,spender/2031,amount/2032] "arc200_Approval(address,address,uint256)"
 int 1
-store 11 // v1922
-byte base64(AAAAAAAAB4I=)
-load 11 // v1922
+store 11 // v2042
+byte base64(AAAAAAAAB/o=)
+load 11 // v2042
 itob
 substring 7 8
 concat
 log // up to 9 bytes
-load 11 // v1922
-pushint 7 // mod: push the number 7 onto the stack
-shl // mod: shift the value at the top of the stack 7 bits to the left
+load 11 // v2042
 itob
 substring 7 8
 store 4 // GV_apiRet :: Null
 global Round
-store 15 // thisConsensusTime/1685
+store 15 // thisConsensusTime/1799
 _reachl_1:
-load 16 // s/1684
+load 16 // s/1798
 extract 0 1
 btoi
 bz l19_ifF
@@ -112,22 +110,30 @@ done:
 int 1
 return
 _api_arc200_transfer2:
-load 11 // data_id/2113
+load 11 // data_id/2243
 extract 0 32
-store 13 // to/2147
-load 11 // data_id/2113
+store 13 // to/2277
+load 11 // data_id/2243
 extract 32 32
-store 12 // amount/2148
-load 20 // enableZeroAddressBurn/1658
-load 13 // to/2147
-load 21 // zeroAddress/1656
+store 12 // amount/2278
+txn Sender
+load 13 // to/2277
+!=
+assert
+// ^ Claim: ARC200: Transfer to self
+// at reach standard library:57:5:application
+// at ./index.rsh:179:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:189:13:application call to [unknown function] (defined at: ./index.rsh:189:13:function exp)
+load 20 // enableZeroAddressBurn/1772
+load 13 // to/2277
+load 21 // zeroAddress/1770
 !=
 ||
 assert
 // ^ Claim: ARC200: Transfer to zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:178:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:187:13:application call to [unknown function] (defined at: ./index.rsh:187:13:function exp)
+// at ./index.rsh:180:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:189:13:application call to [unknown function] (defined at: ./index.rsh:189:13:function exp)
 global ZeroAddress
 // resource: R_Box
 byte base64()
@@ -138,227 +144,231 @@ concat
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
 dup
-store 11 // v2154
-load 12 // amount/2148
+store 11 // v2287
+load 12 // amount/2278
 b>=
 assert
 // ^ Claim: ARC200: Transfer amount must not be greater than balance
 // at reach standard library:57:5:application
-// at ./index.rsh:182:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:187:13:application call to [unknown function] (defined at: ./index.rsh:187:13:function exp)
+// at ./index.rsh:184:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:189:13:application call to [unknown function] (defined at: ./index.rsh:189:13:function exp)
 int 28500
 byte base64(AA==)
 txn Sender
 concat
-load 11 // v2154
-load 12 // amount/2148
+load 11 // v2287
+load 12 // amount/2278
 b-
 callsub l15_LF_checkUInt256ResultLen
 callsub l6_LF_mapSet
 // resource: R_Box
 int 28500
 byte base64(AA==)
-load 13 // to/2147
+load 13 // to/2277
 concat
 global ZeroAddress
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 13 // to/2147
+load 13 // to/2277
 concat
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
-load 12 // amount/2148
+load 12 // amount/2278
 b+
 callsub l15_LF_checkUInt256ResultLen
 callsub l6_LF_mapSet
 byte base64(eYPDXA==)
 txn Sender
 concat
-load 13 // to/2147
+load 13 // to/2277
 concat
-load 12 // amount/2148
+load 12 // amount/2278
 concat
 log // up to 100 bytes
-// ^ log: "arc200_Transfer" [this/1894,to/2147,amount/2148] "arc200_Transfer(address,address,uint256)"
+// ^ log: "arc200_Transfer" [this/2014,to/2277,amount/2278] "arc200_Transfer(address,address,uint256)"
 int 1
-store 11 // v2166
-byte base64(AAAAAAAACHY=)
-load 11 // v2166
+store 11 // v2301
+byte base64(AAAAAAAACP0=)
+load 11 // v2301
 itob
 substring 7 8
 concat
 log // up to 9 bytes
-load 11 // v2166
-pushint 7 // mod: push the number 7 onto the stack
-shl // mod: shift the value at the top of the stack 7 bits to the left
+load 11 // v2301
 itob
 substring 7 8
 store 4 // GV_apiRet :: Null
 global Round
-store 15 // thisConsensusTime/1685
+store 15 // thisConsensusTime/1799
 b _reachl_1
 _api_arc200_transferFrom2:
-load 11 // data_id/2328
+load 11 // data_id/2468
 extract 0 32
-store 22 // from_/2391
-load 11 // data_id/2328
+store 22 // from_/2536
+load 11 // data_id/2468
 extract 32 32
-store 13 // to/2392
-load 11 // data_id/2328
+store 13 // to/2537
+load 11 // data_id/2468
 extract 64 32
-store 12 // amount/2393
-load 22 // from_/2391
-load 21 // zeroAddress/1656
+store 12 // amount/2538
+load 22 // from_/2536
+load 13 // to/2537
+!=
+assert
+// ^ Claim: ARC200: Transfer to self
+// at reach standard library:57:5:application
+// at ./index.rsh:201:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:213:13:application call to [unknown function] (defined at: ./index.rsh:213:13:function exp)
+load 22 // from_/2536
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Transfer from zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:199:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:210:13:application call to [unknown function] (defined at: ./index.rsh:210:13:function exp)
-load 13 // to/2392
-load 21 // zeroAddress/1656
+// at ./index.rsh:202:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:213:13:application call to [unknown function] (defined at: ./index.rsh:213:13:function exp)
+load 13 // to/2537
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Transfer to zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:200:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:210:13:application call to [unknown function] (defined at: ./index.rsh:210:13:function exp)
+// at ./index.rsh:203:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:213:13:application call to [unknown function] (defined at: ./index.rsh:213:13:function exp)
 global ZeroAddress
 // resource: R_Box
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 22 // from_/2391
+load 22 // from_/2536
 concat
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
 dup
-store 24 // v2401
-load 12 // amount/2393
+store 24 // v2549
+load 12 // amount/2538
 b>=
 assert
 // ^ Claim: ARC200: Amount must not be greater than balance
 // at reach standard library:57:5:application
-// at ./index.rsh:201:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:210:13:application call to [unknown function] (defined at: ./index.rsh:210:13:function exp)
-load 22 // from_/2391
+// at ./index.rsh:204:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:213:13:application call to [unknown function] (defined at: ./index.rsh:213:13:function exp)
+load 22 // from_/2536
 txn Sender
 concat
-store 23 // v2404
+store 23 // v2552
 global ZeroAddress
 // resource: R_Box
 byte base64()
 global ZeroAddress
 byte base64(AAAAAAAAAAE=)
-load 23 // v2404
+load 23 // v2552
 concat
 sha256
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
 dup
-store 11 // v2406
-load 12 // amount/2393
+store 11 // v2554
+load 12 // amount/2538
 b>=
 assert
 // ^ Claim: ARC200: Amount must not be greater than allowance
 // at reach standard library:57:5:application
-// at ./index.rsh:205:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:210:13:application call to [unknown function] (defined at: ./index.rsh:210:13:function exp)
+// at ./index.rsh:208:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:213:13:application call to [unknown function] (defined at: ./index.rsh:213:13:function exp)
 int 28500
 byte base64(AA==)
-load 22 // from_/2391
+load 22 // from_/2536
 concat
-load 24 // v2401
-load 12 // amount/2393
+load 24 // v2549
+load 12 // amount/2538
 b-
 callsub l15_LF_checkUInt256ResultLen
 callsub l6_LF_mapSet
 // resource: R_Box
 int 28500
 byte base64(AA==)
-load 13 // to/2392
+load 13 // to/2537
 concat
 global ZeroAddress
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 13 // to/2392
+load 13 // to/2537
 concat
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
-load 12 // amount/2393
+load 12 // amount/2538
 b+
 callsub l15_LF_checkUInt256ResultLen
 callsub l6_LF_mapSet
 byte base64(eYPDXA==)
-load 22 // from_/2391
+load 22 // from_/2536
 concat
-load 13 // to/2392
+load 13 // to/2537
 concat
-load 12 // amount/2393
+load 12 // amount/2538
 concat
 log // up to 100 bytes
-// ^ log: "arc200_Transfer" [from_/2391,to/2392,amount/2393] "arc200_Transfer(address,address,uint256)"
-load 11 // v2406
-load 12 // amount/2393
+// ^ log: "arc200_Transfer" [from_/2536,to/2537,amount/2538] "arc200_Transfer(address,address,uint256)"
+load 11 // v2554
+load 12 // amount/2538
 b-
 callsub l15_LF_checkUInt256ResultLen
-store 13 // newAllowance/2422
+store 13 // newAllowance/2572
 int 28100
 byte base64(AAAAAAAAAAE=)
-load 23 // v2404
+load 23 // v2552
 concat
 sha256
-load 13 // newAllowance/2422
+load 13 // newAllowance/2572
 callsub l6_LF_mapSet
 byte base64(GWn4ZQ==)
-load 22 // from_/2391
+load 22 // from_/2536
 concat
 txn Sender
 concat
-load 13 // newAllowance/2422
+load 13 // newAllowance/2572
 concat
 log // up to 100 bytes
-// ^ log: "arc200_Approval" [from_/2391,this/1894,newAllowance/2422] "arc200_Approval(address,address,uint256)"
+// ^ log: "arc200_Approval" [from_/2536,this/2014,newAllowance/2572] "arc200_Approval(address,address,uint256)"
 int 1
-store 11 // v2424
-byte base64(AAAAAAAACXg=)
-load 11 // v2424
+store 11 // v2574
+byte base64(AAAAAAAACg4=)
+load 11 // v2574
 itob
 substring 7 8
 concat
 log // up to 9 bytes
-load 11 // v2424
-pushint 7 // mod: push the number 7 onto the stack
-shl // mod: shift the value at the top of the stack 7 bits to the left
+load 11 // v2574
 itob
 substring 7 8
 store 4 // GV_apiRet :: Null
 global Round
-store 15 // thisConsensusTime/1685
+store 15 // thisConsensusTime/1799
 b _reachl_1
 _api_deleteAllowanceBox2:
-load 11 // data_id/2543
+load 11 // data_id/2693
 extract 0 32
-store 13 // owner/2650
-load 11 // data_id/2543
+store 13 // owner/2810
+load 11 // data_id/2693
 extract 32 32
-store 12 // spender/2651
-load 13 // owner/2650
-load 12 // spender/2651
+store 12 // spender/2811
+load 13 // owner/2810
+load 12 // spender/2811
 concat
-store 22 // v2652
+store 22 // v2812
 // resource: R_Box
 byte base64()
 global ZeroAddress
 byte base64(AAAAAAAAAAE=)
-load 22 // v2652
+load 22 // v2812
 concat
 sha256
 callsub l3_LF_mapRef
 dup
-store 11 // m/2653
+store 11 // m/2813
 int 0
 getbyte
 int 1
@@ -366,63 +376,63 @@ int 1
 assert
 // ^ Claim: ARC200: Allowance box not found
 // at reach standard library:57:5:application
-// at ./index.rsh:259:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:268:13:application call to [unknown function] (defined at: ./index.rsh:268:13:function exp)
+// at ./index.rsh:262:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:271:13:application call to [unknown function] (defined at: ./index.rsh:271:13:function exp)
 global ZeroAddress
-load 11 // m/2653
+load 11 // m/2813
 callsub l4_LF_fromSome
 global ZeroAddress
 b==
 assert
 // ^ Claim: ARC200: Allowance box not empty
 // at reach standard library:57:5:application
-// at ./index.rsh:263:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:268:13:application call to [unknown function] (defined at: ./index.rsh:268:13:function exp)
+// at ./index.rsh:266:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:271:13:application call to [unknown function] (defined at: ./index.rsh:271:13:function exp)
 int 28100
 byte base64(AAAAAAAAAAE=)
-load 22 // v2652
+load 22 // v2812
 concat
 sha256
 callsub l16_LF_mapDel
 byte base64(Lq70SQ==)
-load 13 // owner/2650
+load 13 // owner/2810
 concat
-load 12 // spender/2651
+load 12 // spender/2811
 concat
 log // up to 68 bytes
-// ^ log: "DeleteAllowanceBox" [owner/2650,spender/2651] "DeleteAllowanceBox(address,address)"
+// ^ log: "DeleteAllowanceBox" [owner/2810,spender/2811] "DeleteAllowanceBox(address,address)"
 byte base64()
-store 11 // v2665
-byte base64(AAAAAAAACmk=)
-load 11 // v2665
+store 11 // v2825
+byte base64(AAAAAAAACwk=)
+load 11 // v2825
 concat
 log // up to 8 bytes
-load 11 // v2665
+load 11 // v2825
 store 4 // GV_apiRet :: Null
 global Round
-store 15 // thisConsensusTime/1685
+store 15 // thisConsensusTime/1799
 b _reachl_1
 _api_deleteBalanceBox2:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 32
 dup
-store 11 // addr/2890
-load 21 // zeroAddress/1656
+store 11 // addr/3060
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Delete balance box to zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:242:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:246:13:application call to [unknown function] (defined at: ./index.rsh:246:13:function exp)
+// at ./index.rsh:245:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:249:13:application call to [unknown function] (defined at: ./index.rsh:249:13:function exp)
 // resource: R_Box
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 11 // addr/2890
+load 11 // addr/3060
 concat
 callsub l3_LF_mapRef
 dup
-store 12 // m/2894
+store 12 // m/3064
 int 0
 getbyte
 int 1
@@ -430,38 +440,38 @@ int 1
 assert
 // ^ Claim: ARC200: Balance box not found
 // at reach standard library:57:5:application
-// at ./index.rsh:243:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:246:13:application call to [unknown function] (defined at: ./index.rsh:246:13:function exp)
+// at ./index.rsh:246:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:249:13:application call to [unknown function] (defined at: ./index.rsh:249:13:function exp)
 global ZeroAddress
-load 12 // m/2894
+load 12 // m/3064
 callsub l4_LF_fromSome
 global ZeroAddress
 b==
 assert
 // ^ Claim: ARC200: Balance box not empty
 // at reach standard library:57:5:application
-// at ./index.rsh:244:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:246:13:application call to [unknown function] (defined at: ./index.rsh:246:13:function exp)
+// at ./index.rsh:247:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:249:13:application call to [unknown function] (defined at: ./index.rsh:249:13:function exp)
 int 28500
 byte base64(AA==)
-load 11 // addr/2890
+load 11 // addr/3060
 concat
 callsub l16_LF_mapDel
 byte base64(lEdsSg==)
-load 11 // addr/2890
+load 11 // addr/3060
 concat
 log // up to 36 bytes
-// ^ log: "DeleteBalanceBox" [addr/2890] "DeleteBalanceBox(address)"
+// ^ log: "DeleteBalanceBox" [addr/3060] "DeleteBalanceBox(address)"
 byte base64()
-store 11 // v2903
-byte base64(AAAAAAAAC1c=)
-load 11 // v2903
+store 11 // v3073
+byte base64(AAAAAAAADAE=)
+load 11 // v3073
 concat
 log // up to 8 bytes
-load 11 // v2903
+load 11 // v3073
 store 4 // GV_apiRet :: Null
 global Round
-store 15 // thisConsensusTime/1685
+store 15 // thisConsensusTime/1799
 b _reachl_1
 _api_destroy2:
 byte base64(AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
@@ -472,96 +482,96 @@ int 1
 assert
 // ^ Claim: ARC200: Zero address balance box not found
 // at reach standard library:57:5:application
-// at ./index.rsh:282:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:287:13:application call to [unknown function] (defined at: ./index.rsh:287:13:function exp)
+// at ./index.rsh:285:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:290:13:application call to [unknown function] (defined at: ./index.rsh:290:13:function exp)
 // resource: R_Box
 int 28500
 byte base64(AA==)
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 concat
 callsub l16_LF_mapDel
 byte base64(TG2m8g==)
 log // up to 4 bytes
 // ^ log: "Destroy" [] "Destroy()"
 byte base64()
-store 11 // v3131
-byte base64(AAAAAAAADDs=)
-load 11 // v3131
+store 11 // v3311
+byte base64(AAAAAAAADO8=)
+load 11 // v3311
 concat
 log // up to 8 bytes
-load 11 // v3131
+load 11 // v3311
 store 4 // GV_apiRet :: Null
 byte base64(AQ==)
-load 16 // s/1684
+load 16 // s/1798
 extract 1 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 9 1
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 10 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 42 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 74 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 82 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 114 32
 concat
 global Round
-store 15 // thisConsensusTime/1685
-store 16 // s/1684
+store 15 // thisConsensusTime/1799
+store 16 // s/1798
 b _reachl_1
 _api_grant2:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 32
 dup
-store 11 // addr/3364
-load 21 // zeroAddress/1656
+store 11 // addr/3554
+load 21 // zeroAddress/1770
 !=
 assert
 // ^ Claim: ARC200: Grant zero address
 // at reach standard library:57:5:application
-// at ./index.rsh:166:12:application call to "check" (defined at: reach standard library:49:32:function exp)
-// at ./index.rsh:168:13:application call to [unknown function] (defined at: ./index.rsh:168:13:function exp)
+// at ./index.rsh:167:12:application call to "check" (defined at: reach standard library:49:32:function exp)
+// at ./index.rsh:169:13:application call to [unknown function] (defined at: ./index.rsh:169:13:function exp)
 byte base64()
-store 12 // v3369
-byte base64(AAAAAAAADSk=)
-load 12 // v3369
+store 12 // v3559
+byte base64(AAAAAAAADec=)
+load 12 // v3559
 concat
 log // up to 8 bytes
-load 12 // v3369
+load 12 // v3559
 store 4 // GV_apiRet :: Null
-load 16 // s/1684
+load 16 // s/1798
 extract 0 1
-load 16 // s/1684
+load 16 // s/1798
 extract 1 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 9 1
 concat
-load 11 // addr/3364
+load 11 // addr/3554
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 42 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 74 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 82 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 114 32
 concat
 global Round
-store 15 // thisConsensusTime/1685
-store 16 // s/1684
+store 15 // thisConsensusTime/1799
+store 16 // s/1798
 b _reachl_1
 _api_touch2:
 global CurrentApplicationAddress
@@ -569,31 +579,31 @@ balance
 global CurrentApplicationAddress
 min_balance
 -
-load 14 // netBalance/1688
+load 14 // netBalance/1802
 -
 l17_getActualBalance:
 dup
-store 12 // f1/3604
+store 12 // f1/3804
 // resource: R_Account
-load 16 // s/1684
+load 16 // s/1798
 extract 10 32
 callsub l18_LF_makeTxn_False_False_False_True
 byte base64()
-store 11 // v3611
-byte base64(AAAAAAAADhs=)
-load 11 // v3611
+store 11 // v3811
+byte base64(AAAAAAAADuM=)
+load 11 // v3811
 concat
 log // up to 8 bytes
-load 11 // v3611
+load 11 // v3811
 store 4 // GV_apiRet :: Null
 global Round
-load 12 // f1/3604
-load 14 // netBalance/1688
+load 12 // f1/3804
+load 14 // netBalance/1802
 +
-load 12 // f1/3604
+load 12 // f1/3804
 -
-store 14 // netBalance/1688
-store 15 // thisConsensusTime/1685
+store 14 // netBalance/1802
+store 15 // thisConsensusTime/1799
 b _reachl_1
 _reacha_arc200_allowance:
 load 1 // GV_currentStep :: UInt
@@ -608,8 +618,8 @@ global ZeroAddress
 byte base64()
 global ZeroAddress
 byte base64(AAAAAAAAAAE=)
-load 12 // v5380
-load 11 // v5381
+load 12 // v5580
+load 11 // v5581
 concat
 concat
 sha256
@@ -627,38 +637,38 @@ _reacha_arc200_approve:
 int 8
 bzero
 byte base64(AA==)
-load 12 // v5410
-load 11 // v5411
+load 12 // v5610
+load 11 // v5611
 concat
 concat
 global ZeroAddress
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 _reachi_2:
 int 3
 load 1 // GV_currentStep :: UInt
 ==
 assert
 callsub l2_LF_svsLoad_3
-load 11 // v5468
+load 11 // v5668
 int 0
 extract_uint64
-store 12 // v5467
-load 11 // v5468
+store 12 // v5667
+load 11 // v5668
 extract 8 97
-store 13 // .fork289.msg/1895
+store 13 // .fork289.msg/2015
 byte base64(2R5N2g==)
-load 12 // v5467
+load 12 // v5667
 itob
 concat
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 concat
 log // up to 109 bytes
-// ^ log: "_reach_e2" [v5467,.fork289.msg/1895] "_reach_e2(uint64,(byte,byte[96]))"
-load 12 // v5467
+// ^ log: "_reach_e2" [v5667,.fork289.msg/2015] "_reach_e2(uint64,(byte,byte[96]))"
+load 12 // v5667
 callsub l5_LF_timeCheck
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 int 0
 getbyte
 switch l7_arc200_approve0_289 l8_arc200_transfer0_289 l9_arc200_transferFrom0_289 l10_deleteAllowanceBox0_289 l11_deleteBalanceBox0_289 l12_destroy0_289 l13_grant0_289 l14_touch0_289
@@ -676,7 +686,7 @@ global ZeroAddress
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 11 // v5386
+load 11 // v5586
 concat
 callsub l3_LF_mapRef
 callsub l4_LF_fromSome
@@ -690,9 +700,8 @@ assert
 // ^ Claim: Incorrect state: not leaf
 // at ./index.rsh:60:20:property binding
 callsub l2_LF_svsLoad_3
-load 17 // v1668
+load 17 // v1782
 itob
-extract 7 0 // mod: uint8
 store 4 // GV_apiRet :: Null
 b apiReturn_check
 _reacha_arc200_name:
@@ -703,7 +712,7 @@ assert
 // ^ Claim: Incorrect state: not leaf
 // at ./index.rsh:58:16:property binding
 callsub l2_LF_svsLoad_3
-load 19 // meta/1659
+load 19 // meta/1773
 extract 8 32
 store 4 // GV_apiRet :: Null
 b apiReturn_check
@@ -715,7 +724,7 @@ assert
 // ^ Claim: Incorrect state: not leaf
 // at ./index.rsh:59:18:property binding
 callsub l2_LF_svsLoad_3
-load 19 // meta/1659
+load 19 // meta/1773
 extract 40 8
 store 4 // GV_apiRet :: Null
 b apiReturn_check
@@ -727,75 +736,75 @@ assert
 // ^ Claim: Incorrect state: not leaf
 // at ./index.rsh:61:23:property binding
 callsub l2_LF_svsLoad_3
-load 18 // v1665
+load 18 // v1779
 store 4 // GV_apiRet :: Null
 b apiReturn_check
 _reacha_arc200_transfer:
 int 8
 bzero
 byte base64(AQ==)
-load 12 // v5418
-load 11 // v5419
+load 12 // v5618
+load 11 // v5619
 concat
 concat
 global ZeroAddress
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_arc200_transferFrom:
 int 8
 bzero
 byte base64(Ag==)
-load 13 // v5426
-load 12 // v5427
+load 13 // v5626
+load 12 // v5627
 concat
-load 11 // v5428
+load 11 // v5628
 concat
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_deleteAllowanceBox:
 int 8
 bzero
 byte base64(Aw==)
-load 12 // v5436
-load 11 // v5437
+load 12 // v5636
+load 11 // v5637
 concat
 concat
 global ZeroAddress
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_deleteBalanceBox:
 int 8
 bzero
 byte base64(BA==)
-load 11 // v5444
+load 11 // v5644
 concat
 int 64
 bzero
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_destroy:
 byte base64(AAAAAAAAAAAFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_grant:
 int 8
 bzero
 byte base64(Bg==)
-load 11 // v5454
+load 11 // v5654
 concat
 int 64
 bzero
 concat
 concat
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reacha_hasAllowance:
 load 1 // GV_currentStep :: UInt
@@ -809,8 +818,8 @@ callsub l2_LF_svsLoad_3
 byte base64()
 global ZeroAddress
 byte base64(AAAAAAAAAAE=)
-load 12 // v5398
-load 11 // v5399
+load 12 // v5598
+load 11 // v5599
 concat
 concat
 sha256
@@ -835,7 +844,7 @@ callsub l2_LF_svsLoad_3
 byte base64()
 global ZeroAddress
 byte base64(AA==)
-load 11 // v5404
+load 11 // v5604
 concat
 callsub l3_LF_mapRef
 int 0
@@ -854,93 +863,93 @@ assert
 // ^ Claim: Incorrect state: not leaf
 // at ./index.rsh:66:10:property binding
 callsub l2_LF_svsLoad_3
-load 16 // s/1684
+load 16 // s/1798
 extract 42 32
-load 16 // s/1684
+load 16 // s/1798
 extract 74 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 1 8
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 82 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 114 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 10 32
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 9 1
 concat
-load 16 // s/1684
+load 16 // s/1798
 extract 0 1
 concat
 store 4 // GV_apiRet :: Null
 b apiReturn_check
 _reacha_touch:
 byte base64(AAAAAAAAAAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 _reachi_0:
-load 12 // v5465
+load 12 // v5665
 int 0
 extract_uint64
-store 13 // v5464
-load 12 // v5465
+store 13 // v5664
+load 12 // v5665
 extract 8 32
-store 21 // zeroAddress/1656
-load 12 // v5465
+store 21 // zeroAddress/1770
+load 12 // v5665
 extract 40 32
-store 11 // manager/1657
-load 12 // v5465
+store 11 // manager/1771
+load 12 // v5665
 extract 72 1
 btoi
-store 20 // enableZeroAddressBurn/1658
-load 12 // v5465
+store 20 // enableZeroAddressBurn/1772
+load 12 // v5665
 extract 73 80
-store 19 // meta/1659
+store 19 // meta/1773
 byte base64(5Ep7Mg==)
-load 13 // v5464
+load 13 // v5664
 itob
 concat
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 concat
-load 11 // manager/1657
+load 11 // manager/1771
 concat
-load 20 // enableZeroAddressBurn/1658
+load 20 // enableZeroAddressBurn/1772
 itob
 substring 7 8
 concat
-load 19 // meta/1659
+load 19 // meta/1773
 concat
 log // up to 157 bytes
-// ^ log: "_reach_e0" [v5464,zeroAddress/1656,manager/1657,enableZeroAddressBurn/1658,meta/1659] "_reach_e0(uint64,address,address,byte,(uint64,byte[32],byte[8],uint256))"
-load 13 // v5464
+// ^ log: "_reach_e0" [v5664,zeroAddress/1770,manager/1771,enableZeroAddressBurn/1772,meta/1773] "_reach_e0(uint64,address,address,byte,(uint64,byte[32],byte[8],uint256))"
+load 13 // v5664
 callsub l5_LF_timeCheck
-load 21 // zeroAddress/1656
-load 11 // manager/1657
+load 21 // zeroAddress/1770
+load 11 // manager/1771
 !=
 assert
 // ^ Claim: ARC200: Zero address must not equal manager address
 // at reach standard library:57:5:application
 // at ./index.rsh:85:10:application call to "check" (defined at: reach standard library:49:32:function exp)
-load 19 // meta/1659
+load 19 // meta/1773
 extract 48 32
 dup
-store 18 // v1665
+store 18 // v1779
 global ZeroAddress
 b>
 assert
 // ^ Claim: ARC200: Total supply must be greater than zero
 // at reach standard library:57:5:application
 // at ./index.rsh:89:10:application call to "check" (defined at: reach standard library:49:32:function exp)
-load 19 // meta/1659
+load 19 // meta/1773
 int 0
 extract_uint64
 dup
-store 17 // v1668
+store 17 // v1782
 int 256
 <=
 assert
@@ -950,63 +959,63 @@ assert
 // resource: R_Box
 int 28500
 byte base64(AA==)
-load 11 // manager/1657
+load 11 // manager/1771
 concat
-load 18 // v1665
+load 18 // v1779
 callsub l6_LF_mapSet
 // resource: R_Box
 int 28500
 byte base64(AA==)
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 concat
 global ZeroAddress
 callsub l6_LF_mapSet
 byte base64(eYPDXA==)
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 concat
-load 11 // manager/1657
+load 11 // manager/1771
 concat
-load 18 // v1665
+load 18 // v1779
 concat
 log // up to 100 bytes
-// ^ log: "arc200_Transfer" [zeroAddress/1656,manager/1657,v1665] "arc200_Transfer(address,address,uint256)"
+// ^ log: "arc200_Transfer" [zeroAddress/1770,manager/1771,v1779] "arc200_Transfer(address,address,uint256)"
 byte base64(AA==)
-load 17 // v1668
+load 17 // v1782
 itob
 concat
-load 20 // enableZeroAddressBurn/1658
+load 20 // enableZeroAddressBurn/1772
 itob
 substring 7 8
 concat
-load 11 // manager/1657
+load 11 // manager/1771
 concat
-load 19 // meta/1659
+load 19 // meta/1773
 extract 8 32
 concat
-load 19 // meta/1659
+load 19 // meta/1773
 extract 40 8
 concat
-load 18 // v1665
+load 18 // v1779
 concat
-load 21 // zeroAddress/1656
+load 21 // zeroAddress/1770
 concat
 global Round
 int 0
-store 14 // netBalance/1688
-store 15 // thisConsensusTime/1685
-store 16 // s/1684
+store 14 // netBalance/1802
+store 15 // thisConsensusTime/1799
+store 16 // s/1798
 b _reachl_1
 _reachp_0:
 callsub l0_LF_wasntMeth
 int 100000
 callsub l1_LF_mbrAdd
 txna ApplicationArgs 1
-store 12 // v5465
+store 12 // v5665
 b _reachi_0
 _reachp_2:
 callsub l0_LF_wasntMeth
 txna ApplicationArgs 1
-store 11 // v5468
+store 11 // v5668
 b _reachi_2
 alloc:
 int 0
@@ -1062,18 +1071,18 @@ b updateState
 arc200_allowanceAcq4c8hE24gt_EoooVBPqZqn0ii698pjkLnoeezacoY_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
-store 11 // v5381
-store 12 // v5380
+store 11 // v5581
+store 12 // v5580
 b _reacha_arc200_allowance
 arc200_approve_aB7vxbW4PSDQsylrpf8z0pJ5DG0KY_ArfOZuMRX9a63o_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
-store 11 // v5411
-store 12 // v5410
+store 11 // v5611
+store 12 // v5610
 b _reacha_arc200_approve
 arc200_balanceOfAuLlni3r2JwN05I0cJndHjbQh_B7u8HtXeT2u87KRQA_:
 txna ApplicationArgs 1
-store 11 // v5386
+store 11 // v5586
 b _reacha_arc200_balanceOf
 arc200_decimals_0i3zaAdWGk8HTrh900e3z__BopVJHiDErU4VQKq4WR4_:
 b _reacha_arc200_decimals
@@ -1087,46 +1096,46 @@ arc200_transferF8dq513jzwlGNyuNOIzPPYDtVSgiLxnp3MTKwA15nTo4_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
 txna ApplicationArgs 3
-store 11 // v5428
-store 12 // v5427
-store 13 // v5426
+store 11 // v5628
+store 12 // v5627
+store 13 // v5626
 b _reacha_arc200_transferFrom
 arc200_transfer_mW6YBiBj2tVEDo94HJlsKqWJTJtaEhfhx1b4rELoCvQ_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
-store 11 // v5419
-store 12 // v5418
+store 11 // v5619
+store 12 // v5618
 b _reacha_arc200_transfer
 deleteAllowanceBwW_6j_WUL0rkLmgjbujZC5C5QUg6KUnu_PXF9qBLlcA_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
-store 11 // v5437
-store 12 // v5436
+store 11 // v5637
+store 12 // v5636
 b _reacha_deleteAllowanceBox
 deleteBalanceBoxHBBZgGrzWMOWl0OIpQz_b5RkO7RW9VDfjoXEXumYBYk_:
 txna ApplicationArgs 1
-store 11 // v5444
+store 11 // v5644
 b _reacha_deleteBalanceBox
 destroy__voidyQs01swZ_UAEgoudVZNc2fO1ReK4LXRCsQSyR_cTRkI_:
 b _reacha_destroy
 grant_address_voB0P2GtSPgk8keWQFFrigNPpqwOzZufpkaNLj5BW3NLk_:
 txna ApplicationArgs 1
-store 11 // v5454
+store 11 // v5654
 b _reacha_grant
 hasAllowance_add8MigYkFtGyiY_nwrKWhHmCnIsjROuTjO4Faff7edDW0_:
 txna ApplicationArgs 1
 txna ApplicationArgs 2
-store 11 // v5399
-store 12 // v5398
+store 11 // v5599
+store 12 // v5598
 b _reacha_hasAllowance
 hasBalance_addreiUYh5_XlPYmV0QW7Va5b0smQFFe3ff7oqyFvTefxscI_:
 txna ApplicationArgs 1
-store 11 // v5404
+store 11 // v5604
 b _reacha_hasBalance
 l10_deleteAllowanceBox0_289:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 64
-store 11 // data_id/2543
+store 11 // data_id/2693
 b _api_deleteAllowanceBox2
 l11_deleteBalanceBox0_289:
 b _api_deleteBalanceBox2
@@ -1138,21 +1147,21 @@ l14_touch0_289:
 b _api_touch2
 l19_ifF:
 l20_LF_svsDump_3:
-load 21 // zeroAddress/1656
-load 20 // enableZeroAddressBurn/1658
+load 21 // zeroAddress/1770
+load 20 // enableZeroAddressBurn/1772
 itob
 substring 7 8
 concat
-load 19 // meta/1659
+load 19 // meta/1773
 concat
-load 18 // v1665
+load 18 // v1779
 concat
-load 17 // v1668
+load 17 // v1782
 itob
 concat
-load 16 // s/1684
+load 16 // s/1798
 concat
-load 14 // netBalance/1688
+load 14 // netBalance/1802
 itob
 concat
 int 3
@@ -1174,19 +1183,19 @@ itxn_field Amount
 itxn_submit
 retsub
 l7_arc200_approve0_289:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 64
-store 11 // data_id/1898
+store 11 // data_id/2018
 b _api_arc200_approve2
 l8_arc200_transfer0_289:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 64
-store 11 // data_id/2113
+store 11 // data_id/2243
 b _api_arc200_transfer2
 l9_arc200_transferFrom0_289:
-load 13 // .fork289.msg/1895
+load 13 // .fork289.msg/2015
 extract 1 96
-store 11 // data_id/2328
+store 11 // data_id/2468
 b _api_arc200_transferFrom2
 state___byte_32_Ht0jmphvDcy9ubqKBL80A2jiDOOsjFXX7wE_xU1x_j4_:
 b _reacha_state
@@ -1228,7 +1237,7 @@ int pay
 ==
 assert
 gtxns Amount
-<=
+==
 assert
 retsub
 l3_LF_mapRef:
@@ -1243,27 +1252,27 @@ retsub
 l2_LF_svsLoad_3:
 dup
 extract 0 32
-store 21 // zeroAddress/1656
+store 21 // zeroAddress/1770
 dup
 extract 32 1
 btoi
-store 20 // enableZeroAddressBurn/1658
+store 20 // enableZeroAddressBurn/1772
 dup
 extract 33 80
-store 19 // meta/1659
+store 19 // meta/1773
 dup
 extract 113 32
-store 18 // v1665
+store 18 // v1779
 dup
 int 145
 extract_uint64
-store 17 // v1668
+store 17 // v1782
 dup
 extract 153 146
-store 16 // s/1684
+store 16 // s/1798
 int 299
 extract_uint64
-store 14 // netBalance/1688
+store 14 // netBalance/1802
 retsub
 l4_LF_fromSome:
 dup

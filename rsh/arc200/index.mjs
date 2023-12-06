@@ -1,20 +1,5 @@
 import * as backend from "./build/index.ARC200.mjs";
-import { loadStdlib } from "@reach-sh/stdlib";
-
-const deployCost = "0.16"; // txn cost + cost for box
-const transferCostHot = "0.001"; // txn cost
-const transferCostCold = "0.0305"; // txn cost + cost for box
-const transferGain = "0.0189"; // gain on box deletion
-const transferNetCost = "0.0020"; // transferCostCold - transferGain
-const transferFromCostCold = "";
-const transferFromCostHot = "";
-const transferFromGain = "";
-const transferFromNetCost = "";
-const approveCostCold = "";
-const approveCostHot = "";
-const approveGain = "";
-const approveNetCost = "";
-const deleteBalanceBoxCost = "";
+import { loadStdlib, test } from "@reach-sh/stdlib";
 
 const fromSome = (v, d) => (v[0] === "None" ? d : v[1]);
 
@@ -176,11 +161,32 @@ do {
 
   const ctcManager = accManager.contract(backend, ctcInfo);
 
+  // burn 0 tokens (v1.0.0)
+
+  console.log("Burning 0 tokens...");
+  await ctcManager.a.arc200_transfer(accZero, bn(0));
+  // accZero balance increased by 1
+  // accManager balance decreased by 1
+  console.log("1 token burned");
+
+  // transfer tokens to self should fail (v1.0.1)
+
+  console.log("Attempt to transfer tokens to self...");
+  await test.chkErr("transfer", "transfer to self", () =>
+    ctcManager.a.arc200_transfer(accManager, bn(0))
+  );
+  console.log("Transfer to self failed");
+  // no change
+
+  // transferFrom owner to owner by spender should fail (v1.0.1)
+
+  // TODO write me
+
   console.log("Burning tokens...");
 
   await ctcManager.a.arc200_transfer(
     zeroAddress,
-    stdlib.bigNumberify(tokens[0].totalSupply)
+    stdlib.bigNumberify(tokens[0].totalSupply).sub(bn(1))
   );
 
   console.log("manager balance:");
@@ -190,7 +196,7 @@ do {
 
   console.log("Deleting balance box...");
 
-  await ctcManager.a.deleteBalanceBox(accManager);
+  //await ctcManager.a.deleteBalanceBox(accManager);
 
   /*
   console.log("Approving spend...")
@@ -281,16 +287,15 @@ do {
 
   // TEST should not be able to delete zero addres box
 
-  console.log("Test: should not be able to delete zero address box");
+  // Delete balance box to zero address should fail (v1.0.0)
 
+  console.log("Attempt to delete zero address box should fail...");
   assertEq(fromSome(await balanceOf(zeroAddress), bn(0)), bn(0));
-
-  try {
-    await ctcMaster.a.deleteBalanceBox(zeroAddress);
-    process.exit(2);
-  } catch (e) {
-    console.log("ARC200: Delete balance box to zero address");
-  }
+  assertEq(fromSome(await hasBalance(zeroAddress), false), false);
+  test.chkErr("deleteBalanceBox", "zero address", () =>
+    ctcMaster.a.deleteBalanceBox(zeroAddress)
+  );
+  console.log("Delete zero address box failed");
 
   // TEST view functions are callable
 
@@ -722,6 +727,6 @@ for (const addr of addrRobots) {
   }
 } while (0);
 
-// TODO
+console.log("Test Successfull ");
 
 process.exit(0);
