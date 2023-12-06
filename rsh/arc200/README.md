@@ -14,7 +14,7 @@ v1.x.y
 
 - *Fix: disallow transfer to self in transfer_ frunction to prevent potential issues associate with modifying same map location in single app call*
 - *Add: generate contract.json file in test script, index.mjs*
-- *Add: manager readonly menthod*
+- *Add: manager readonly method*
 - *Improvement: complete test script*
 
 **31 Oct 2023**  
