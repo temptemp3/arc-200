@@ -85,18 +85,17 @@ function AccountBalance(props) {
     if (props.token.assetType === "rc200") {
       const { algodClient, indexerClient } = getAlgorandClients();
       const ci = new arc200(token.appId, algodClient, indexerClient);
-      const tokenR = await ci.getMetadata();
-      if (!tokenR.success) return; /// TODO handle error
-      const meta = tokenR.result;
+      const decimalsR = await ci.arc200_decimals();
+      if (!decimalsR.success) return; /// TODO handle error
+      const decimals = decimalsR.returnValue;
       const balanceR = await ci.arc200_balanceOf(activeAccount.address);
       if (!balanceR.success) return; /// TODO handle error
-      const amount = fawd(balanceR.result, meta.decimals);
-      const token = {
-        tokenId: token.appId,
+      const amount = fawd(balanceR.returnValue, Number(decimals));
+      const newToken = {
+        ...props.token,
         amount,
-        ...meta,
       };
-      setToken(token);
+      setToken(newToken);
     } else if (props.token.assetType === "sa") {
       const { indexer } = await stdlib.getProvider();
       const assetDetails = await indexer
@@ -112,6 +111,16 @@ function AccountBalance(props) {
         ...assetDetails.asset,
       };
       setToken(token);
+    } else if (props.token.assetType === "network") {
+      const { indexer } = await stdlib.getProvider();
+      const accInfo = await indexer
+        .lookupAccountByID(activeAccount.address)
+        .do();
+      console.log({ accInfo });
+      setToken({
+        ...token,
+        amount: fawd(accInfo?.account?.["amount-without-pending-rewards"], 6),
+      });
     }
   }, [activeAccount, token]);
   useEffect(() => {

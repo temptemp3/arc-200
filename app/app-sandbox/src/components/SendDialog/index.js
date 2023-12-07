@@ -17,10 +17,17 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 
 import { toast } from "react-toastify";
-import { getCurrentNode, getGenesisHash, makeStdLib } from "../../utils/reach.js";
+import {
+  getCurrentNode,
+  getGenesisHash,
+  makeStdLib,
+} from "../../utils/reach.js";
 import ConfirmationComponent from "../ConfirmationComponent.js";
 import { getAlgorandClients } from "../../utils/algorand.js";
 import arc200 from "arc200js";
+import algosdk, { encodeUnsignedTransaction } from "algosdk";
+
+import { encode as encodeBase64 } from "@stablelib/base64";
 
 function SendDialog(props) {
   const { providers, activeAccount } = useWallet();
@@ -96,17 +103,61 @@ function SendDialog(props) {
       try {
         switch (props.token.assetType) {
           case "network": {
-            const acc = await stdlib.connectAccount({
-              addr: activeAccount.address,
-            });
-            await stdlib.transfer(
-              acc,
-              accountAddress,
-              stdlib.parseCurrency(
-                prepareTokenAmount(tokenAmount).replace(/,/g, "")
-              )
-            );
-            props.reloadToken();
+            if (
+              activeAccount.providerId === PROVIDER_ID.CUSTOM &&
+              activeAccount.name === "kibisis"
+            ) {
+              const algorand = window.algorand;
+              if (!algorand) {
+                throw new Error("no wallets are installed!");
+              }
+              const [node] = getCurrentNode();
+              const wallets = algorand.getWallets();
+              const wallet = await algorand.enable({
+                genesisHash: getGenesisHash(node),
+              });
+              const { algodClient } = getAlgorandClients();
+              const suggestedParams = await algodClient
+                .getTransactionParams()
+                .do();
+              const utxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+                amount: stdlib
+                  .parseCurrency(
+                    prepareTokenAmount(tokenAmount).replace(/,/g, "")
+                  )
+                  .toBigInt(),
+                from: activeAccount.address,
+                to: accountAddress,
+                suggestedParams,
+              });
+              const result = await window.algorand.signTxns({
+                txns: [
+                  {
+                    txn: encodeBase64(encodeUnsignedTransaction(utxn)),
+                  },
+                ],
+              });
+              let signedTransactionBytes;
+              signedTransactionBytes = result.stxns.map(
+                (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
+              );
+              await algodClient.sendRawTransaction(signedTransactionBytes).do();
+            } else {
+              const acc = await stdlib.connectAccount({
+                addr: activeAccount.address,
+              });
+              await stdlib.transfer(
+                acc,
+                accountAddress,
+                stdlib.parseCurrency(
+                  prepareTokenAmount(tokenAmount).replace(/,/g, "")
+                )
+              );
+            }
+            // TODO confirm transaction
+            setTimeout(() => {
+              props.reloadToken();
+            }, 5_000);
             toast(
               <div>
                 Transfer successful!
@@ -136,8 +187,7 @@ function SendDialog(props) {
               const [node] = getCurrentNode();
               const wallets = algorand.getWallets();
               const wallet = await algorand.enable({
-                genesisHash: getGenesisHash
-                (node),
+                genesisHash: getGenesisHash(node),
               });
               const { algodClient, indexerClient } = getAlgorandClients();
               const ci = new arc200(token.appId, algodClient, indexerClient, {
@@ -170,7 +220,10 @@ function SendDialog(props) {
               );
             }
             if (res2) {
-              props.reloadToken();
+              // TODO confirm transaction
+              setTimeout(() => {
+                props.reloadToken();
+              }, 5_000);
               toast(
                 <div>
                   Transfer successful!
