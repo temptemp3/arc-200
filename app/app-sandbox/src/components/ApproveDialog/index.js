@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useWallet } from "@txnlab/use-wallet";
+import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
 import {
   Button,
   Container,
@@ -53,30 +53,44 @@ function SendDialog(props) {
     (async () => {
       try {
         setPending(true);
-
-        const { algodClient, indexerClient } = getAlgorandClients();
-        const ci = new arc200(token.appId, algodClient, indexerClient);
         const amount = stdlib
           .parseCurrency(tokenAmount, Number(token.decimals))
           .toBigInt();
-        const res = await ci.arc200_approve(accountAddress, amount);
-        if (!res.success) return; // TODO: handle error
-        const result = await window.algorand.signTxns({
-          txns: res.txns.map((el) => {
-            return {
-              txn: el,
-            };
-          }),
-        });
-        let signedTransactionBytes;
-        // decode the base 64 encoded signed transactions
-        signedTransactionBytes = result.stxns.map(
-          (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
-        );
-        // send to the network
-        const res2 = await algodClient
-          .sendRawTransaction(signedTransactionBytes)
-          .do();
+        let res;
+        if (
+          activeAccount.providerId === PROVIDER_ID.CUSTOM &&
+          activeAccount.name === "kibisis"
+        ) {
+          const { algodClient, indexerClient } = getAlgorandClients();
+          const ci = new arc200(token.appId, algodClient, indexerClient);
+
+          res = await ci.arc200_approve(accountAddress, amount);
+          if (!res.success) return; // TODO: handle error
+
+          const result = await window.algorand.signTxns({
+            txns: res.txns.map((el) => {
+              return {
+                txn: el,
+              };
+            }),
+          });
+          let signedTransactionBytes;
+          // decode the base 64 encoded signed transactions
+          signedTransactionBytes = result.stxns.map(
+            (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
+          );
+          // send to the network
+          res = await algodClient
+            .sendRawTransaction(signedTransactionBytes)
+            .do();
+        } else {
+          res = await ARC200Service.approve(
+            props.token,
+            activeAccount.address,
+            accountAddress,
+            tokenAmount
+          );
+        }
         if (res) {
           props.reloadToken();
           toast(
