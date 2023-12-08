@@ -527,6 +527,11 @@ const TokenHolders = ({
                               row[0]
                             )}
                           </Link>
+                          <br />
+                          {((address) =>
+                            address.slice(0, 16) + "..." + address.slice(-16))(
+                            row[0]
+                          )}
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           {Number(row[1]).toFixed(token.decimals)}
@@ -973,7 +978,7 @@ const Token = ({
           transactions={
             addresses
               ? transactions.filter(
-                  (t) => addresses.includes(t[2]) || addresses.includes(t[3])
+                  (t) => addresses.includes(t[3]) || addresses.includes(t[4])
                 )
               : transactions
           }
