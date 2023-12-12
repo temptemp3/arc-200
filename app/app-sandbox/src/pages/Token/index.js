@@ -40,10 +40,15 @@ import NFDService from "../../services/NFDService";
 import moment from "moment";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import * as Copy from "react-copy-to-clipboard";
+import { toast } from "react-toastify";
 
 import arc200 from "arc200js";
 
 import ScrollableTabsButtonAuto from "../../components/ScrollableTabsButtonAuto";
+
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ContentCopy from "@mui/icons-material/ContentCopy";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
@@ -162,6 +167,8 @@ const TokenApprovals = ({
   approvals,
   nfds,
 }) => {
+  const { CopyToClipboard } = Copy;
+  const notify = (msg) => toast(msg);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   if (approvals?.length === 0) return null;
@@ -213,46 +220,88 @@ const TokenApprovals = ({
                     ).map((row) => (
                       <StyledTableRow key={`approval-owner-${row[0]}`}>
                         <StyledTableCell>
-                          <Link
-                            style={{
-                              fontWeight:
-                                (addresses ?? []).includes(row[0]) && "bold",
-                            }}
-                            onClick={() => {
-                              setAddresses(
-                                Array.from(
-                                  new Set([...(addresses ?? []), row[0]])
-                                )
-                              );
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Link
+                              style={{
+                                fontWeight:
+                                  (addresses ?? []).includes(row[0]) && "bold",
+                              }}
+                              onClick={() => {
+                                setAddresses(
+                                  Array.from(
+                                    new Set([...(addresses ?? []), row[0]])
+                                  )
+                                );
+                              }}
+                            >
+                              {((address) =>
+                                nfds[address]?.name ||
+                                address.slice(0, 8) +
+                                  "..." +
+                                  address.slice(-8))(row[0])}
+                            </Link>
+                            &nbsp;
                             {((address) =>
-                              nfds[address]?.name ||
-                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              nfds[address]?.name ? address.slice(0, 4) : "")(
                               row[0]
                             )}
-                          </Link>
+                            &nbsp;
+                            <CopyToClipboard
+                              text={row[0]}
+                              onCopy={() => {
+                                notify(
+                                  `Copied address ${row[0].slice(
+                                    0,
+                                    4
+                                  )}...${row[0].slice(-4)} to clipboard!`
+                                );
+                              }}
+                            >
+                              <ContentCopy fontSize="small" />
+                            </CopyToClipboard>
+                          </Box>
                         </StyledTableCell>
                         <StyledTableCell>
-                          <Link
-                            style={{
-                              fontWeight:
-                                (addresses ?? []).includes(row[1]) && "bold",
-                            }}
-                            onClick={() => {
-                              setAddresses(
-                                Array.from(
-                                  new Set([...(addresses ?? []), row[1]])
-                                )
-                              );
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Link
+                              style={{
+                                fontWeight:
+                                  (addresses ?? []).includes(row[1]) && "bold",
+                              }}
+                              onClick={() => {
+                                setAddresses(
+                                  Array.from(
+                                    new Set([...(addresses ?? []), row[1]])
+                                  )
+                                );
+                              }}
+                            >
+                              {((address) =>
+                                nfds[address]?.name ||
+                                address.slice(0, 8) +
+                                  "..." +
+                                  address.slice(-8))(row[1])}
+                            </Link>
+                            &nbsp;
                             {((address) =>
-                              nfds[address]?.name ||
-                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              nfds[address]?.name ? address.slice(0, 4) : "")(
                               row[1]
                             )}
-                          </Link>
+                            &nbsp;
+                            <CopyToClipboard
+                              text={row[1]}
+                              onCopy={() => {
+                                notify(
+                                  `Copied address ${row[1].slice(
+                                    0,
+                                    4
+                                  )}...${row[1].slice(-4)} to clipboard!`
+                                );
+                              }}
+                            >
+                              <ContentCopy fontSize="small" />
+                            </CopyToClipboard>
+                          </Box>
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           {(([a, b]) =>
@@ -317,6 +366,8 @@ const TokenApprovalSums = ({
   approvals,
   nfds,
 }) => {
+  const { CopyToClipboard } = Copy;
+  const notify = (msg) => toast(msg);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [showModal, setShowModal] = React.useState(false);
@@ -369,25 +420,46 @@ const TokenApprovalSums = ({
                     ).map((row) => (
                       <StyledTableRow key={`approval-owner-${row[0]}`}>
                         <StyledTableCell>
-                          <Link
-                            style={{
-                              fontWeight:
-                                (addresses ?? []).includes(row[0]) && "bold",
-                            }}
-                            onClick={() => {
-                              setAddresses(
-                                Array.from(
-                                  new Set([...(addresses ?? []), row[0]])
-                                )
-                              );
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Link
+                              style={{
+                                fontWeight:
+                                  (addresses ?? []).includes(row[0]) && "bold",
+                              }}
+                              onClick={() => {
+                                setAddresses(
+                                  Array.from(
+                                    new Set([...(addresses ?? []), row[0]])
+                                  )
+                                );
+                              }}
+                            >
+                              {((address) =>
+                                nfds[address]?.name ||
+                                address.slice(0, 8) +
+                                  "..." +
+                                  address.slice(-8))(row[0])}
+                            </Link>
+                            &nbsp;
                             {((address) =>
-                              nfds[address]?.name ||
-                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              nfds[address]?.name ? address.slice(0, 4) : "")(
                               row[0]
                             )}
-                          </Link>
+                            &nbsp;
+                            <CopyToClipboard
+                              text={row[0]}
+                              onCopy={() => {
+                                notify(
+                                  `Copied address ${row[0].slice(
+                                    0,
+                                    4
+                                  )}...${row[0].slice(-4)} to clipboard!`
+                                );
+                              }}
+                            >
+                              <ContentCopy fontSize="small" />
+                            </CopyToClipboard>
+                          </Box>
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           {(([a, b]) =>
@@ -459,6 +531,8 @@ const TokenHolders = ({
   holders,
   nfds,
 }) => {
+  const { CopyToClipboard } = Copy;
+  const notify = (msg) => toast(msg);
   const [page, setPage] = React.useState(0);
   const [showModal, setShowModal] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
@@ -508,30 +582,46 @@ const TokenHolders = ({
                     ).map((row) => (
                       <StyledTableRow key={row[0]}>
                         <StyledTableCell>
-                          <Link
-                            style={{
-                              fontWeight:
-                                (addresses ?? []).includes(row[0]) && "bold",
-                            }}
-                            onClick={() => {
-                              setAddresses(
-                                Array.from(
-                                  new Set([...(addresses ?? []), row[0]])
-                                )
-                              );
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <Link
+                              style={{
+                                fontWeight:
+                                  (addresses ?? []).includes(row[0]) && "bold",
+                              }}
+                              onClick={() => {
+                                setAddresses(
+                                  Array.from(
+                                    new Set([...(addresses ?? []), row[0]])
+                                  )
+                                );
+                              }}
+                            >
+                              {((address) =>
+                                nfds[address]?.name ||
+                                address.slice(0, 8) +
+                                  "..." +
+                                  address.slice(-8))(row[0])}
+                            </Link>
+                            &nbsp;
                             {((address) =>
-                              nfds[address]?.name ||
-                              address.slice(0, 8) + "..." + address.slice(-8))(
+                              nfds[address]?.name ? address.slice(0, 4) : "")(
                               row[0]
                             )}
-                          </Link>
-                          <br />
-                          {((address) =>
-                            address.slice(0, 16) + "..." + address.slice(-16))(
-                            row[0]
-                          )}
+                            &nbsp;
+                            <CopyToClipboard
+                              text={row[0]}
+                              onCopy={() => {
+                                notify(
+                                  `Copied address ${row[0].slice(
+                                    0,
+                                    4
+                                  )}...${row[0].slice(-4)} to clipboard!`
+                                );
+                              }}
+                            >
+                              <ContentCopy fontSize="small" />
+                            </CopyToClipboard>
+                          </Box>
                         </StyledTableCell>
                         <StyledTableCell align="right">
                           {Number(row[1]).toFixed(token.decimals)}
@@ -599,6 +689,8 @@ const TokenTransactions = ({
   transactions,
   nfds,
 }) => {
+  const { CopyToClipboard } = Copy;
+  const notify = (msg) => toast(msg);
   const [pageTx, setTxPage] = React.useState(0);
   const [rowsTxPerPage, setTxRowsPerPage] = React.useState(10);
   if ((transactions?.length ?? 0) === 0) return null;
@@ -659,42 +751,88 @@ const TokenTransactions = ({
                       <Chip size="small" variant="outlined" label={row[6]} />
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      <Link
-                        style={{
-                          fontWeight:
-                            (addresses ?? []).includes(row[3]) && "bold",
-                        }}
-                        onClick={() => {
-                          setAddresses(
-                            Array.from(new Set([...(addresses ?? []), row[3]]))
-                          );
-                        }}
-                      >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[3]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[3]])
+                              )
+                            );
+                          }}
+                        >
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[3]
+                          )}
+                        </Link>
+                        &nbsp;
                         {((address) =>
-                          nfds[address]?.name ||
-                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          nfds[address]?.name ? address.slice(0, 4) : "")(
                           row[3]
                         )}
-                      </Link>
+                        &nbsp;
+                        <CopyToClipboard
+                          text={row[3]}
+                          onCopy={() => {
+                            notify(
+                              `Copied address ${row[3].slice(
+                                0,
+                                4
+                              )}...${row[3].slice(-4)} to clipboard!`
+                            );
+                          }}
+                        >
+                          <ContentCopy fontSize="small" />
+                        </CopyToClipboard>
+                      </Box>
                     </StyledTableCell>
                     <StyledTableCell align="right">
-                      <Link
-                        style={{
-                          fontWeight:
-                            (addresses ?? []).includes(row[4]) && "bold",
-                        }}
-                        onClick={() => {
-                          setAddresses(
-                            Array.from(new Set([...(addresses ?? []), row[4]]))
-                          );
-                        }}
-                      >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Link
+                          style={{
+                            fontWeight:
+                              (addresses ?? []).includes(row[4]) && "bold",
+                          }}
+                          onClick={() => {
+                            setAddresses(
+                              Array.from(
+                                new Set([...(addresses ?? []), row[4]])
+                              )
+                            );
+                          }}
+                        >
+                          {((address) =>
+                            nfds[address]?.name ||
+                            address.slice(0, 8) + "..." + address.slice(-8))(
+                            row[4]
+                          )}
+                        </Link>
+                        &nbsp;
                         {((address) =>
-                          nfds[address]?.name ||
-                          address.slice(0, 8) + "..." + address.slice(-8))(
+                          nfds[address]?.name ? address.slice(0, 4) : "")(
                           row[4]
                         )}
-                      </Link>
+                        &nbsp;
+                        <CopyToClipboard
+                          text={row[4]}
+                          onCopy={() => {
+                            notify(
+                              `Copied address ${row[4].slice(
+                                0,
+                                4
+                              )}...${row[4].slice(-4)} to clipboard!`
+                            );
+                          }}
+                        >
+                          <ContentCopy fontSize="small" />
+                        </CopyToClipboard>
+                      </Box>
                     </StyledTableCell>
                     <StyledTableCell align="right">
                       {Number(
@@ -899,9 +1037,11 @@ const Token = ({
                 setAddresses(null);
               }
             }}
-            label={((address) =>
+            label={`${((address) =>
               nfds[address]?.name ||
-              address.slice(0, 8) + "..." + address.slice(-8))(address)}
+              address.slice(0, 8) + "..." + address.slice(-8))(address)} ${
+              nfds[address] ? address.slice(0, 4) : ""
+            }`}
           />
         ))}
         {addresses?.length > 1 && (
@@ -1000,9 +1140,27 @@ function Page() {
   const [addresses, setAddresses] = React.useState(null);
   const [searchParams] = useSearchParams();
   const paramAddr = searchParams.get("address");
+  const paramNfd = searchParams.get("nfd");
   React.useEffect(() => {
     if (paramAddr) setAddresses(paramAddr.split(","));
   }, [paramAddr]);
+  React.useEffect(() => {
+    if (paramNfd) {
+      (async () => {
+        const nfd = await NFDService.getNFDByName(paramNfd);
+        const { caAlgo, owner, unverifiedCaAlgo } = nfd;
+        const addresses = new Set();
+        addresses.add(owner);
+        if (caAlgo) {
+          caAlgo.forEach((address) => addresses.add(address));
+        }
+        if (unverifiedCaAlgo) {
+          unverifiedCaAlgo.forEach((address) => addresses.add(address));
+        }
+        setAddresses(Array.from(addresses));
+      })();
+    }
+  }, [paramNfd]);
   const loading = React.useMemo(() => {
     if (!events) return { message: "Loading token info...", progress: 0 };
     return null;
