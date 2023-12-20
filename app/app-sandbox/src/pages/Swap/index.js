@@ -1,22 +1,37 @@
-import {
-  Box,
-  Button,
-  Container,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import * as React from "react";
+import SwapForm from "../../components/SwapForm";
 
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
+import React, { useState } from "react";
+import { Tab, Tabs, Typography } from "@mui/material";
+
+const SwapTabs = () => {
+  const [selectedTab, setSelectedTab] = useState("swap");
+
+  const handleChange = (event, newValue) => {
+    setSelectedTab(newValue);
+  };
+
+  return (
+    <div>
+      <Tabs value={selectedTab} onChange={handleChange} centered>
+        <Tab value="swap" label="Swap" />
+        <Tab value="pool" label="Pool" />
+      </Tabs>
+      {selectedTab === "swap" && (
+        <div>
+          <SwapForm />
+        </div>
+      )}
+      {selectedTab === "pool" && (
+        <div>
+          <Typography variant="h6">Pool Tab Content</Typography>
+        </div>
+      )}
+    </div>
+  );
+};
 
 function Page() {
-  return <TokenSwap />;
+  return <SwapTabs />;
 }
 
 export default Page;

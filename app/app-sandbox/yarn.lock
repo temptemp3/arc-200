@@ -2913,6 +2913,14 @@
     expect "^29.0.0"
     pretty-format "^29.0.0"
 
+"@types/jest@^29.5.11":
+  version "29.5.11"
+  resolved "https://registry.yarnpkg.com/@types/jest/-/jest-29.5.11.tgz#0c13aa0da7d0929f078ab080ae5d4ced80fa2f2c"
+  integrity sha512-S2mHmYIVe13vrm6q4kN6fLYYAka15ALQki/vgDC3mIukEOx8WJlv0kQPM+d4w8Gp6u0uSdKND04IlTXBv0rwnQ==
+  dependencies:
+    expect "^29.0.0"
+    pretty-format "^29.0.0"
+
 "@types/json-schema@*", "@types/json-schema@^7.0.4", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.8", "@types/json-schema@^7.0.9":
   version "7.0.11"
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.11.tgz"
@@ -3889,18 +3897,17 @@ anymatch@^3.0.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-arc200js@^2.1.7, arc200js@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.2.0.tgz#c90b54adfbfc1c349707e07132dad728ec2549d9"
-  integrity sha512-iS7yMhJ/RRgCzC5GGnkw/fs+GlY0EI/gWSvS647pSuG9U6p2xop/KBFKtyDVl7Ai61NOn2jWt2bylB3U2u7pUA==
+arc200js@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.3.2.tgz#55d55446da61cb480dd093f24185e6619f6d6570"
+  integrity sha512-tUkvP6MoqEt1Bd1kDTtfaR6wzY1tN9N1ogno9AJjlrH3gObuZJEBBPoSilYEy1Y64TgYWDxjGPaS0RxC8jcQIg==
   dependencies:
-    arc200js "^2.1.7"
-    arccjs "^2.1.0"
+    arccjs "^2.3.3"
 
-arccjs@^2.1.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.2.0.tgz#4ebefa4298317761e8b100fe8da380122af2d9e9"
-  integrity sha512-tVf08m+09zKoy8uY/IrYoDVYv2TRrTpX3Jh1y+2RHB8conCuXbyudXxD5LZ6VWMMMfGEaglCSRbi7D53tr/Evw==
+arccjs@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.3.3.tgz#f71f46707041f73f7f5db02c8b34da7dfd86f841"
+  integrity sha512-CPHcH+UXiqtkiL96X8o69HPrPK1nnd1NH6BmWWTqVdx6uNCy8IlWie0tN7czCfHcErubYCQ09U7Zk0/T9oZwJw==
   dependencies:
     algosdk "^2.7.0"
     buffer "^6.0.3"
@@ -4280,6 +4287,11 @@ bignumber.js@^9.0.0:
   version "9.1.1"
   resolved "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.1.1.tgz"
   integrity sha512-pHm4LsMJ6lzgNGVfZHjMoO8sdoRhOzOH4MLmY65Jg70bpxCKu5iOHNJyfF6OyvYw7t8Fpf35RuzUyqnQsj8Vig==
+
+bignumber.js@^9.1.2:
+  version "9.1.2"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.1.2.tgz#b7c4242259c008903b13707983b5f4bbd31eda0c"
+  integrity sha512-2/mKyZH9K85bzOEfhXDBFZTGd1CTs+5IHpeFQo9luiBG7hghdC851Pj2WAhb6E3R6b9tZj/XKhbg4fum+Kepug==
 
 binary-extensions@^2.0.0:
   version "2.2.0"
@@ -11155,6 +11167,11 @@ use-sync-external-store@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz"
   integrity sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==
+
+usehooks-ts@^2.9.1:
+  version "2.9.1"
+  resolved "https://registry.yarnpkg.com/usehooks-ts/-/usehooks-ts-2.9.1.tgz#953d3284851ffd097432379e271ce046a8180b37"
+  integrity sha512-2FAuSIGHlY+apM9FVlj8/oNhd+1y+Uwv5QNkMQz1oSfdHk4PXo1qoCw9I5M7j0vpH8CSWFJwXbVPeYDjLCx9PA==
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"

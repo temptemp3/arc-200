@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import ARC200Service from "../../services/ARC200Service.ts";
 import { makeStdLib } from "../../utils/reach";
+import BoltIcon from '@mui/icons-material/Bolt';
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
@@ -228,6 +230,7 @@ function AccountBalance(props) {
                           },
                         }
                       : null,
+                    /*
                     token.assetType === "rc200"
                       ? {
                           label: "T",
@@ -236,6 +239,17 @@ function AccountBalance(props) {
                           onClick: () => {
                             setToken(token);
                             setSpendDialogOpen(true);
+                          },
+                        }
+                      : null,
+                      */
+                    token.assetType === "rc200"
+                      ? {
+                          label: "E",
+                          description: "Swap",
+                          icon: <CurrencyExchangeIcon />,
+                          onClick: () => {
+                            window.location = "/#/swap";
                           },
                         }
                       : null,

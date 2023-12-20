@@ -62,7 +62,9 @@ function SendDialog(props) {
           activeAccount.name === "kibisis"
         ) {
           const { algodClient, indexerClient } = getAlgorandClients();
-          const ci = new arc200(token.appId, algodClient, indexerClient);
+          const ci = new arc200(token.appId, algodClient, indexerClient, {
+            acc: { addr: activeAccount.address },
+          });
 
           res = await ci.arc200_approve(accountAddress, amount);
           if (!res.success) return; // TODO: handle error

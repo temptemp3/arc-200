@@ -23,8 +23,11 @@
     "add": "^2.0.6",
     "algorand-walletconnect-qrcode-modal": "^1.8.0",
     "algosdk": "^2.7.0",
-    "arc200js": "^2.2.0",
+    "arc200js": "^2.3.2",
+    "arccjs": "^2.3.3",
     "axios": "^1.4.0",
+    "bignumber.js": "^9.1.2",
+    "ethers": "^5.7.2",
     "moment": "^2.29.4",
     "nfdjs": "^1.1.0",
     "process": "^0.11.10",
@@ -42,6 +45,7 @@
     "tweetnacl": "^1.0.3",
     "typescript": "^5.0.4",
     "use-debounce": "^9.0.4",
+    "usehooks-ts": "^2.9.1",
     "web-vitals": "^2.1.4",
     "yarn": "^1.22.19"
   },
@@ -74,6 +78,7 @@
     "@babel/plugin-syntax-import-assertions": "^7.23.3",
     "@craco/craco": "^7.1.0",
     "@craco/types": "^7.1.0",
+    "@types/jest": "^29.5.11",
     "@types/react-copy-to-clipboard": "^5.0.4",
     "gh-pages": "^5.0.0"
   }

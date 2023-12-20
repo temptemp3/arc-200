@@ -45,10 +45,8 @@ import { toast } from "react-toastify";
 
 import arc200 from "arc200js";
 
-import ScrollableTabsButtonAuto from "../../components/ScrollableTabsButtonAuto";
-
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ContentCopy from "@mui/icons-material/ContentCopy";
+import { formatWithDecimals } from "../../common/utils/bn";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
@@ -352,172 +350,6 @@ const TokenApprovals = ({
             </Paper>
           )}
         </Box>
-      </>
-    )
-  );
-};
-
-// Token Approval Sums
-const TokenApprovalSums = ({
-  chart,
-  addresses,
-  setAddresses,
-  token,
-  approvals,
-  nfds,
-}) => {
-  const { CopyToClipboard } = Copy;
-  const notify = (msg) => toast(msg);
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [showModal, setShowModal] = React.useState(false);
-  if (approvals?.length === 0) return null;
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - approvals?.length) : 0;
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-  return (
-    token && (
-      <>
-        <Box sx={{ textAlign: "left", margin: 1 }}>
-          <Stack
-            direction="row"
-            gap={1}
-            style={{ alignItems: "center", justifyContent: "flex-start" }}
-          >
-            <h2>
-              Approvals <small>for spending</small> [
-              {approvals?.length > 0 ? approvals?.length : "..."}]
-            </h2>
-            <PieChartIcon color="primary" onClick={() => setShowModal(true)} />
-          </Stack>
-          {approvals?.length > 0 ? (
-            <TableContainer component={Paper}>
-              <Table
-                sx={{ minWidth: 700 }}
-                aria-label="customized pagination table"
-              >
-                <TableHead>
-                  <TableRow>
-                    <StyledTableCell>Spender</StyledTableCell>
-                    <StyledTableCell align="right">Amount</StyledTableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {approvals?.length > 0 ? (
-                    (rowsPerPage > 0
-                      ? approvals?.slice(
-                          page * rowsPerPage,
-                          page * rowsPerPage + rowsPerPage
-                        )
-                      : approvals
-                    ).map((row) => (
-                      <StyledTableRow key={`approval-owner-${row[0]}`}>
-                        <StyledTableCell>
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <Link
-                              style={{
-                                fontWeight:
-                                  (addresses ?? []).includes(row[0]) && "bold",
-                              }}
-                              onClick={() => {
-                                setAddresses(
-                                  Array.from(
-                                    new Set([...(addresses ?? []), row[0]])
-                                  )
-                                );
-                              }}
-                            >
-                              {((address) =>
-                                nfds[address]?.name ||
-                                address.slice(0, 8) +
-                                  "..." +
-                                  address.slice(-8))(row[0])}
-                            </Link>
-                            &nbsp;
-                            {((address) =>
-                              nfds[address]?.name ? address.slice(0, 4) : "")(
-                              row[0]
-                            )}
-                            &nbsp;
-                            <CopyToClipboard
-                              text={row[0]}
-                              onCopy={() => {
-                                notify(
-                                  `Copied address ${row[0].slice(
-                                    0,
-                                    4
-                                  )}...${row[0].slice(-4)} to clipboard!`
-                                );
-                              }}
-                            >
-                              <ContentCopy fontSize="small" />
-                            </CopyToClipboard>
-                          </Box>
-                        </StyledTableCell>
-                        <StyledTableCell align="right">
-                          {(([a, b]) =>
-                            [Number(a).toLocaleString(), b].join("."))(
-                            Number(row[1]).toFixed(token.decimals).split(".")
-                          )}
-                        </StyledTableCell>
-                      </StyledTableRow>
-                    ))
-                  ) : (
-                    <StyledTableRow style={{ height: 184 }}>
-                      <StyledTableCell colSpan={3} align="center">
-                        Loading...
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  )}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TablePagination
-                      rowsPerPageOptions={[
-                        5,
-                        10,
-                        25,
-                        { label: "All", value: -1 },
-                      ]}
-                      colSpan={3}
-                      count={approvals?.length}
-                      rowsPerPage={rowsPerPage}
-                      page={page}
-                      SelectProps={{
-                        inputProps: {
-                          "aria-label": "rows per page",
-                        },
-                        native: true,
-                      }}
-                      onPageChange={handleChangePage}
-                      onRowsPerPageChange={handleChangeRowsPerPage}
-                      ActionsComponent={TablePaginationActions}
-                    />
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Paper sx={{ width: "100%", overflow: "hidden" }}>
-              <Skeleton variant="rounded" width="100%" height={278} />
-            </Paper>
-          )}
-        </Box>
-        <Modal
-          open={showModal}
-          onClose={() => setShowModal(false)}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box style={modalBoxStyle}>{chart}</Box>
-        </Modal>
       </>
     )
   );
@@ -901,25 +733,6 @@ const Token = ({
     [addresses]
   );
 
-  // total amount approved for each spender
-  const approvalsSpender = new Map();
-  for (const [, spender, amount] of approvals) {
-    if (!approvalsSpender.has(spender)) approvalsSpender.set(spender, 0n);
-    approvalsSpender.set(
-      spender,
-      Number(approvalsSpender.get(spender)) + Number(amount)
-    );
-  }
-  // total amount approved fro each owner
-  const approvalsOwner = new Map();
-  for (const [owner, , amount] of approvals) {
-    if (!approvalsOwner.has(owner)) approvalsOwner.set(owner, 0n);
-    approvalsOwner.set(
-      owner,
-      Number(approvalsOwner.get(owner)) + Number(amount)
-    );
-  }
-
   const renderPieChart = (title, data) => {
     return (
       <Chart
@@ -941,32 +754,6 @@ const Token = ({
       .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
       .filter(([address, amount]) => amount > 0),
   ]);
-
-  const approvalsSpenderChart = renderPieChart(
-    "Approvals for spending (total)",
-    ((approvals) => [
-      ["Spender", "Amount"],
-      ...(addresses
-        ? approvals.filter((h) => addresses.includes(h[0]))
-        : approvals
-      )
-        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-        .filter(([address, amount]) => amount > 0),
-    ])(Array.from(approvalsSpender))
-  );
-
-  const approvalsOwnerChart = renderPieChart(
-    "Approvals by Owner (total)",
-    ((approvals) => [
-      ["Owner", "Amount"],
-      ...(addresses
-        ? approvals.filter((h) => addresses.includes(h[0]))
-        : approvals
-      )
-        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-        .filter(([address, amount]) => amount > 0),
-    ])(Array.from(approvalsOwner))
-  );
 
   return (
     // Token Info
@@ -1063,36 +850,6 @@ const Token = ({
         />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <TokenApprovalSums
-          chart={approvalsSpenderChart}
-          addresses={addresses}
-          setAddresses={setAddresses}
-          token={token}
-          approvals={((approvals) =>
-            addresses
-              ? approvals.filter((h) => addresses.includes(h[0]))
-              : approvals)(
-            Array.from(approvalsSpender)
-              .filter(([spender, amount]) => amount > 0n)
-              .sort((a, b) => b[1] - a[1])
-          )}
-          nfds={nfds}
-        />
-        <TokenApprovalSums
-          chart={approvalsOwnerChart}
-          addresses={addresses}
-          setAddresses={setAddresses}
-          token={token}
-          approvals={((approvals) =>
-            addresses
-              ? approvals.filter((h) => addresses.includes(h[0]))
-              : approvals)(
-            Array.from(approvalsOwner)
-              .filter(([spender, amount]) => amount > 0n)
-              .sort((a, b) => b[1] - a[1])
-          )}
-          nfds={nfds}
-        />
         <TokenApprovals
           addresses={addresses}
           setAddresses={setAddresses}
@@ -1104,8 +861,8 @@ const Token = ({
                 )
               : approvals)(
             approvals
-              .filter(([owner, spender, amount]) => amount > 0n)
-              .sort((a, b) => b[2] - a[2])
+            //.filter(([owner, spender, amount]) => amount > 0n)
+            //.sort((a, b) => b[2] - a[2])
           )}
           nfds={nfds}
         />
@@ -1215,20 +972,23 @@ function Page() {
         return b2 - a2;
       });
       const atxns = approvalEvent.events;
-      const approvalsM = new Map();
-      for (const [, , , owner, spender, amount] of atxns) {
-        if (!approvalsM.has(owner)) approvalsM.set(owner, new Map());
-        approvalsM.get(owner).set(spender, amount);
-      }
-      // flatten map to array containing [owner, spender, amount]
-      const approvals = Array.from(approvalsM.entries()).flatMap(
-        ([owner, spenderMap]) =>
-          Array.from(spenderMap.entries()).map(([spender, amount]) => [
-            owner,
-            spender,
-            fawd(amount, token.decimals),
-          ])
-      );
+      atxns.sort((a, b) => b[1] - a[1]);
+      const approvalS = new Set();
+      const approvals = [];
+      atxns
+        .map(([, , , owner, spender, amount]) => [owner, spender, amount])
+        .forEach(([owner, spender, amount]) => {
+          const key = `${owner}-${spender}`;
+          if (!approvalS.has(key)) {
+            approvalS.add(key);
+            approvals.push([
+              owner,
+              spender,
+              formatWithDecimals(amount, token.decimals),
+            ]);
+          }
+        });
+      approvals.sort((a, b) => b[2] - a[2]);
       const ctxns = [
         ...ttxns.map((data) => [...data, "Transfer"]),
         ...atxns.map((data) => [...data, "Approval"]),
@@ -1257,7 +1017,7 @@ function Page() {
       transactions={transactions}
       holders={holders}
       nfds={nfds}
-      approvals={approvals}
+      approvals={approvals.filter(([owner, spender, amount]) => amount > 0)}
     />
   ) : (
     <LoadingIndicator message={loading.message} progress={loading.progress} />

@@ -22,6 +22,7 @@ import Subscription from "./pages/Subscription";
 import Mint from "./pages/Mint";
 import Token from "./pages/Token";
 import Config from "./pages/Config";
+import Swap from "./pages/Swap";
 import TokenAddress from "./pages/TokenAddress";
 import AppBar from "./components/AppBar.tsx";
 import { MyCustomProvider } from "./wallet/CustomProvider";
@@ -35,8 +36,8 @@ function App() {
     case "voi":
     case "voi-testnet":
       networkProviders = [
-        { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
         /*
+        { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
         {
           id: PROVIDER_ID.WALLETCONNECT,
           clientStatic: WalletConnectModalSign,
@@ -126,6 +127,7 @@ function App() {
           <Route path="/mint" element={<Mint />} />
           <Route path="/token/:id" element={<Token />} />
           <Route path="/token/:id/address/:addr" element={<TokenAddress />} />
+          <Route path="/swap" element={<Swap />} />
           <Route path="/s" element={<Subscription />} />
         </Routes>
       </div>
