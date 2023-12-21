@@ -1,4 +1,5 @@
 import SwapForm from "../../components/SwapForm";
+import PoolForm from "../../components/PoolForm";
 
 import React, { useState } from "react";
 import { Tab, Tabs, Typography } from "@mui/material";
@@ -23,7 +24,7 @@ const SwapTabs = () => {
       )}
       {selectedTab === "pool" && (
         <div>
-          <Typography variant="h6">Pool Tab Content</Typography>
+          <PoolForm />
         </div>
       )}
     </div>

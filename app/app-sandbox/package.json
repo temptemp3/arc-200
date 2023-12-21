@@ -24,7 +24,7 @@
     "algorand-walletconnect-qrcode-modal": "^1.8.0",
     "algosdk": "^2.7.0",
     "arc200js": "^2.3.2",
-    "arccjs": "^2.3.3",
+    "arccjs": "^2.3.5",
     "axios": "^1.4.0",
     "bignumber.js": "^9.1.2",
     "ethers": "^5.7.2",
