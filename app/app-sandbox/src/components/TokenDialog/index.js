@@ -130,8 +130,9 @@ function TokenDialog(props) {
                 label="Token Id"
                 value={tokenIdStr}
                 onChange={(e) => setTokenIdStr(e.target.value)}
+                error={!!error}
+                helperText={error}
               />
-              {error && <Alert severity="error">{error}</Alert>}
               {tokenType === TOKEN_ASSET && (
                 <FormControlLabel
                   label={`Opt-in to ${asset.asset.params.name} ${asset.asset.params['unit-name']}:${asset.asset.index}`}
