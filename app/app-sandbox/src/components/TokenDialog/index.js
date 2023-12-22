@@ -31,6 +31,7 @@ function TokenDialog(props) {
   const [tokenIdStr, setTokenIdStr] = useState('');
   const [tokenIdStrDebounced] = useDebounce(tokenIdStr, 500);
   const [tokenType, setTokenType] = useState();
+  const [asset, setAsset] = useState();
   const [addAssetChecked, setAddAssetChecked] = useState(false);
   const [error, setError] = useState();
   const isValid = !error && !!tokenType && 
@@ -39,7 +40,8 @@ function TokenDialog(props) {
     if (props.open) {
       setError();
       setTokenType();
-      setTokenIdStr('')
+      setTokenIdStr('');
+      setAsset();
       setAddAssetChecked(false);
     }
   }, [props.open]);
@@ -55,6 +57,7 @@ function TokenDialog(props) {
       .lookupAssetByID(tokenId)
       .do()
       .catch(() => {});
+    setAsset(asset);
     return !!asset;
   }
   const checkToken = async () => {
@@ -62,6 +65,7 @@ function TokenDialog(props) {
     const tokenId = parseInt(tokenIdStrDebounced);
     setError();
     setTokenType();
+    setAsset();
     setAddAssetChecked(false);
     if (await checkAppId(tokenId)) {
       setTokenType(TOKEN_ARC200);
@@ -130,7 +134,7 @@ function TokenDialog(props) {
               {error && <Alert severity="error">{error}</Alert>}
               {tokenType === TOKEN_ASSET && (
                 <FormControlLabel
-                  label="Add asset to wallet"
+                  label={`Opt-in to ${asset.asset.params.name} ${asset.asset.params['unit-name']}:${asset.asset.index}`}
                   control={(
                     <Checkbox
                       checked={addAssetChecked}
