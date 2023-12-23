@@ -140,25 +140,11 @@ const withdrawReserve = async (
   return res;
 };
 
-// here
-// ---
-
-/*
- * v_Swap
- * - returns simulation response
- * @param ctcInfo
- * @param address
- * @param amount
- * @param swapAForB (default: true)
- */
-const v_Swap = async (
-  ctcInfo: number,
-  address: string,
-  amount: bigint,
-  swapAForB = true
-) => {
-  const res = await swap(ctcInfo, address, amount, swapAForB);
-  return res.returnValue;
+const getInfo = async (ctcInfo: number) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const InfoR = await ci.Info();
+  if (!InfoR.success) throw new Error("Info failed");
+  return InfoR.returnValue;
 };
 
 /* doSwap
@@ -241,6 +227,8 @@ const SwapForm: React.FC<SwapFormProps> = () => {
   const [allowance, setAllowance] = React.useState<string>("");
   const [step, setStep] = React.useState<number>(0);
   const [approval, setApproval] = React.useState<string>("");
+  const [poolBals, setPoolBals] = React.useState<bigint[]>([0n, 0n]);
+  const [protoInfo, setProtoInfo] = React.useState<bigint[]>([0n, 0n, 0n]);
 
   const ctcInfo = 23223146;
 
@@ -358,6 +346,46 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       console.log(e);
     }
   }, [swapDirection, debouncedValue, token, ntoken]);
+
+  useEffect(() => {
+    (async () => {
+      const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
+        await getInfo(ctcInfo);
+      setPoolBals(poolBals);
+      setProtoInfo(protoInfo);
+    })();
+  }, [version]);
+
+  const displayPoolLiquidity = useMemo(() => {
+    const [a, b] = (([a, b]) => (swapDirection ? [a, b] : [b, a]))(poolBals);
+    const aBn = new BigNumber(a.toString()).dividedBy(10 ** token.decimals);
+    const bBn = new BigNumber(b.toString()).dividedBy(10 ** ntoken.decimals);
+    return `${Number(aBn.toFixed(token.decimals)).toLocaleString()} ${
+      token.symbol
+    } / ${Number(bBn.toFixed(token.decimals)).toLocaleString()} ${
+      ntoken.symbol
+    }`;
+  }, [poolBals, token, ntoken]);
+
+  const displayExchangeRate = useMemo(() => {
+    const [a, b] = (([a, b]) => (swapDirection ? [a, b] : [b, a]))(poolBals);
+    const aBn = new BigNumber(a.toString()).dividedBy(10 ** token.decimals);
+    const bBn = new BigNumber(b.toString()).dividedBy(10 ** ntoken.decimals);
+    const rate = bBn.dividedBy(aBn);
+    return rate.toFixed(ntoken.decimals);
+  }, [swapDirection, token, ntoken, poolBals]);
+
+  const displayFee = useMemo(() => {
+    const [, , totFee] = protoInfo;
+    const prec = 10_000;
+    const amtA = Number(tokens[swapDirection ? "tokenA" : "tokenB"]);
+    if (isNaN(Number(amtA)) || amtA === 0) return `${Number(totFee) / 100}%`;
+    const tokenBn = new BigNumber(amtA);
+    const totFeeBn = new BigNumber(totFee.toString());
+    const feeBn = tokenBn.multipliedBy(totFeeBn).dividedBy(prec);
+    const feeBnStr = feeBn.toFixed(token.decimals);
+    return `${feeBnStr} ${token.symbol}`;
+  }, [protoInfo, swapDirection, tokens, token]);
 
   const signTransaction = useCallback(
     async (txns: string[]) => {
@@ -893,8 +921,47 @@ const SwapForm: React.FC<SwapFormProps> = () => {
                   helperText=" "
                 />
               </div>
+              <Box
+                sx={{
+                  border: 3,
+                  mb: 3,
+                  p: 2,
+                  borderRadius: "5px",
+                  borderColor: "#1976d2",
+                }}
+              >
+                <List sx={{ p: 0 }}>
+                  {[
+                    {
+                      label: "Exchange Rate",
+                      value: `1 ${token.symbol} ~= ${displayExchangeRate} ${ntoken.symbol}`,
+                    },
+                    {
+                      label: "Swap Fee",
+                      value: displayFee,
+                    },
+                    {
+                      label: "Minimum Received",
+                      value: `${((o) => (o === 0 ? "-" : o.toLocaleString()))(
+                        Number(output)
+                      )} ${ntoken.symbol}`,
+                    },
+                    {
+                      label: "Pool Liquidity",
+                      value: `${displayPoolLiquidity}`,
+                    },
+                  ].map(({ label, value }) => (
+                    <ListItem sx={{ p: 0 }}>
+                      <ListItemText primary={label} />
+                      <Typography variant="caption">{value}</Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
               <Button
-                disabled={error}
+                disabled={
+                  tokens[swapDirection ? "tokenA" : "tokenB"] === "" || error
+                }
                 size="large"
                 fullWidth
                 variant="contained"
