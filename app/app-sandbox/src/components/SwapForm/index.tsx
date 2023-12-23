@@ -324,26 +324,32 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       if (swapDirection) {
         const { tokenA } = debouncedValue;
         if (!tokenA) return;
-        const tokenN = bigNumberify(tokenA);
-        if (tokenN.gt(bigNumberify(allowance))) return;
-        const amount = bigNumberToBigInt(
-          parseWithDecimals(tokenA, token.decimals)
+        const tokenBn = new BigNumber(tokenA);
+        const tokenAtomic = tokenBn.multipliedBy(
+          new BigNumber(10).pow(token.decimals)
         );
-        v_Swap(ctcInfo, activeAccount.address, amount, swapDirection).then(
-          ([a, b]) => {
+        const tokenBi = bigNumberToBigInt(bigNumberify(tokenAtomic.toFixed(0)));
+        const allowanceBi = bigNumberToBigInt(bigNumberify(allowance));
+        console.log({ tokenBi, allowanceBi });
+        swap(ctcInfo, activeAccount.address, tokenBi, swapDirection).then(
+          ({ returnValue }) => {
+            const [a, b] = returnValue;
             setOutput(formatWithDecimals(bigNumberify(b), ntoken.decimals));
           }
         );
       } else {
         const { tokenB } = debouncedValue;
         if (!tokenB) return;
-        const tokenN = bigNumberify(tokenB);
-        if (tokenN.gt(bigNumberify(allowance))) return; // token number is greater than allowance do approval
-        const amount = bigNumberToBigInt(
-          parseWithDecimals(tokenB, token.decimals)
+        const tokenBn = new BigNumber(tokenB);
+        const tokenAtomic = tokenBn.multipliedBy(
+          new BigNumber(10).pow(token.decimals)
         );
-        v_Swap(ctcInfo, activeAccount.address, amount, swapDirection).then(
-          ([a, b]) => {
+        const tokenBi = bigNumberToBigInt(bigNumberify(tokenAtomic.toFixed(0)));
+        const allowanceBi = bigNumberToBigInt(bigNumberify(allowance));
+        console.log({ allowanceBi, tokenBi });
+        swap(ctcInfo, activeAccount.address, tokenBi, swapDirection).then(
+          ({ returnValue }) => {
+            const [a, b] = returnValue;
             setOutput(formatWithDecimals(bigNumberify(a), ntoken.decimals));
           }
         );
