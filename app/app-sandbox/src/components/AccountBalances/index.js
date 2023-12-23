@@ -376,7 +376,7 @@ function AccountBalances(props) {
       });
     }
     setArc200Tokens(tokens);
-  }, [activeAccount, props.tokensIds]);
+  }, [activeAccount, props.tokenIds]);
   // -------------------------------------------
   // effect: reload tokens on account change
   // -------------------------------------------
@@ -386,7 +386,7 @@ function AccountBalances(props) {
   }, [activeAccount, arc200Tokens]);
   useEffect(() => {
     reloadTokens();
-  }, [props.tokensIds]);
+  }, [props.tokenIds]);
   // -------------------------------------------
   return (
     <div className="AccountBalances">
