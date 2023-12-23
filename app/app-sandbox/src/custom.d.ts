@@ -11,3 +11,4 @@ declare module "nfdjs" {
 }
 
 declare module "arccjs";
+declare module "swap200js";

@@ -8,11 +8,7 @@ import {
   Typography,
   ButtonGroup,
   Tooltip,
-  List,
-  ListItem,
-  ListItemText,
 } from "@mui/material";
-import SwapVertIcon from "@mui/icons-material/SwapVert";
 import CONTRACT from "arccjs";
 import { getAlgorandClients } from "../../utils/algorand";
 import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
@@ -20,13 +16,14 @@ import { toast } from "react-toastify";
 
 import { useDebounce } from "usehooks-ts";
 
+import swap200 from "swap200js";
+
 import arc200Schema from "../../abis/arc200.json";
 import swap200Schema from "../../abis/swap200.json";
 import { getCurrentNode, getGenesisHash } from "../../utils/reach";
 import LoadingIndicator from "../LoadingIndicator";
 import { getApplicationAddress, waitForConfirmation } from "algosdk";
 
-import ARC200Service from "../../services/ARC200Service";
 import {
   bigNumberToBigInt,
   bigNumberify,
@@ -34,17 +31,17 @@ import {
 } from "../../common/utils/bn";
 
 import convertToAtomicUnit from "../../common/utils/convertToAtomicUnit";
-import convertToStandardUnit from "../../common/utils/convertToStandardUnit";
 import BigNumber from "bignumber.js";
 
-import BoltIcon from "@mui/icons-material/Bolt";
 import HelpIcon from "@mui/icons-material/Help";
 
 const { indexerClient, algodClient } = getAlgorandClients();
 
 // contractjs funcs
 
-//  swap
+// arc200
+
+// TODO use arc200/swap200 lib
 
 const getBalance = async (ctcInfo: number, address: string) => {
   const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
@@ -64,148 +61,6 @@ const getAllowance = async (
   return allowanceR.returnValue;
 };
 
-const transfer = async (
-  ctcInfo: number,
-  addressFrom: string,
-  addressTo: string,
-  amount: bigint
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema, {
-    addr: addressFrom,
-  });
-  ci.setFee(2000);
-  ci.paymentAmount = 28500;
-  const res = await ci.arc200_transfer(addressTo, amount);
-  if (!res.success) throw new Error("arc200_transfer failed");
-  return res;
-};
-
-const Info = async (ctcInfo: number) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema);
-  const InfoR = await ci.Info();
-  if (!InfoR.success) throw new Error("Info failed");
-  return InfoR.returnValue;
-};
-
-const v_deposit = async (ctcInfo: number, address: string, lp: bigint[]) => {
-  const res = await deposit(ctcInfo, address, lp, 0n);
-  return res.returnValue;
-};
-
-const deposit = async (
-  ctcInfo: number,
-  addr: string,
-  lp: bigint[],
-  ol: bigint
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr,
-  });
-  /*
-  const reserveR = await ci.reserve(addr);
-  if (!reserveR.success) throw new Error("getReserves failed");
-  const reserve = reserveR.returnValue;
-  */
-  ci.setFee(2000);
-  ci.setPaymentAmount(28500);
-  //const arg = [reserve[0], reserve[1]];
-  const res = await ci.Provider_deposit(lp, ol);
-  if (!res.success) throw new Error("Provider_depositR failed");
-  return res;
-};
-
-const v_withdraw = async (ctcInfo: number, address: string, lp: bigint) => {
-  const res = await withdraw(ctcInfo, address, lp, [0n, 0n]);
-  return res.returnValue;
-};
-
-const withdraw = async (
-  ctcInfo: number,
-  addr: string,
-  lp: bigint,
-  outsl: bigint[]
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr,
-  });
-  ci.setFee(2000);
-  ci.setPaymentAmount(28500);
-  const res = await ci.Provider_withdraw(lp, outsl);
-  if (!res.success) throw new Error("Provider_withdraw failed");
-  return res;
-};
-
-//  swap
-
-const getEvents = async (ctcInfo: number) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
-  const res = await ci.getEvents();
-  return res;
-};
-
-const getReserve = async (ctcInfo: number, address: string) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema);
-  const res = await ci.reserve(address);
-  if (!res.success) throw new Error("getReserves failed");
-  return res.returnValue;
-};
-
-const swap = async (
-  ctcInfo: number,
-  address: string,
-  amount: bigint,
-  swapAForB = true
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr: address,
-  });
-  ci.setFee(4000);
-  ci.paymentAmount = 28500 * 2;
-  const res = swapAForB
-    ? await ci.Trader_swapAForB(amount, 0)
-    : await ci.Trader_swapBForA(amount, 0);
-  if (!res.success) throw new Error("Trader_swapAForB failed");
-  return res;
-};
-
-const v_Swap = async (
-  ctcInfo: number,
-  address: string,
-  amount: bigint,
-  swapAForB = true
-) => {
-  const res = await swap(ctcInfo, address, amount, swapAForB);
-  return res.returnValue;
-};
-
-const doSwap = async (
-  ctcInfo: number,
-  address: string,
-  amount: bigint,
-  swapAForB = true
-) => {
-  const res = await swap(ctcInfo, address, amount, swapAForB);
-  if (!res.success) throw new Error("swap failed");
-  return res;
-};
-
-const doWithdraw = async (
-  ctcInfo: number,
-  address: string,
-  amt: bigint,
-  swapDirection = true
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr: address,
-  });
-  ci.setFee(4000);
-  ci.paymentAmount = 28500 * 2;
-  const method = swapDirection ? "Provider_withdrawA" : "Provider_withdrawB";
-  const res = await ci[method](amt);
-  if (!res.success) throw new Error(`${method} failed`);
-  return res.txns;
-};
-
 const doApprove = async (
   ctcInfo: number,
   address: string,
@@ -219,6 +74,78 @@ const doApprove = async (
   ci.paymentAmount = 28500;
   const res = await ci.arc200_approve(addrSpender, amount);
   if (!res.success) throw new Error("arc200_approve failed");
+  return res;
+};
+
+//  swap
+
+const getReserve = async (ctcInfo: number, address: string) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const res = await ci.reserve(address);
+  if (!res.success) throw new Error("getReserves failed");
+  return res.returnValue;
+};
+
+const getInfo = async (ctcInfo: number) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const InfoR = await ci.Info();
+  if (!InfoR.success) throw new Error("Info failed");
+  return InfoR.returnValue;
+};
+
+const withdrawReserve = async (
+  ctcInfo: number,
+  address: string,
+  amt: bigint,
+  isA: boolean
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.withdrawReserve(amt, isA);
+  if (!res.success) throw new Error(`withdrawReserve failed`);
+  return res;
+};
+
+const depositReserve = async (
+  ctcInfo: number,
+  address: string,
+  amount: bigint,
+  isA: boolean
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.depositReserve(amount, isA);
+  if (!res.success) throw new Error("depositReserve failed");
+  return res;
+};
+
+const deposit = async (
+  ctcInfo: number,
+  address: string,
+  lp: bigint[],
+  ol: bigint
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.depositLiquidity(lp, ol);
+  if (!res.success) throw new Error("Provider_depositL failed");
+  return res;
+};
+
+const withdraw = async (
+  ctcInfo: number,
+  address: string,
+  lp: bigint,
+  outsl: bigint[]
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.withdrawLiquidity(lp, outsl);
+  if (!res.success) throw new Error("Provider_withdraw failed");
   return res;
 };
 
@@ -361,17 +288,7 @@ const PoolForm: React.FC<PoolFormProps> = () => {
       swapDirection: false,
     });
     return list;
-  }, [reserves, rate, token, ntoken]);
-
-  /*
-  useEffect(() => {
-    getEvents(token.id).then(setTokenEvents);
-  }, [token]);
-
-  useEffect(() => {
-    getEvents(ntoken.id).then(setNTokenEvents);
-  }, [ntoken]);
-  */
+  }, [reserves, rate, token, ntoken, version]);
 
   useEffect(() => {
     if (!activeAccount) return;
@@ -414,32 +331,20 @@ const PoolForm: React.FC<PoolFormProps> = () => {
 
   useEffect(() => {
     if (!activeAccount || !redeamable) return;
-    v_deposit(
+    deposit(
       ctcInfo,
       activeAccount.address,
-      redeamable.map(({ number }) => number)
-    ).then(setReceive);
-  }, [activeAccount, redeamable]);
+      redeamable.map(({ number }) => number),
+      0n
+    ).then(({ returnValue }) => {
+      setReceive(returnValue);
+    });
+  }, [activeAccount, redeamable, version]);
 
   useEffect(() => {
     (async () => {
-      // ["lptBals", Bals],
-      // ["poolBals", Bals],
-      // ["protoInfo", ProtocolInfo],
-      // ["protoBals", Bals],
-      // ["tokB", TokenT],
-      // ["tokA", TokenT],
-      const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] = await Info(
-        ctcInfo
-      );
-      console.log({
-        lptBals,
-        poolBals,
-        protoInfo,
-        protoBals,
-        tokB,
-        tokA,
-      });
+      const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
+        await getInfo(ctcInfo);
       setLptBals(lptBals);
       setPoolBals(poolBals);
     })();
@@ -552,247 +457,214 @@ const PoolForm: React.FC<PoolFormProps> = () => {
     [swapDirection]
   );
 
-  const handleWithdrawButtonClick = useCallback(async () => {
-    try {
-      setLoading(true);
-      setMessage("Signature pending...");
-      const r = reserves[swapDirection ? 0 : 1];
-      const txns = await doWithdraw(
-        ctcInfo,
-        activeAccount.address,
-        r,
-        swapDirection
-      );
-      const txId = await signTransaction(txns);
-      setMessage("Waiting for confirmation...");
-      await waitForTxn(txId);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [reserves, swapDirection]);
-
-  const handleMaxButtonClick = useCallback(
-    (el: number) => {
-      const newValue = ((tot) => (el === 100 ? tot : (tot * el) / 100))(
-        Number(balances[token.id]) / 10 ** token.decimals
-      ).toFixed(token.decimals);
-      if (swapDirection) {
-        setTokens({ ...tokens, tokenA: newValue.toString() });
-      } else {
-        setTokens({ ...tokens, tokenB: newValue.toString() });
-      }
-    },
-    [reserves, swapDirection, balances, token]
-  );
-
-  const handleApproveMaxButtonClick = useCallback(
-    (el: number) => {
-      const newValue =
-        ((Number(balances[token.id]) / 10 ** token.decimals) * el) / 100;
-      setApproval(newValue.toFixed(token.decimals));
-    },
-    [balances, token]
-  );
-
-  const handleApprove = useCallback(async () => {
-    try {
-      setLoading(true);
-      setMessage("Signature pending...");
-      const res = await doApprove(
-        token.id,
-        activeAccount.address,
-        ctcAddr,
-        bigNumberToBigInt(
-          bigNumberify(
-            convertToAtomicUnit(
-              new BigNumber(approval),
-              token.decimals
-            ).toString()
-          )
-        )
-      );
-      const { txns } = res;
-      const txId = await signTransaction(txns);
-      setMessage("Waiting for confirmation...");
-      await waitForTxn(txId);
-      const msg = "+" + approval + " " + token.symbol;
-      toast(
-        <div>
-          Approve successful!
-          <br />
-          {msg}
-        </div>
-      );
-      setVersion(version + 1);
-      setTokens({ tokenA: "", tokenB: "" });
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeAccount, swapDirection, tokens, approval, token]);
-
-  const handleRedeem = useCallback(
-    async (token: any) => {
+  const handleAdd = useCallback(
+    async (pct: number) => {
+      if (!redeamable) return;
       try {
+        if (pct <= 0 || pct > 100) return;
         setLoading(true);
-        setMessage("Signature pending...");
-
-        const bal = await getBalance(token.id, activeAccount.address);
-        if (bal === 0n) {
-          setMessage("Signature pending (1 of 2)...");
-          const res = await transfer(
-            token.id,
-            activeAccount.address,
-            activeAccount.address,
-            0n
-          );
-          const txId = await signTransaction(res.txns);
-          setMessage("Waiting for confirmation (1 of 2)...");
-          await waitForTxn(txId);
-          setMessage("Signature pending (2 of 2)...");
-        }
-
-        const txns = await doWithdraw(
+        setMessage("Adding liquidty...");
+        const newRedeemable = redeamable.map((el) => {
+          const bn = new BigNumber(el.number.toString());
+          const pctBn = new BigNumber(pct);
+          const out = bn.multipliedBy(pctBn).dividedBy(100);
+          return {
+            ...el,
+            number: bigNumberToBigInt(bigNumberify(out.toFixed(0))),
+          };
+        });
+        const { returnValue: ol } = await deposit(
           ctcInfo,
           activeAccount.address,
-          token.number,
-          token.swapDirection
+          newRedeemable.map(({ number }) => number),
+          0n
         );
+        const { txns } = await deposit(
+          ctcInfo,
+          activeAccount.address,
+          newRedeemable.map(({ number }) => number),
+          ol
+        );
+        setMessage("Pending signature...");
         const txId = await signTransaction(txns);
-
-        if (bal === 0n) {
-          setMessage("Waiting for confirmation (2 of 2)...");
-        } else {
-          setMessage("Waiting for confirmation...");
-        }
+        setMessage("Waiting for confirmation...");
         await waitForTxn(txId);
-        setVersion(version + 1);
+        const msg = "";
         toast(
           <div>
-            Redeem successful!
+            Add successful!
             <br />
-            {"+" +
-              formatWithDecimals(token.number, token.decimals) +
-              " " +
-              token.symbol}
+            {msg}
           </div>
         );
       } catch (e) {
         console.log(e);
       } finally {
         setLoading(false);
+        setVersion(version + 1);
       }
     },
-    [activeAccount, version]
+    [
+      activeAccount,
+      swapDirection,
+      tokens,
+      allowance,
+      token,
+      ntoken,
+      version,
+      redeamable,
+    ]
   );
 
-  const parseWithDecimals = (amount: string, decimals: number) => {
-    const [l, r] = amount.split(".");
-    const lbn = bigNumberify(l).mul(
-      bigNumberify(10).pow(bigNumberify(decimals))
-    );
-    if (r) {
-      const rbn = bigNumberify(r.padEnd(decimals, "0").slice(0, decimals));
-      return lbn.add(rbn);
-    } else {
-      return lbn;
-    }
-  };
-
-  const handleAdd = useCallback(async () => {
-    if (!redeamable) return;
-    try {
-      setLoading(true);
-      setMessage("Adding liquidty...");
-      const res = await deposit(
-        ctcInfo,
-        activeAccount.address,
-        redeamable.map(({ number }) => number),
-        receive
-      );
-      console.log({ res });
-      const { txns } = res;
-      setMessage("Pending signature...");
-      const txId = await signTransaction(txns);
-      setMessage("Waiting for confirmation...");
-      await waitForTxn(txId);
-      const msg = "";
-      toast(
-        <div>
-          Add successful!
-          <br />
-          {msg}
-        </div>
-      );
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-      setVersion(version + 1);
-    }
-  }, [
-    activeAccount,
-    swapDirection,
-    tokens,
-    allowance,
-    token,
-    ntoken,
-    version,
-    redeamable,
-  ]);
-
-  const handleRemove = useCallback(async () => {
-    try {
-      setLoading(true);
-      setMessage("Transaction pending...");
-      const allowance = await getAllowance(
-        ctcInfo,
-        activeAccount.address,
-        ctcAddr
-      );
-      if (allowance < balance) {
-        const { txns } = await doApprove(
+  const handleRemove = useCallback(
+    async (pct: number) => {
+      try {
+        if (pct <= 0 || pct > 100) return;
+        setLoading(true);
+        setMessage("Transaction pending...");
+        const balanceBn = new BigNumber(balance.toString());
+        const out = balanceBn.multipliedBy(pct).dividedBy(100);
+        const outBn = bigNumberify(out.toFixed(0));
+        const outBi = bigNumberToBigInt(outBn);
+        const allowance = await getAllowance(
           ctcInfo,
           activeAccount.address,
-          ctcAddr,
-          balance
+          ctcAddr
+        );
+        if (allowance < outBi) {
+          const { txns } = await doApprove(
+            ctcInfo,
+            activeAccount.address,
+            ctcAddr,
+            allowance + outBi
+          );
+          const txId = await signTransaction(txns);
+          await waitForTxn(txId);
+        }
+        const { returnValue: outsl } = await withdraw(
+          ctcInfo,
+          activeAccount.address,
+          outBi,
+          [0n, 0n]
+        );
+        const { txns } = await withdraw(
+          ctcInfo,
+          activeAccount.address,
+          outBi,
+          outsl
         );
         const txId = await signTransaction(txns);
         await waitForTxn(txId);
+        toast(<div>Remove successful!</div>);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+        setVersion(version + 1);
       }
-      const outsl = await v_withdraw(ctcInfo, activeAccount.address, balance);
-      const { txns } = await withdraw(
-        ctcInfo,
-        activeAccount.address,
-        balance,
-        outsl
-      );
-      const txId = await signTransaction(txns);
-      await waitForTxn(txId);
-      const msg = "-" + balance + " " + token.symbol;
-      toast(
-        <div>
-          Remove successful!
-          <br />
-          {msg}
-        </div>
-      );
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-      setVersion(version + 1);
-    }
-  }, [balance]);
+    },
+    [balance]
+  );
 
-  const handleSwitchDirection = useCallback(() => {
-    setSwapDirection(!swapDirection);
-    setTokens({ tokenA: "", tokenB: "" });
-    // You can add logic here to switch the direction of the swap
-  }, [swapDirection]);
+  const handleDepositReserveButtonClick = useCallback(
+    async (token: any, isA: boolean) => {
+      try {
+        setLoading(true);
+        const input = window.prompt(
+          `Enter amount of ${token.symbol} to deposit:`
+        );
+        const inputN = Number.parseFloat(input.replace(/,/g, ""));
+        if (Number.isNaN(inputN)) return;
+        const inputBn = new BigNumber(inputN);
+        const inputAtomic = convertToAtomicUnit(inputBn, token.decimals);
+        const inputABn = bigNumberify(inputAtomic.toString());
+        const inputABi = bigNumberToBigInt(inputABn);
+        setMessage("Signature pending...");
+        const allowance = await getAllowance(
+          token.id,
+          activeAccount.address,
+          ctcAddr
+        );
+        if (allowance < inputAtomic) {
+          setMessage("Signature pending (1 of 2)...");
+          const { txns } = await doApprove(
+            token.id,
+            activeAccount.address,
+            ctcAddr,
+            inputABi
+          );
+          const txId = await signTransaction(txns);
+          setMessage("Waiting for confirmation (1 of 2)...");
+          await waitForTxn(txId);
+          setMessage("Signature pending (2 of 2)...");
+        }
+        const { txns } = await depositReserve(
+          ctcInfo,
+          activeAccount.address,
+          inputABi,
+          isA
+        );
+        const txId = await signTransaction(txns);
+        setMessage("Waiting for confirmation...");
+        await waitForTxn(txId);
+        const msg = "+" + input + " " + token.symbol;
+        toast(
+          <div>
+            Deposit successful!
+            <br />
+            {msg}
+          </div>
+        );
+        setVersion(version + 1);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeAccount]
+  );
+
+  const handleWithdrawReserveButtonClick = useCallback(
+    async (token: any, isA: boolean) => {
+      try {
+        setLoading(true);
+        const input = window.prompt(
+          `Enter amount of ${token.symbol} to deposit:`
+        );
+        const inputN = Number.parseFloat(input.replace(/,/g, ""));
+        if (Number.isNaN(inputN)) return;
+        const inputBn = new BigNumber(inputN);
+        const inputAtomic = convertToAtomicUnit(inputBn, token.decimals);
+        const inputABn = bigNumberify(inputAtomic.toString());
+        const inputABi = bigNumberToBigInt(inputABn);
+        setMessage("Signature pending...");
+        const { txns } = await withdrawReserve(
+          ctcInfo,
+          activeAccount.address,
+          inputABi,
+          isA
+        );
+        const txId = await signTransaction(txns);
+        setMessage("Waiting for confirmation...");
+        await waitForTxn(txId);
+        const msg = "-" + input + " " + token.symbol;
+        toast(
+          <div>
+            Withdraw successful!
+            <br />
+            {msg}
+          </div>
+        );
+        setVersion(version + 1);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeAccount]
+  );
 
   if (!redeamable) return null;
   return (
@@ -800,92 +672,103 @@ const PoolForm: React.FC<PoolFormProps> = () => {
       sx={{
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
-        height: "80vh",
+        alignItems: "end",
       }}
     >
       {step === 0 || loading ? (
         <LoadingIndicator message={message} />
       ) : (
         <Stack sx={{ minWidth: "300px", width: "500px", gap: 2 }}>
-          <Box
+          <Stack
             sx={{
-              display: "flex",
-              justifyContent: "end",
-              alignItems: "center",
-              spacing: 2,
-              gap: 1,
+              color: "#1976d2",
+              mt: 3,
+              background: "#e3f2fd",
+              p: 1,
+              borderRadius: "5px",
             }}
           >
-            <Typography variant="h5">TVL</Typography>
-            <Typography variant="h5">
-              {Number(
-                formatWithDecimals(poolBals[0] * 2n, token.decimals)
-              ).toLocaleString()}{" "}
-              {token.symbol}
-            </Typography>
-            <Tooltip
-              title={
-                <div>
-                  Total Value Locked:
-                  <br />
-                  {Number(
-                    formatWithDecimals(poolBals[0], token.decimals)
-                  ).toLocaleString()}{" "}
-                  {token.symbol} +{" "}
-                  {Number(
-                    formatWithDecimals(poolBals[1], ntoken.decimals)
-                  ).toLocaleString()}{" "}
-                  {ntoken.symbol}
-                </div>
-              }
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "end",
+                alignItems: "center",
+                spacing: 2,
+                gap: 1,
+              }}
             >
-              <HelpIcon fontSize="medium" />
-            </Tooltip>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "end",
-              alignItems: "center",
-              spacing: 2,
-              gap: 1,
-            }}
-          >
-            <Typography variant="h5">Total Minted</Typography>
-            <Typography variant="h5">
-              {Number(formatWithDecimals(lptBals[1], 6)).toLocaleString()} LPT
-            </Typography>
-            <Tooltip title={<div>LPT, Liquidity Provider Token</div>}>
-              <HelpIcon fontSize="medium" />
-            </Tooltip>
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "end",
-              alignItems: "center",
-              spacing: 2,
-              gap: 1,
-            }}
-          >
-            <Typography variant="h5">Your Share</Typography>
-            <Typography variant="h5">{share}%</Typography>
-            <Tooltip
-              title={
-                <div>
-                  Balance:
-                  <br />
-                  {Number(formatWithDecimals(balance, 6)).toLocaleString()}{" "}
-                  ARC200LP
-                </div>
-              }
+              <Typography variant="h6">TVL</Typography>
+              <Typography variant="h6">
+                {Number(
+                  formatWithDecimals(poolBals[0] * 2n, token.decimals)
+                ).toLocaleString()}{" "}
+                {token.symbol}
+              </Typography>
+              <Tooltip
+                title={
+                  <div>
+                    Total Value Locked:
+                    <br />
+                    {Number(
+                      formatWithDecimals(poolBals[0], token.decimals)
+                    ).toLocaleString()}{" "}
+                    {token.symbol} +{" "}
+                    {Number(
+                      formatWithDecimals(poolBals[1], ntoken.decimals)
+                    ).toLocaleString()}{" "}
+                    {ntoken.symbol}
+                  </div>
+                }
+              >
+                <HelpIcon fontSize="medium" />
+              </Tooltip>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "end",
+                alignItems: "center",
+                spacing: 2,
+                gap: 1,
+              }}
             >
-              <HelpIcon fontSize="medium" />
-            </Tooltip>
-          </Box>
+              <Typography variant="h6">Total Minted</Typography>
+              <Typography variant="h6">
+                {Number(formatWithDecimals(lptBals[1], 6)).toLocaleString()} LPT
+              </Typography>
+              <Tooltip title={<div>LPT, Liquidity Provider Token</div>}>
+                <HelpIcon fontSize="medium" />
+              </Tooltip>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "end",
+                alignItems: "center",
+                spacing: 2,
+                gap: 1,
+              }}
+            >
+              <Typography variant="h6">Your Share</Typography>
+              <Typography variant="h6">{share}%</Typography>
+              <Tooltip
+                title={
+                  <div>
+                    Balance:
+                    <br />
+                    {Number(
+                      formatWithDecimals(balance, 6)
+                    ).toLocaleString()}{" "}
+                    ARC200LP
+                  </div>
+                }
+              >
+                <HelpIcon fontSize="medium" />
+              </Tooltip>
+            </Box>
+          </Stack>
           {step === 2 && (
-            <Stack sx={{ minWidth: "300px", width: "500px", gap: 5 }}>
+            <Stack sx={{ minWidth: "300px", width: "100%", gap: 5 }}>
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "5px" }}
               >
@@ -919,34 +802,27 @@ const PoolForm: React.FC<PoolFormProps> = () => {
                             token.decimals
                           )}
                     </Typography>
+                    <Typography variant="caption">
+                      Reserves:{" "}
+                      {!reserves
+                        ? "-"
+                        : formatWithDecimals(reserves[0], token.decimals)}
+                    </Typography>
                   </Stack>
-                  {/*
-                  <Box>
-                    <ButtonGroup size="small" variant="outlined">
-                      {[0, 50, 100].map((el) => (
-                        <Tooltip
-                          key={`swap-${el}`}
-                          title="Set Approval to Balance"
-                        >
-                          <Button onClick={() => handleMaxButtonClick(el)}>
-                            {el}%
-                          </Button>
-                        </Tooltip>
-                      ))}
-                    </ButtonGroup>
-                  </Box>
-                      */}
                 </Stack>
-                <TextField
-                  disabled
-                  label={tokenList[swapDirection ? tokenA : tokenB].symbol}
-                  value={formatWithDecimals(
-                    bigNumberify(redeamable[0]?.number ?? 0),
-                    token.decimals
-                  )}
-                  fullWidth
-                  type="number"
-                />
+
+                <Stack direction="row" gap={0}>
+                  <TextField
+                    disabled
+                    label={tokenList[swapDirection ? tokenA : tokenB].symbol}
+                    value={formatWithDecimals(
+                      bigNumberify(redeamable[0]?.number ?? 0),
+                      token.decimals
+                    )}
+                    fullWidth
+                    type="number"
+                  />
+                </Stack>
 
                 <Button
                   variant="text"
@@ -987,28 +863,93 @@ const PoolForm: React.FC<PoolFormProps> = () => {
                             ntoken.decimals
                           )}
                     </Typography>
+                    <Typography variant="caption">
+                      Reserves:{" "}
+                      {!reserves
+                        ? "-"
+                        : formatWithDecimals(reserves[1], ntoken.decimals)}
+                    </Typography>
                   </Stack>
                 </Box>
-                <TextField
-                  disabled
-                  label={tokenList[swapDirection ? tokenB : tokenA].symbol}
-                  value={formatWithDecimals(
-                    bigNumberify(redeamable[1]?.number ?? 0),
-                    ntoken.decimals
-                  )}
-                  fullWidth
-                  type="number"
-                />
+                <Stack direction="row">
+                  <TextField
+                    disabled
+                    label={tokenList[swapDirection ? tokenB : tokenA].symbol}
+                    value={formatWithDecimals(
+                      bigNumberify(redeamable[1]?.number ?? 0),
+                      ntoken.decimals
+                    )}
+                    fullWidth
+                    type="number"
+                  />
+                </Stack>
               </div>
               <Box>
                 You will receive {formatWithDecimals(bigNumberify(receive), 6)}{" "}
                 LPT (new share: {newShare}%)
               </Box>
+              <ButtonGroup>
+                <Button
+                  size="large"
+                  fullWidth
+                  variant="contained"
+                  onClick={async () => {
+                    await handleDepositReserveButtonClick(token, true);
+                  }}
+                >
+                  Deposit
+                </Button>
+                <Button size="large" fullWidth variant="text">
+                  {token.symbol}
+                </Button>
+                <Button
+                  size="large"
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => {
+                    handleWithdrawReserveButtonClick(token, true);
+                  }}
+                >
+                  Withdraw
+                </Button>
+              </ButtonGroup>
+              <ButtonGroup>
+                <Button
+                  size="large"
+                  fullWidth
+                  variant="contained"
+                  onClick={() => {
+                    handleDepositReserveButtonClick(ntoken, false);
+                  }}
+                >
+                  Deposit
+                </Button>
+                <Button size="large" fullWidth variant="text">
+                  {ntoken.symbol}
+                </Button>
+                <Button
+                  size="large"
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => {
+                    handleWithdrawReserveButtonClick(ntoken, false);
+                  }}
+                >
+                  Withdraw
+                </Button>
+              </ButtonGroup>
               <Button
                 size="large"
                 fullWidth
                 variant="contained"
-                onClick={handleAdd}
+                onClick={() => {
+                  const input = window.prompt(
+                    "Enter percentage (1-100) to add:"
+                  );
+                  const inputN = Number.parseInt(input.replace(/,/g, ""));
+                  if (Number.isNaN(inputN)) return;
+                  handleAdd(inputN);
+                }}
               >
                 Add Liquidity
               </Button>
@@ -1016,7 +957,14 @@ const PoolForm: React.FC<PoolFormProps> = () => {
                 size="large"
                 fullWidth
                 variant="outlined"
-                onClick={handleRemove}
+                onClick={() => {
+                  const input = window.prompt(
+                    "Enter percentage (1-100) to remove:"
+                  );
+                  const inputN = Number.parseInt(input.replace(/,/g, ""));
+                  if (Number.isNaN(inputN)) return;
+                  handleRemove(inputN);
+                }}
               >
                 Remove Liquidity
               </Button>

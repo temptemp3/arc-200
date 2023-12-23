@@ -20,13 +20,14 @@ import { toast } from "react-toastify";
 
 import { useDebounce } from "usehooks-ts";
 
+import swap200 from "swap200js";
+
 import arc200Schema from "../../abis/arc200.json";
 import swap200Schema from "../../abis/swap200.json";
 import { getCurrentNode, getGenesisHash } from "../../utils/reach";
 import LoadingIndicator from "../LoadingIndicator";
 import { getApplicationAddress, waitForConfirmation } from "algosdk";
 
-import ARC200Service from "../../services/ARC200Service";
 import {
   bigNumberToBigInt,
   bigNumberify,
@@ -35,15 +36,22 @@ import {
 
 import convertToAtomicUnit from "../../common/utils/convertToAtomicUnit";
 import convertToStandardUnit from "../../common/utils/convertToStandardUnit";
-import BigNumber from "bignumber.js";
 
-import BoltIcon from "@mui/icons-material/Bolt";
+import BigNumber from "bignumber.js";
 
 const { indexerClient, algodClient } = getAlgorandClients();
 
 // contractjs funcs
 
-//  swap
+// contract
+
+const getEvents = async (ctcInfo: number) => {
+  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema);
+  const res = await ci.getEvents();
+  return res;
+};
+
+//  arc200
 
 const getBalance = async (ctcInfo: string, address: string) => {
   const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
@@ -69,26 +77,36 @@ const transfer = async (
   addressTo: string,
   amount: bigint
 ) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema, {
-    addr: addressFrom,
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: addressFrom },
   });
-  ci.setFee(2000);
-  ci.paymentAmount = 28500;
   const res = await ci.arc200_transfer(addressTo, amount);
   if (!res.success) throw new Error("arc200_transfer failed");
   return res;
 };
 
-//  swap
-
-const getEvents = async (ctcInfo: number) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema);
-  const res = await ci.getEvents();
+const doApprove = async (
+  ctcInfo: number,
+  address: string,
+  addrSpender: string,
+  amount: bigint
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.arc200_approve(addrSpender, amount);
+  if (!res.success) throw new Error("arc200_approve failed");
   return res;
 };
 
+// ---
+
+// swap
+
+// ---
+
 const getReserve = async (ctcInfo: number, address: string) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema);
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
   const res = await ci.reserve(address);
   if (!res.success) throw new Error("getReserves failed");
   return res.returnValue;
@@ -100,18 +118,39 @@ const swap = async (
   amount: bigint,
   swapAForB = true
 ) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr: address,
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
   });
-  ci.setFee(5000);
-  ci.paymentAmount = 28500 * 2;
-  const res = swapAForB
-    ? await ci.Trader_swapAForB(amount, 0)
-    : await ci.Trader_swapBForA(amount, 0);
-  if (!res.success) throw new Error("Trader_swapAForB failed");
+  const res = await ci.swap(amount, 0, swapAForB);
+  if (!res.success) throw new Error("Trader_swap failed");
   return res;
 };
 
+const withdrawReserve = async (
+  ctcInfo: number,
+  address: string,
+  amt: number,
+  isA: boolean
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: address },
+  });
+  const res = await ci.withdrawReserve(amt, isA);
+  if (!res.success) throw new Error(`withdrawReserve failed`);
+  return res;
+};
+
+// here
+// ---
+
+/*
+ * v_Swap
+ * - returns simulation response
+ * @param ctcInfo
+ * @param address
+ * @param amount
+ * @param swapAForB (default: true)
+ */
 const v_Swap = async (
   ctcInfo: number,
   address: string,
@@ -122,6 +161,13 @@ const v_Swap = async (
   return res.returnValue;
 };
 
+/* doSwap
+ * - returns full swap response
+ * @param ctcInfo
+ * @param address
+ * @param amount
+ * @param swapAForB (default: true)
+ */
 const doSwap = async (
   ctcInfo: number,
   address: string,
@@ -133,38 +179,7 @@ const doSwap = async (
   return res;
 };
 
-const doWithdraw = async (
-  ctcInfo: number,
-  address: string,
-  amt: number,
-  swapDirection = true
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, swap200Schema, {
-    addr: address,
-  });
-  ci.setFee(3000);
-  ci.paymentAmount = 28500 * 2;
-  const method = swapDirection ? "Provider_withdrawA" : "Provider_withdrawB";
-  const res = await ci[method](amt);
-  if (!res.success) throw new Error(`${method} failed`);
-  return res.txns;
-};
-
-const doApprove = async (
-  ctcInfo: number,
-  address: string,
-  addrSpender: string,
-  amount: bigint
-) => {
-  const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema, {
-    addr: address,
-  });
-  ci.setFee(2000);
-  ci.paymentAmount = 28500;
-  const res = await ci.arc200_approve(addrSpender, amount);
-  if (!res.success) throw new Error("arc200_approve failed");
-  return res;
-};
+// ---
 
 // end contractjs funcs
 
@@ -418,7 +433,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
     try {
       setLoading(true);
       setMessage("Signature pending...");
-      const res = await doApprove(
+      const { txns } = await doApprove(
         token.id,
         activeAccount.address,
         ctcAddr,
@@ -431,7 +446,6 @@ const SwapForm: React.FC<SwapFormProps> = () => {
           )
         )
       );
-      const { txns } = res;
       const txId = await signTransaction(txns);
       setMessage("Waiting for confirmation...");
       await waitForTxn(txId);
@@ -473,7 +487,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
           setMessage("Signature pending (2 of 2)...");
         }
 
-        const txns = await doWithdraw(
+        const { txns } = await withdrawReserve(
           ctcInfo,
           activeAccount.address,
           token.number,

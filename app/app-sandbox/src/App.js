@@ -36,8 +36,8 @@ function App() {
     case "voi":
     case "voi-testnet":
       networkProviders = [
-        /*
         { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
+        /*
         {
           id: PROVIDER_ID.WALLETCONNECT,
           clientStatic: WalletConnectModalSign,

@@ -13,7 +13,10 @@ const SwapTabs = () => {
 
   return (
     <div>
-      <Tabs value={selectedTab} onChange={handleChange} centered>
+      <Tabs
+        value={selectedTab}
+        onChange={handleChange}
+      >
         <Tab value="swap" label="Swap" />
         <Tab value="pool" label="Pool" />
       </Tabs>
