@@ -132,9 +132,10 @@ const MyAppBar = () => {
                     p.metadata.id === activeAccount?.providerId) ||
                   p.metadata.id === "custom"
               )
-              .disconnect();
-          handleMenuClose();
-          window.location.reload();
+              .disconnect().then(() => {
+                handleMenuClose();
+                window.location.reload();
+              });
         }}
       >
         Disconnect
