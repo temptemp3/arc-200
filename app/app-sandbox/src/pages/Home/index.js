@@ -9,8 +9,7 @@ import defaultTokens from "../../config/defaultTokens";
 import { useNavigate, useParams } from "react-router-dom";
 import { makeStdLib } from "../../utils/reach";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
-import { getAlgorandClients } from "../../utils/algorand";
-import arc200 from "arc200js";
+import TokenDialog from "../../components/TokenDialog/index.js";
 
 const stdlib = makeStdLib();
 
@@ -24,6 +23,7 @@ function Balances(props) {
   const [, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
   const { activeAccount } = useWallet();
+  const [tokenDialogOpen, setTokenDialogOpen] = React.useState(false);
   const addrTo = params.addr;
   const amount = params.amt;
   const note = params.note;
@@ -53,78 +53,20 @@ function Balances(props) {
     </div>
   ) : (
     <>
+      <TokenDialog
+        open={tokenDialogOpen}
+        setOpen={setTokenDialogOpen}
+        tokenIds={tokenIds}
+        setTokenIds={setTokenIds}
+      />
       <div>
         <Typography variant="h6">Balances</Typography>
         <Button
           variant="outlined"
           sx={{ ml: 1 }}
-          onClick={async () => {
-            const tokenIdStr = window.prompt("Enter token id");
-            if (!tokenIdStr) return;
-            const tokenId = parseInt(tokenIdStr);
-
-            const { algodClient, indexerClient } = getAlgorandClients();
-            const ci = new arc200(tokenId, algodClient, indexerClient);
-            const tokenR = await ci.getMetadata();
-
-            if (tokenR.success) {
-              const newTokenIds = Array.from(new Set([...tokenIds, tokenId]));
-              setTokenIds(newTokenIds);
-              const storedTokens = JSON.parse(
-                localStorage.getItem("tokens") ||
-                  `${JSON.stringify(defaultTokens)}`
-              );
-              localStorage.setItem(
-                "tokens",
-                JSON.stringify({
-                  ...storedTokens,
-                  [node]: newTokenIds,
-                })
-              );
-              return;
-            }
-            const asset = await indexerClient
-              .lookupAssetByID(tokenId)
-              .do()
-              .catch(() => {});
-            if (asset) {
-              const acc = await stdlib.connectAccount({
-                addr: activeAccount.address,
-              });
-              await acc.tokenAccepted(tokenId);
-              return;
-            }
-            return alert(`Token '${tokenId}' not found`);
-          }}
+          onClick={() => setTokenDialogOpen(true)}
         >
           Add
-        </Button>
-        <Button
-          variant="outlined"
-          sx={{ ml: 1 }}
-          onClick={() => {
-            try {
-              const token = parseInt(window.prompt("Enter appId"));
-              if (!token) return;
-              const newTokens = Array.from(new Set([...tokenIds, token]));
-              setTokenIds(newTokens);
-              const storedTokens = JSON.parse(
-                localStorage.getItem("tokens") ||
-                  `${JSON.stringify(defaultTokens)}`
-              );
-              localStorage.setItem(
-                "tokens",
-                JSON.stringify({
-                  ...storedTokens,
-                  [node]: newTokens,
-                })
-              );
-            } catch (e) {
-              console.log(e);
-            }
-          }}
-        >
-          Add VRC200
         </Button>
         <Button
           variant="outlined"
