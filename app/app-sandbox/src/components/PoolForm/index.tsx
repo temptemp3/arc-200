@@ -41,7 +41,12 @@ const { indexerClient, algodClient } = getAlgorandClients();
 
 // arc200
 
-// TODO use arc200/swap200 lib
+const getMetadata = async (ctcInfo: number) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const res = await ci.getMetadata();
+  if (!res.success) throw new Error("getMetadata failed");
+  return res.returnValue;
+};
 
 const getBalance = async (ctcInfo: number, address: string) => {
   const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
@@ -59,6 +64,20 @@ const getAllowance = async (
   const allowanceR = await ci.arc200_allowance(addressOwner, addressSpender);
   if (!allowanceR.success) return; // TODO: Handle error
   return allowanceR.returnValue;
+};
+
+const doTransfer = async (
+  ctcInfo: number,
+  addressFrom: string,
+  addrTo: string,
+  amount: bigint
+) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient, {
+    acc: { addr: addressFrom },
+  });
+  const res = await ci.arc200_transfer(addrTo, amount);
+  if (!res.success) throw new Error("arc200_transfer failed");
+  return res;
 };
 
 const doApprove = async (
@@ -158,6 +177,7 @@ const waitForTxn = async (txId: string, rounds = 4) =>
 
 // end algsdk funcs
 
+/*
 const poolList: any = { "23215100": { tokA: 6779767, tokB: 6778021 } };
 const tokenList: any = {
   "6778021": {
@@ -182,9 +202,10 @@ const tokenList: any = {
 };
 const tokenA = "6779767";
 const tokenB = "6778021";
+*/
 
 interface PoolFormProps {
-  // Define any props if needed
+  ctcInfo: string;
 }
 
 interface Tokens {
@@ -192,7 +213,7 @@ interface Tokens {
   tokenB: string;
 }
 
-const PoolForm: React.FC<PoolFormProps> = () => {
+const PoolForm: React.FC<PoolFormProps> = (props) => {
   const { activeAccount } = useWallet();
   const [tokens, setTokens] = React.useState<Tokens>({
     tokenA: "",
@@ -204,7 +225,7 @@ const PoolForm: React.FC<PoolFormProps> = () => {
   const [allowances, setAllowances] = React.useState<any>({});
   const [reserves, setReserves] = React.useState<bigint[]>([0n, 0n]);
   const [output, setOutput] = React.useState<string>("");
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loading, setLoading] = React.useState<boolean>(true);
   const [version, setVersion] = React.useState<number>(0);
   const [message, setMessage] = React.useState<string>("");
   const [allowance, setAllowance] = React.useState<string>("");
@@ -216,22 +237,27 @@ const PoolForm: React.FC<PoolFormProps> = () => {
   const [share, setShare] = React.useState<string>("");
   const [receive, setReceive] = React.useState<bigint>(0n);
   const [newShare, setNewShare] = React.useState<string>("");
-  const [tokenEvents, setTokenEvents] = React.useState<any[]>([]);
-  const [ntokenEvents, setNTokenEvents] = React.useState<any[]>([]);
+  const [tokenList, setTokenList] = React.useState<any>(null);
+  const [tokenA, setTokenA] = React.useState<string>("");
+  const [tokenB, setTokenB] = React.useState<string>("");
 
-  const ctcInfo = 23223146;
+  //const ctcInfo = 23223146; // VIA/VRC200
+  //const ctcInfo = 24584694; // VIA/VOICE
+  const ctcInfo = Number(props.ctcInfo);
 
   const ctcAddr = useMemo(() => getApplicationAddress(ctcInfo), []);
 
   const token = useMemo(() => {
+    if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenA : tokenB;
     return { ...tokenList[token], id: Number(token) };
-  }, []);
+  }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const ntoken = useMemo(() => {
+    if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenB : tokenA;
     return { ...tokenList[token], id: Number(token) };
-  }, []);
+  }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const rate = useMemo(() => {
     const [a, b] = poolBals;
@@ -243,7 +269,8 @@ const PoolForm: React.FC<PoolFormProps> = () => {
   }, [token, ntoken, poolBals]);
 
   const redeamable = useMemo(() => {
-    if (!reserves || !rate) return null;
+    if (!reserves || !rate || !tokenList || tokenA === "" || tokenB === "")
+      return [];
     const list = [];
     const token0: any = tokenList[tokenA];
     const token1: any = tokenList[tokenB];
@@ -343,12 +370,25 @@ const PoolForm: React.FC<PoolFormProps> = () => {
 
   useEffect(() => {
     (async () => {
+      setMessage("Loading liquidity pool...");
       const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
         await getInfo(ctcInfo);
       setLptBals(lptBals);
       setPoolBals(poolBals);
+      setTokenA(`${tokA}`);
+      setTokenB(`${tokB}`);
+      setMessage("Loading token metadata...");
+      const tokATM = await getMetadata(Number(tokA));
+      const tokBTM = await getMetadata(Number(tokB));
+      console.log({ tokATM, tokBTM });
+      setTokenList({
+        [tokA]: { ...tokATM, decimals: Number(tokATM.decimals) },
+        [tokB]: { ...tokBTM, decimals: Number(tokBTM.decimals) },
+      });
+      setLoading(false);
     })();
   }, [version]);
+  console.log({ tokenList });
 
   useEffect(() => {
     if (!activeAccount) return;
@@ -367,7 +407,7 @@ const PoolForm: React.FC<PoolFormProps> = () => {
       });
       setBalances(balances);
     })();
-  }, [activeAccount, version]);
+  }, [activeAccount, version, tokenList, tokenA, tokenB]);
 
   useEffect(() => {
     if (!activeAccount) return;
@@ -576,17 +616,31 @@ const PoolForm: React.FC<PoolFormProps> = () => {
         const inputN = Number.parseFloat(input.replace(/,/g, ""));
         if (Number.isNaN(inputN)) return;
         const inputBn = new BigNumber(inputN);
-        const inputAtomic = convertToAtomicUnit(inputBn, token.decimals);
-        const inputABn = bigNumberify(inputAtomic.toString());
+        const inputAtomic = inputBn.multipliedBy(10 ** token.decimals);
+        const inputABn = bigNumberify(inputAtomic.toFixed(0));
         const inputABi = bigNumberToBigInt(inputABn);
-        setMessage("Signature pending...");
+        setMessage("Signature pending (Deposit)...");
+        const balance = await getBalance(token.id, ctcAddr);
+        if (balance === 0n) {
+          const { txns } = await doTransfer(
+            token.id,
+            activeAccount.address,
+            ctcAddr,
+            0n
+          );
+          setMessage("Signature pending (Transfer)...");
+          const txId = await signTransaction(txns);
+          setMessage("Waiting for confirmation...");
+          await waitForTxn(txId);
+          setMessage("Signature pending (Deposit)...");
+        }
         const allowance = await getAllowance(
           token.id,
           activeAccount.address,
           ctcAddr
         );
-        if (allowance < inputAtomic) {
-          setMessage("Signature pending (1 of 2)...");
+        if (allowance < inputABi) {
+          setMessage("Signature pending (Approve)...");
           const { txns } = await doApprove(
             token.id,
             activeAccount.address,
@@ -594,9 +648,9 @@ const PoolForm: React.FC<PoolFormProps> = () => {
             inputABi
           );
           const txId = await signTransaction(txns);
-          setMessage("Waiting for confirmation (1 of 2)...");
+          setMessage("Waiting for confirmation...");
           await waitForTxn(txId);
-          setMessage("Signature pending (2 of 2)...");
+          setMessage("Signature pending (Deposit)...");
         }
         const { txns } = await depositReserve(
           ctcInfo,
@@ -666,7 +720,6 @@ const PoolForm: React.FC<PoolFormProps> = () => {
     [activeAccount]
   );
 
-  if (!redeamable) return null;
   return (
     <Container
       sx={{

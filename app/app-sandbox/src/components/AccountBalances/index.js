@@ -249,7 +249,7 @@ function AccountBalance(props) {
                           description: "Swap",
                           icon: <CurrencyExchangeIcon />,
                           onClick: () => {
-                            window.location = "/#/swap";
+                            window.location = "/#/swap?poolId=23223146";
                           },
                         }
                       : null,

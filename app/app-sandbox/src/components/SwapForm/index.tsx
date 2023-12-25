@@ -53,6 +53,13 @@ const getEvents = async (ctcInfo: number) => {
 
 //  arc200
 
+const getMetadata = async (ctcInfo: number) => {
+  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const res = await ci.getMetadata();
+  if (!res.success) throw new Error("getMetadata failed");
+  return res.returnValue;
+};
+
 const getBalance = async (ctcInfo: string, address: string) => {
   const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
   const balanceR = await ci.arc200_balanceOf(address);
@@ -177,6 +184,7 @@ const waitForTxn = async (txId: string, rounds = 4) =>
 // end algsdk funcs
 
 const poolList: any = { "23215100": { tokA: 6779767, tokB: 6778021 } };
+/*
 const tokenList: any = {
   "6778021": {
     name: "VRC200",
@@ -200,9 +208,10 @@ const tokenList: any = {
 };
 const tokenA = "6779767";
 const tokenB = "6778021";
+*/
 
 interface SwapFormProps {
-  // Define any props if needed
+  ctcInfo: string;
 }
 
 interface Tokens {
@@ -210,7 +219,7 @@ interface Tokens {
   tokenB: string;
 }
 
-const SwapForm: React.FC<SwapFormProps> = () => {
+const SwapForm: React.FC<SwapFormProps> = (props) => {
   const { activeAccount } = useWallet();
   const [tokens, setTokens] = React.useState<Tokens>({
     tokenA: "",
@@ -221,7 +230,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
   const [balances, setBalances] = React.useState<any>({});
   const [reserves, setReserves] = React.useState<any>({});
   const [output, setOutput] = React.useState<string>("");
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loading, setLoading] = React.useState<boolean>(true);
   const [version, setVersion] = React.useState<number>(0);
   const [message, setMessage] = React.useState<string>("");
   const [allowance, setAllowance] = React.useState<string>("");
@@ -229,22 +238,30 @@ const SwapForm: React.FC<SwapFormProps> = () => {
   const [approval, setApproval] = React.useState<string>("");
   const [poolBals, setPoolBals] = React.useState<bigint[]>([0n, 0n]);
   const [protoInfo, setProtoInfo] = React.useState<bigint[]>([0n, 0n, 0n]);
+  const [tokenList, setTokenList] = React.useState<any>(null);
+  const [tokenA, setTokenA] = React.useState<string>("");
+  const [tokenB, setTokenB] = React.useState<string>("");
 
-  const ctcInfo = 23223146;
+  //const ctcInfo = 23223146; // VIA/VR200
+  //const ctcInfo = 24584694; // VIA/VOICE
+  const ctcInfo = Number(props.ctcInfo);
 
   const ctcAddr = useMemo(() => getApplicationAddress(ctcInfo), []);
 
   const token = useMemo(() => {
+    if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenA : tokenB;
     return { ...tokenList[token], id: Number(token) };
-  }, [swapDirection]);
+  }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const ntoken = useMemo(() => {
+    if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenB : tokenA;
     return { ...tokenList[token], id: Number(token) };
-  }, [swapDirection]);
+  }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const redeamable = useMemo(() => {
+    if (!tokenList || tokenA === "" || tokenB === "") return [];
     const list = [];
     const token0: any = tokenList[tokenA];
     const token1: any = tokenList[tokenB];
@@ -263,10 +280,30 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       swapDirection: false,
     });
     return list;
-  }, [reserves]);
+  }, [reserves, tokenList, tokenA, tokenB]);
 
   useEffect(() => {
-    if (!activeAccount) return;
+    (async () => {
+      setMessage("Loading liquidity pool...");
+      const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
+        await getInfo(ctcInfo);
+      setPoolBals(poolBals);
+      setProtoInfo(protoInfo);
+      setTokenA(`${tokA}`);
+      setTokenB(`${tokB}`);
+      setMessage("Loading token metadata...");
+      const tokATM = await getMetadata(Number(tokA));
+      const tokBTM = await getMetadata(Number(tokB));
+      setTokenList({
+        [tokA]: { ...tokATM, decimals: Number(tokATM.decimals) },
+        [tokB]: { ...tokBTM, decimals: Number(tokBTM.decimals) },
+      });
+      setLoading(false);
+    })();
+  }, [version]);
+
+  useEffect(() => {
+    if (!activeAccount || !tokenList) return;
     (async () => {
       const tokens = Object.entries(tokenList)
         .filter(([k, v]) => [tokenA, tokenB].includes(k))
@@ -282,7 +319,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       });
       setBalances(balances);
     })();
-  }, [activeAccount, version]);
+  }, [activeAccount, version, tokenA, tokenB, tokenList]);
 
   useEffect(() => {
     if (!activeAccount) return;
@@ -290,10 +327,10 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       const reserves_ = await getReserve(ctcInfo, activeAccount.address);
       setReserves(reserves_);
     })();
-  }, [activeAccount, version]);
+  }, [activeAccount, version, tokenA, tokenB, tokenList]);
 
   useEffect(() => {
-    if (!activeAccount) return;
+    if (!activeAccount || tokenA === "" || tokenB === "") return;
     const tokenId = Number(swapDirection ? tokenA : tokenB);
     getAllowance(tokenId, activeAccount.address, ctcAddr).then(
       (allowanceBi: bigint) => {
@@ -305,7 +342,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
         }
       }
     );
-  }, [activeAccount, version, swapDirection]);
+  }, [activeAccount, version, swapDirection, tokenA, tokenB]);
 
   useEffect(() => {
     try {
@@ -318,7 +355,6 @@ const SwapForm: React.FC<SwapFormProps> = () => {
         );
         const tokenBi = bigNumberToBigInt(bigNumberify(tokenAtomic.toFixed(0)));
         const allowanceBi = bigNumberToBigInt(bigNumberify(allowance));
-        console.log({ tokenBi, allowanceBi });
         swap(ctcInfo, activeAccount.address, tokenBi, swapDirection).then(
           ({ returnValue }) => {
             const [a, b] = returnValue;
@@ -334,7 +370,6 @@ const SwapForm: React.FC<SwapFormProps> = () => {
         );
         const tokenBi = bigNumberToBigInt(bigNumberify(tokenAtomic.toFixed(0)));
         const allowanceBi = bigNumberToBigInt(bigNumberify(allowance));
-        console.log({ allowanceBi, tokenBi });
         swap(ctcInfo, activeAccount.address, tokenBi, swapDirection).then(
           ({ returnValue }) => {
             const [a, b] = returnValue;
@@ -346,15 +381,6 @@ const SwapForm: React.FC<SwapFormProps> = () => {
       console.log(e);
     }
   }, [swapDirection, debouncedValue, token, ntoken]);
-
-  useEffect(() => {
-    (async () => {
-      const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
-        await getInfo(ctcInfo);
-      setPoolBals(poolBals);
-      setProtoInfo(protoInfo);
-    })();
-  }, [version]);
 
   const displayPoolLiquidity = useMemo(() => {
     const [a, b] = (([a, b]) => (swapDirection ? [a, b] : [b, a]))(poolBals);
@@ -698,6 +724,7 @@ const SwapForm: React.FC<SwapFormProps> = () => {
     }
   }, [error, allowance, swapDirection, token, ntoken, balances, tokens]);
 
+  //if (!tokenList) return null;
   return (
     <Container
       sx={{
