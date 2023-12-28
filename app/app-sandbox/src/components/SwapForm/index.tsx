@@ -24,7 +24,7 @@ import swap200 from "swap200js";
 
 import arc200Schema from "../../abis/arc200.json";
 import swap200Schema from "../../abis/swap200.json";
-import { getCurrentNode, getGenesisHash } from "../../utils/reach";
+import { getCurrentNode, getGenesisHash, makeStdLib } from "../../utils/reach";
 import LoadingIndicator from "../LoadingIndicator";
 import { getApplicationAddress, waitForConfirmation } from "algosdk";
 
@@ -40,6 +40,8 @@ import convertToStandardUnit from "../../common/utils/convertToStandardUnit";
 import BigNumber from "bignumber.js";
 
 const { indexerClient, algodClient } = getAlgorandClients();
+
+const stdlib: any = makeStdLib();
 
 // contractjs funcs
 
@@ -85,9 +87,9 @@ const transfer = async (
   amount: bigint
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: addressFrom },
+    acc: { addr: addressFrom, sk: new Uint8Array(0) },
   });
-  const res = await ci.arc200_transfer(addressTo, amount);
+  const res = await ci.arc200_transfer(addressTo, amount, true, false);
   if (!res.success) throw new Error("arc200_transfer failed");
   return res;
 };
@@ -99,9 +101,9 @@ const doApprove = async (
   amount: bigint
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.arc200_approve(addrSpender, amount);
+  const res = await ci.arc200_approve(addrSpender, amount, true, false);
   if (!res.success) throw new Error("arc200_approve failed");
   return res;
 };
@@ -126,9 +128,9 @@ const swap = async (
   swapAForB = true
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.swap(amount, 0, swapAForB);
+  const res = await ci.swap(amount, BigInt(0), swapAForB, true, false);
   if (!res.success) throw new Error("Trader_swap failed");
   return res;
 };
@@ -136,13 +138,13 @@ const swap = async (
 const withdrawReserve = async (
   ctcInfo: number,
   address: string,
-  amt: number,
+  amt: bigint,
   isA: boolean
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.withdrawReserve(amt, isA);
+  const res = await ci.withdrawReserve(amt, isA, true, false);
   if (!res.success) throw new Error(`withdrawReserve failed`);
   return res;
 };
@@ -237,7 +239,9 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
   const [step, setStep] = React.useState<number>(0);
   const [approval, setApproval] = React.useState<string>("");
   const [poolBals, setPoolBals] = React.useState<bigint[]>([0n, 0n]);
-  const [protoInfo, setProtoInfo] = React.useState<bigint[]>([0n, 0n, 0n]);
+  const [protoInfo, setProtoInfo] = React.useState<
+    [bigint, bigint, bigint, string, number]
+  >([0n, 0n, 0n, "", 0]);
   const [tokenList, setTokenList] = React.useState<any>(null);
   const [tokenA, setTokenA] = React.useState<string>("");
   const [tokenB, setTokenB] = React.useState<string>("");
@@ -295,8 +299,14 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       const tokATM = await getMetadata(Number(tokA));
       const tokBTM = await getMetadata(Number(tokB));
       setTokenList({
-        [tokA]: { ...tokATM, decimals: Number(tokATM.decimals) },
-        [tokB]: { ...tokBTM, decimals: Number(tokBTM.decimals) },
+        [tokA as unknown as string]: {
+          ...tokATM,
+          decimals: Number(tokATM.decimals),
+        },
+        [tokB as unknown as string]: {
+          ...tokBTM,
+          decimals: Number(tokBTM.decimals),
+        },
       });
       setLoading(false);
     })();
@@ -445,6 +455,13 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
           .sendRawTransaction(signedTransactionBytes)
           .do();
         return res.txId;
+      } else {
+        const wtxns = txns.map((el) => {
+          return {
+            txn: el,
+          };
+        });
+        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
       }
     },
     [activeAccount, allowance]
@@ -533,13 +550,13 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         setMessage("Signature pending...");
 
         const bal = await getBalance(token.id, activeAccount.address);
-        if (bal === 0n) {
+        if (bal === BigInt(0)) {
           setMessage("Signature pending (1 of 2)...");
           const res = await transfer(
             token.id,
             activeAccount.address,
             activeAccount.address,
-            0n
+            BigInt(0)
           );
           const txId = await signTransaction(res.txns);
           setMessage("Waiting for confirmation (1 of 2)...");

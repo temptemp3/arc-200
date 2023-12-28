@@ -3897,10 +3897,10 @@ anymatch@^3.0.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-arc200js@^2.3.2:
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.3.2.tgz#55d55446da61cb480dd093f24185e6619f6d6570"
-  integrity sha512-tUkvP6MoqEt1Bd1kDTtfaR6wzY1tN9N1ogno9AJjlrH3gObuZJEBBPoSilYEy1Y64TgYWDxjGPaS0RxC8jcQIg==
+arc200js@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/arc200js/-/arc200js-2.3.3.tgz#6cf3f99d49123f7cad15cb1dc3f72d94b648ed00"
+  integrity sha512-LsGmTMg/0IUf/vCGKmN6qOzGtqjQc0n+SKNjli24QnQWgRkb+jl3B72+NYWLSEpW5Q/On6fv+w6X8Cudz/bDuQ==
   dependencies:
     arccjs "^2.3.3"
 
@@ -10746,10 +10746,10 @@ svgo@^2.7.0:
     picocolors "^1.0.0"
     stable "^0.1.8"
 
-swap200js@^0.0.12:
-  version "0.0.12"
-  resolved "https://registry.yarnpkg.com/swap200js/-/swap200js-0.0.12.tgz#56036bfe9bb8431cb3bb74c4042db8f0a27dc947"
-  integrity sha512-oEXzt9QxNrs/nWaG++v8MLbB3U013k0+FEDakhh4ezKC6drA2IdmOHEFgfVb4Y0AeWhPYejrZee+yCSQtFRDOw==
+swap200js@^0.0.14:
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/swap200js/-/swap200js-0.0.14.tgz#8db37909f9bdf08d026bf4e5f022cef0a70ed1d0"
+  integrity sha512-YJXEnG+QODmqIFZRIuKzdv5euwREIJ3VRR/h0JwnrVHxkhebAtfcy8111J0WJoYEdE8VLiL7yb5djmaYu0H6Yg==
   dependencies:
     arccjs "^2.3.3"
 

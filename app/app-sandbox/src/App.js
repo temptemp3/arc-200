@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import "./App.css";
 
@@ -27,7 +27,6 @@ import TokenAddress from "./pages/TokenAddress";
 import AppBar from "./components/AppBar.tsx";
 import { MyCustomProvider } from "./wallet/CustomProvider";
 import { getCurrentNode, getGenesisHash } from "./utils/reach";
-//  import ARC200AppBar from "./components/ARC200AppBar/index.js";
 
 function App() {
   const [node] = getCurrentNode();
@@ -36,7 +35,10 @@ function App() {
     case "voi":
     case "voi-testnet":
       networkProviders = [
-        { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
+        {
+          id: "defly",
+          clientStatic: DeflyWalletConnect,
+        },
         /*
         {
           id: PROVIDER_ID.WALLETCONNECT,
@@ -56,7 +58,7 @@ function App() {
         },
         */
         {
-          id: "custom",
+          id: PROVIDER_ID.CUSTOM,
           clientOptions: {
             name: "kibisis",
             icon: "https://avatars.githubusercontent.com/u/99801015?s=200&v=4",
@@ -93,7 +95,7 @@ function App() {
         },
         //{ id: PROVIDER_ID.EXODUS },
         {
-          id: "custom",
+          id: PROVIDER_ID.CUSTOM,
           clientOptions: {
             name: "kibisis",
             icon: "https://avatars.githubusercontent.com/u/99801015?s=200&v=4",
@@ -118,7 +120,6 @@ function App() {
   });
   return (
     <WalletProvider value={providers}>
-      {/*<ARC200AppBar />*/}
       <div className="App">
         <Routes>
           <Route path="/" element={<Home />} />

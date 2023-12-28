@@ -19,8 +19,7 @@ import { useDebounce } from "usehooks-ts";
 import swap200 from "swap200js";
 
 import arc200Schema from "../../abis/arc200.json";
-import swap200Schema from "../../abis/swap200.json";
-import { getCurrentNode, getGenesisHash } from "../../utils/reach";
+import { getCurrentNode, getGenesisHash, makeStdLib } from "../../utils/reach";
 import LoadingIndicator from "../LoadingIndicator";
 import { getApplicationAddress, waitForConfirmation } from "algosdk";
 
@@ -35,7 +34,11 @@ import BigNumber from "bignumber.js";
 
 import HelpIcon from "@mui/icons-material/Help";
 
+type bals = [bigint, bigint];
+
 const { indexerClient, algodClient } = getAlgorandClients();
+
+const stdlib: any = makeStdLib();
 
 // contractjs funcs
 
@@ -73,9 +76,9 @@ const doTransfer = async (
   amount: bigint
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: addressFrom },
+    acc: { addr: addressFrom, sk: new Uint8Array(0) },
   });
-  const res = await ci.arc200_transfer(addrTo, amount);
+  const res = await ci.arc200_transfer(addrTo, amount, true, false);
   if (!res.success) throw new Error("arc200_transfer failed");
   return res;
 };
@@ -119,9 +122,9 @@ const withdrawReserve = async (
   isA: boolean
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.withdrawReserve(amt, isA);
+  const res = await ci.withdrawReserve(amt, isA, true, false);
   if (!res.success) throw new Error(`withdrawReserve failed`);
   return res;
 };
@@ -133,9 +136,9 @@ const depositReserve = async (
   isA: boolean
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.depositReserve(amount, isA);
+  const res = await ci.depositReserve(amount, isA, true, false);
   if (!res.success) throw new Error("depositReserve failed");
   return res;
 };
@@ -143,13 +146,13 @@ const depositReserve = async (
 const deposit = async (
   ctcInfo: number,
   address: string,
-  lp: bigint[],
+  lp: [bigint, bigint],
   ol: bigint
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.depositLiquidity(lp, ol);
+  const res = await ci.depositLiquidity(lp, ol, true, false);
   if (!res.success) throw new Error("Provider_depositL failed");
   return res;
 };
@@ -158,12 +161,12 @@ const withdraw = async (
   ctcInfo: number,
   address: string,
   lp: bigint,
-  outsl: bigint[]
+  outsl: [bigint, bigint]
 ) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
-    acc: { addr: address },
+    acc: { addr: address, sk: new Uint8Array(0) },
   });
-  const res = await ci.withdrawLiquidity(lp, outsl);
+  const res = await ci.withdrawLiquidity(lp, outsl, true, false);
   if (!res.success) throw new Error("Provider_withdraw failed");
   return res;
 };
@@ -223,7 +226,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
   const [swapDirection, setSwapDirection] = React.useState<boolean>(true);
   const [balances, setBalances] = React.useState<any>({});
   const [allowances, setAllowances] = React.useState<any>({});
-  const [reserves, setReserves] = React.useState<bigint[]>([0n, 0n]);
+  const [reserves, setReserves] = React.useState<any>([BigInt(0), BigInt(0)]);
   const [output, setOutput] = React.useState<string>("");
   const [loading, setLoading] = React.useState<boolean>(true);
   const [version, setVersion] = React.useState<number>(0);
@@ -268,7 +271,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
     return rate;
   }, [token, ntoken, poolBals]);
 
-  const redeamable = useMemo(() => {
+  const redeamable: any = useMemo(() => {
     if (!reserves || !rate || !tokenList || tokenA === "" || tokenB === "")
       return [];
     const list = [];
@@ -361,8 +364,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
     deposit(
       ctcInfo,
       activeAccount.address,
-      redeamable.map(({ number }) => number),
-      0n
+      redeamable.map(({ number }: { number: bigint }) => number),
+      BigInt(0)
     ).then(({ returnValue }) => {
       setReceive(returnValue);
     });
@@ -380,15 +383,19 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
       setMessage("Loading token metadata...");
       const tokATM = await getMetadata(Number(tokA));
       const tokBTM = await getMetadata(Number(tokB));
-      console.log({ tokATM, tokBTM });
       setTokenList({
-        [tokA]: { ...tokATM, decimals: Number(tokATM.decimals) },
-        [tokB]: { ...tokBTM, decimals: Number(tokBTM.decimals) },
+        [tokA as unknown as string]: {
+          ...tokATM,
+          decimals: Number(tokATM.decimals),
+        },
+        [tokB as unknown as string]: {
+          ...tokBTM,
+          decimals: Number(tokBTM.decimals),
+        },
       });
       setLoading(false);
     })();
   }, [version]);
-  console.log({ tokenList });
 
   useEffect(() => {
     if (!activeAccount) return;
@@ -430,10 +437,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
 
   useEffect(() => {
     if (!activeAccount) return;
-    (async () => {
-      const reserves_ = await getReserve(ctcInfo, activeAccount.address);
-      setReserves(reserves_);
-    })();
+    getReserve(ctcInfo, activeAccount.address).then(setReserves);
   }, [activeAccount, version]);
 
   useEffect(() => {
@@ -476,6 +480,13 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           .sendRawTransaction(signedTransactionBytes)
           .do();
         return res.txId;
+      } else {
+        const wtxns = txns.map((el) => {
+          return {
+            txn: el,
+          };
+        });
+        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
       }
     },
     [activeAccount, allowance]
@@ -504,7 +515,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         if (pct <= 0 || pct > 100) return;
         setLoading(true);
         setMessage("Adding liquidty...");
-        const newRedeemable = redeamable.map((el) => {
+        const newRedeemable = redeamable.map((el: any) => {
           const bn = new BigNumber(el.number.toString());
           const pctBn = new BigNumber(pct);
           const out = bn.multipliedBy(pctBn).dividedBy(100);
@@ -516,13 +527,13 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         const { returnValue: ol } = await deposit(
           ctcInfo,
           activeAccount.address,
-          newRedeemable.map(({ number }) => number),
+          newRedeemable.map(({ number }: { number: bigint }) => number),
           0n
         );
         const { txns } = await deposit(
           ctcInfo,
           activeAccount.address,
-          newRedeemable.map(({ number }) => number),
+          newRedeemable.map(({ number }: { number: bigint }) => number),
           ol
         );
         setMessage("Pending signature...");
@@ -621,12 +632,12 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         const inputABi = bigNumberToBigInt(inputABn);
         setMessage("Signature pending (Deposit)...");
         const balance = await getBalance(token.id, ctcAddr);
-        if (balance === 0n) {
+        if (balance === BigInt(0)) {
           const { txns } = await doTransfer(
             token.id,
             activeAccount.address,
             ctcAddr,
-            0n
+            BigInt(0)
           );
           setMessage("Signature pending (Transfer)...");
           const txId = await signTransaction(txns);

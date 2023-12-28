@@ -22,14 +22,12 @@ export class MyCustomProvider implements CustomProvider {
     const { genesisHash } = metadata;
     const wallet = await algorand.enable({ genesisHash });
     return {
-      accounts: [
-        {
-          providerId: PROVIDER_ID.CUSTOM,
-          name: "kibisis",
-          address: wallet.accounts[0].address,
-        },
-      ],
-    };
+      accounts: wallet.accounts.map((account: any) => ({
+        providerId: PROVIDER_ID.CUSTOM,
+        name: "kibisis",
+        address: account.address,
+      })),
+    } as Wallet;
   }
 
   async disconnect(): Promise<void> {
@@ -37,7 +35,7 @@ export class MyCustomProvider implements CustomProvider {
   }
 
   async reconnect(metadata: Metadata): Promise<Wallet | null> {
-    // reconnect to wallet
+    return null;
   }
 
   async signTransactions(
@@ -47,5 +45,6 @@ export class MyCustomProvider implements CustomProvider {
     returnGroup?: boolean | undefined
   ): Promise<Uint8Array[]> {
     // sign transactions
+    return [] as Uint8Array[];
   }
 }
