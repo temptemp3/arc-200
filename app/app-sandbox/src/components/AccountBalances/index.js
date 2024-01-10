@@ -40,7 +40,7 @@ const fawd = stdlib.formatWithDecimals;
 
 const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
 
-const nodeNetwork = (node) => {
+export const nodeNetwork = (node) => {
   switch (node) {
     case "algorand":
     case "algorand-testnet":
@@ -165,7 +165,7 @@ function AccountBalance(props) {
                 sx={{ ml: 1 }}
                 label={`${(
                   (token?.network ?? "")[0] + (token?.assetType ?? "")
-                ).toUpperCase()}:${token.appId}`}
+                ).toUpperCase()}:${token.appId ?? token.tokenId}`}
               />
             )}
             <br />
@@ -265,7 +265,7 @@ function AccountBalances(props) {
   const { activeAccount } = useWallet();
   const [token, setToken] = useState({});
   const [networkTokens, setNetworkTokens] = useState(null);
-  const [nativeTokens, setNativeTokens] = useState([]);
+  const [nativeTokens, setNativeTokens] = useState(null);
   const [arc200Tokens, setArc200Tokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const loading = useMemo(() => !props.tokens, [props.tokens]);
@@ -409,7 +409,7 @@ function AccountBalances(props) {
           <TableBody>
             {props.tokens?.map((token) => (
               <AccountBalance
-                key={token.appId}
+                key={token.appId ?? token.tokenId}
                 token={token}
                 manage={props.manage}
               />

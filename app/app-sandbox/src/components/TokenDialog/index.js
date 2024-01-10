@@ -18,6 +18,7 @@ import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
 import { getAlgorandClients } from "../../utils/algorand";
 import { makeStdLib } from "../../utils/reach";
 import arc200 from "arc200js";
+import { nodeNetwork } from "../AccountBalances/index.js";
 
 const TOKEN_ARC200 = 'arc200'
 const TOKEN_ASSET = 'asset'
@@ -34,6 +35,7 @@ function TokenDialog(props) {
   const [asset, setAsset] = useState();
   const [addAssetChecked, setAddAssetChecked] = useState(false);
   const [error, setError] = useState();
+  const [loading, setLoading] = useState(false);
   const isValid = !error && !!tokenType && 
     (tokenType !== TOKEN_ASSET || (tokenType === TOKEN_ASSET && addAssetChecked));
   useEffect(() => {
@@ -95,23 +97,58 @@ function TokenDialog(props) {
       );
     }
   }
+  const insertToken = async (tokenId) => {
+    const { indexerClient } = getAlgorandClients();
+    const assetDetails = await indexerClient
+      .lookupAssetByID(tokenId)
+      .do();
+    const decimals = assetDetails?.asset?.params?.decimals ?? 0;
+    const name = assetDetails?.asset?.params?.name ?? "Unknown";
+    const symbol = assetDetails?.asset?.params?.["unit-name"] ?? "Unknown";
+    const amountAu = asset?.amount ?? 0;
+    const amount = stdlib.formatWithDecimals(
+      stdlib.bigNumberify(amountAu),
+      decimals
+    );
+    const token = {
+      ...(assetDetails?.asset ?? {}),
+      amount,
+      name,
+      symbol,
+      decimals,
+      tokenId,
+      assetType: "sa", // TODO switch display based on network
+      network: nodeNetwork(node),
+    };
+    const tokens = [...props.tokens, token];
+    tokens.sort((a, b) => a.tokenId - b.tokenId);
+    props.setTokens(tokens);
+  }
   const addAsset = async (tokenId) => {
     if (tokenType === TOKEN_ASSET) {
       const acc = await stdlib.connectAccount({
         addr: activeAccount.address,
       });
-      await acc.tokenAccepted(tokenId);
+      await acc.tokenAccept(tokenId);
+      await insertToken(tokenId);
     }
   }
   const addToken = async () => {
     if (!isValid) return;
-    const tokenId = parseInt(tokenIdStrDebounced);
-    if (tokenType === TOKEN_ARC200) {
-      await addAppId(tokenId);
-    } else if (tokenType === TOKEN_ASSET) {
-      await addAsset(tokenId);
+    setLoading(true);
+    try {
+      const tokenId = parseInt(tokenIdStrDebounced);
+      if (tokenType === TOKEN_ARC200) {
+        await addAppId(tokenId);
+      } else if (tokenType === TOKEN_ASSET) {
+        await addAsset(tokenId);
+      }
+      props.setOpen(false);
+    } catch(e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
     }
-    props.setOpen(false);
   }
   return (
     <div className="SendDialog">
@@ -148,7 +185,7 @@ function TokenDialog(props) {
                 <Button variant="outlined" onClick={() => props.setOpen(false)}>
                   Cancel
                 </Button>
-                <Button disabled={!isValid} variant="contained" onClick={addToken}>
+                <Button disabled={!isValid || loading} variant="contained" onClick={addToken}>
                   Add
                 </Button>
               </ButtonGroup>

@@ -58,6 +58,8 @@ function Balances(props) {
         setOpen={setTokenDialogOpen}
         tokenIds={tokenIds}
         setTokenIds={setTokenIds}
+        tokens={tokens}
+        setTokens={setTokens}
       />
       <div>
         <Typography variant="h6">Balances</Typography>
