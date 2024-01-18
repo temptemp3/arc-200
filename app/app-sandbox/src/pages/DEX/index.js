@@ -267,13 +267,18 @@ function Home() {
     localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}`
   );
   return (
-    <>
-      {activeAccount ? (
-        <Balances pools={pools} tokens={userTokens[node]} />
-      ) : (
-        <Connect />
-      )}
-    </>
+    <Container sx={{ mt: 5 }}>
+      <Stack spacing={2}>
+        <Typography variant="h4" sx={{ textAlign: "left" }}>
+          Tokens
+        </Typography>
+        <TokenList pools={pools} />
+        <Typography variant="h4" sx={{ textAlign: "left" }}>
+          Pools
+        </Typography>
+        <Pools pools={pools} />
+      </Stack>
+    </Container>
   );
 }
 

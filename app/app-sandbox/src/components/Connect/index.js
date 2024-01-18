@@ -1,17 +1,22 @@
-import { Stack, Typography } from "@mui/material";
+import { Stack, Container } from "@mui/material";
 import * as React from "react";
 
 const Connect = () => {
+  const handleClick = () => {
+    alert("Use icon in app bar to connect to wallet.");
+  };
   return (
-    <div className="Home">
-      <Stack direction="column" gap={1}>
-        <Stack
-          direction="column"
-          gap={5}
-          style={{ textAlign: "center" }}
-        ></Stack>
+    <Container
+      maxWidth="sm"
+      sx={{
+        mt: 10,
+      }}
+    >
+      <Stack direction="column" sx={{ mt: 5, gap: 2 }}>
+        <button onClick={handleClick}>Kibisis</button>
+        <button onClick={handleClick}>A-Wallet</button>
       </Stack>
-    </div>
+    </Container>
   );
 };
 

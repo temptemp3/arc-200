@@ -4,6 +4,7 @@ const tokens = {
   voi: [],
   "voi-testnet": [
     6779767, // VIA
+    24590664, // wVOI
     6778021, // VRC200
     /*
     6779791, // Stanley Nickels

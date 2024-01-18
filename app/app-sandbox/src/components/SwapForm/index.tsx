@@ -11,12 +11,17 @@ import {
   List,
   ListItem,
   ListItemText,
+  FormControl,
+  MenuItem,
+  Select,
+  InputLabel,
 } from "@mui/material";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
 import CONTRACT from "arccjs";
 import { getAlgorandClients } from "../../utils/algorand";
 import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import { useDebounce } from "usehooks-ts";
 
@@ -62,13 +67,13 @@ const getMetadata = async (ctcInfo: number) => {
   return res.returnValue;
 };
 
-const getBalance = async (ctcInfo: string, address: string) => {
+const getBalance = async (ctcInfo: number, address: string) => {
   const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, arc200Schema);
   const balanceR = await ci.arc200_balanceOf(address);
+  console.log({ balanceR });
   if (!balanceR.success) return; // TODO: Handle error
   return balanceR.returnValue;
 };
-
 const getAllowance = async (
   ctcInfo: number,
   addressOwner: string,
@@ -214,6 +219,10 @@ const tokenB = "6778021";
 
 interface SwapFormProps {
   ctcInfo: string;
+  direction: boolean;
+  pool: any;
+  pools: any[];
+  tokens: any[];
 }
 
 interface Tokens {
@@ -227,6 +236,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
     tokenA: "",
     tokenB: "",
   });
+  const [pools, setPools] = React.useState<any[]>([]);
   const debouncedValue = useDebounce<Tokens>(tokens, 500);
   const [swapDirection, setSwapDirection] = React.useState<boolean>(true);
   const [balances, setBalances] = React.useState<any>({});
@@ -245,9 +255,8 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
   const [tokenList, setTokenList] = React.useState<any>(null);
   const [tokenA, setTokenA] = React.useState<string>("");
   const [tokenB, setTokenB] = React.useState<string>("");
+  const navigate = useNavigate();
 
-  //const ctcInfo = 23223146; // VIA/VR200
-  //const ctcInfo = 24584694; // VIA/VOICE
   const ctcInfo = Number(props.ctcInfo);
 
   const ctcAddr = useMemo(() => getApplicationAddress(ctcInfo), []);
@@ -255,13 +264,13 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
   const token = useMemo(() => {
     if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenA : tokenB;
-    return { ...tokenList[token], id: Number(token) };
+    return { ...tokenList[token], id: token };
   }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const ntoken = useMemo(() => {
     if (!tokenList || tokenA === "" || tokenB === "") return {};
     const token = swapDirection ? tokenB : tokenA;
-    return { ...tokenList[token], id: Number(token) };
+    return { ...tokenList[token], id: token };
   }, [swapDirection, tokenList, tokenA, tokenB]);
 
   const redeamable = useMemo(() => {
@@ -287,6 +296,20 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
   }, [reserves, tokenList, tokenA, tokenB]);
 
   useEffect(() => {
+    setSwapDirection(props.direction);
+  }, [props.direction]);
+
+  useEffect(() => {
+    if (!props.pools) return;
+    const tok = Number(swapDirection ? tokenA : tokenB);
+    setPools(
+      props.pools.filter(
+        (p) => ctcInfo !== p.poolId && [p.tokA, p.tokB].includes(tok)
+      )
+    );
+  }, [props.pools, props.direction, swapDirection, tokenA, tokenB]);
+
+  useEffect(() => {
     (async () => {
       setMessage("Loading liquidity pool...");
       const [lptBals, poolBals, protoInfo, protoBals, tokB, tokA] =
@@ -302,10 +325,12 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         [tokA as unknown as string]: {
           ...tokATM,
           decimals: Number(tokATM.decimals),
+          id: Number(tokA),
         },
         [tokB as unknown as string]: {
           ...tokBTM,
           decimals: Number(tokBTM.decimals),
+          id: Number(tokB),
         },
       });
       setLoading(false);
@@ -506,14 +531,18 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
     [balances, token]
   );
 
+  console.log({ token });
+
   const handleApprove = useCallback(async () => {
     try {
       setLoading(true);
       setMessage("Signature pending...");
       const { txns } = await doApprove(
-        token.id,
+        Number(token.id),
         activeAccount.address,
         ctcAddr,
+        bigNumberToBigInt(parseWithDecimals(approval, token.decimals))
+        /*
         bigNumberToBigInt(
           bigNumberify(
             convertToAtomicUnit(
@@ -522,6 +551,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
             ).toString()
           )
         )
+        */
       );
       const txId = await signTransaction(txns);
       setMessage("Waiting for confirmation...");
@@ -548,19 +578,48 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       try {
         setLoading(true);
         setMessage("Signature pending...");
-
         const bal = await getBalance(token.id, activeAccount.address);
+        console.log({ bal });
         if (bal === BigInt(0)) {
-          setMessage("Signature pending (1 of 2)...");
-          const res = await transfer(
-            token.id,
-            activeAccount.address,
-            activeAccount.address,
-            BigInt(0)
-          );
-          const txId = await signTransaction(res.txns);
-          setMessage("Waiting for confirmation (1 of 2)...");
-          await waitForTxn(txId);
+          if (token.id === 24590664) {
+            setMessage("Signature pending (1 of 2)...");
+            const ci = new CONTRACT(
+              token.id,
+              algodClient,
+              indexerClient,
+              {
+                name: "",
+                desc: "",
+                methods: [
+                  {
+                    name: "createBalanceBox",
+                    args: [{ type: "address" }],
+                    returns: {
+                      type: "byte",
+                    },
+                  },
+                ],
+                events: [],
+              },
+              { addr: activeAccount.address, sk: new Uint8Array(0) }
+            );
+            ci.setFee(2000);
+            ci.setPaymentAmount(28500);
+            const res = await ci.createBalanceBox(activeAccount.address);
+            const txId = await signTransaction(res.txns);
+            setMessage("Waiting for confirmation (1 of 2)...");
+            await waitForTxn(txId);
+          } else {
+            const res = await transfer(
+              token.id,
+              activeAccount.address,
+              activeAccount.address,
+              BigInt(0)
+            );
+            const txId = await signTransaction(res.txns);
+            setMessage("Waiting for confirmation (1 of 2)...");
+            await waitForTxn(txId);
+          }
           setMessage("Signature pending (2 of 2)...");
         }
 
@@ -600,7 +659,8 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
 
   const parseWithDecimals = (amount: string, decimals: number) => {
     const [l, r] = amount.split(".");
-    const lbn = bigNumberify(l).mul(
+    const safeL = l === "" ? "0" : l;
+    const lbn = bigNumberify(safeL).mul(
       bigNumberify(10).pow(bigNumberify(decimals))
     );
     if (r) {
@@ -651,13 +711,23 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       } else {
         // Swap from tokenB to tokenA
         // Implement your swapping logic here
-        const amount = bigNumberToBigInt(
-          parseWithDecimals(tokens.tokenB, token.decimals)
-        );
+        const allowanceBn = parseWithDecimals(allowance, token.decimals);
+        const amountBn = parseWithDecimals(tokens.tokenB, token.decimals);
+        if (allowanceBn.lt(amountBn)) {
+          setMessage("Approving...");
+          const { txns } = await doApprove(
+            Number(tokenA),
+            activeAccount.address,
+            ctcAddr,
+            bigNumberToBigInt(allowanceBn)
+          );
+          const txId = await signTransaction(txns);
+          setMessage("Waiting for confirmation...");
+        }
         const { txns, returnValue } = await doSwap(
           ctcInfo,
           activeAccount.address,
-          amount,
+          bigNumberToBigInt(amountBn),
           swapDirection
         );
         const txId = await signTransaction(txns);
@@ -685,11 +755,17 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
   }, [activeAccount, swapDirection, tokens, allowance, token, ntoken, version]);
 
   const handleSwitchDirection = useCallback(() => {
+    if (!tokenList) return;
     setSwapDirection(!swapDirection);
     setAllowance("");
     setTokens({ tokenA: "", tokenB: "" });
+    navigate(
+      `/swap?poolId=${props.ctcInfo}&mode=swap&tokA=${
+        tokenList[swapDirection ? tokenB : tokenA].id
+      }`
+    );
     // You can add logic here to switch the direction of the swap
-  }, [swapDirection]);
+  }, [swapDirection, tokenList]);
 
   const error = useMemo(() => {
     try {
@@ -704,6 +780,8 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       return v.gt(allowanceBn) || v.gt(balanceBn);
     } catch (e) {}
   }, [tokens, swapDirection, token, allowance, balances]);
+
+  console.log({ props });
 
   const helperText = useMemo(() => {
     if (error) {
@@ -741,7 +819,38 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
     }
   }, [error, allowance, swapDirection, token, ntoken, balances, tokens]);
 
-  //if (!tokenList) return null;
+  const renderSelect = () => (
+    <FormControl fullWidth>
+      <InputLabel id="demo-simple-select-label">
+        {tokenList[swapDirection ? tokenB : tokenA].symbol}
+      </InputLabel>
+      <Select
+        labelId="demo-simple-select-label"
+        id="demo-simple-select"
+        onChange={(e) => {
+          const newPoolId = e.target.value;
+          const newPool = pools.find((p) => p.poolId === newPoolId);
+          navigate(
+            `/swap?poolId=${newPoolId}&mode=swap&tokA=${Number(
+              swapDirection ? tokenB : tokenA
+            )}`
+          );
+          window.location.reload();
+        }}
+      >
+        {pools.map((p: any) => (
+          <MenuItem key={p.poolId} value={p.poolId}>
+            {props?.tokens?.find((t: any) =>
+              p.tokA === tokenList[swapDirection ? tokenB : tokenA].tokenId
+                ? t.tokenId === p.tokA
+                : t.tokenId === p.tokB
+            )?.symbol ?? "a"}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+
   return (
     <Container
       sx={{
@@ -811,7 +920,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
                   fullWidth
                   type="number"
                 />
-
                 <Button
                   variant="text"
                   onClick={handleSwitchDirection}
@@ -846,14 +954,18 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
                   </Stack>
                   <Box>&nbsp;</Box>
                 </Box>
-                <TextField
-                  disabled
-                  label={tokenList[swapDirection ? tokenB : tokenA].symbol}
-                  value={output}
-                  fullWidth
-                  type="number"
-                  helperText=" "
-                />
+                {pools.length > 0 ? (
+                  renderSelect()
+                ) : (
+                  <TextField
+                    disabled
+                    label={tokenList[swapDirection ? tokenB : tokenA].symbol}
+                    value={output}
+                    fullWidth
+                    type="number"
+                    helperText=" "
+                  />
+                )}
               </div>
               <Button
                 size="large"
@@ -956,19 +1068,23 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
                   </Stack>
                   <Box>&nbsp;</Box>
                 </Box>
-                <TextField
-                  disabled
-                  label={tokenList[swapDirection ? tokenB : tokenA].symbol}
-                  value={output}
-                  fullWidth
-                  type="number"
-                  helperText=" "
-                />
+                {pools.length > 0 ? (
+                  renderSelect()
+                ) : (
+                  <TextField
+                    disabled
+                    label={tokenList[swapDirection ? tokenB : tokenA].symbol}
+                    value={output}
+                    fullWidth
+                    type="number"
+                    helperText=" "
+                  />
+                )}
               </div>
               <Box
                 sx={{
                   border: 3,
-                  mb: 3,
+                  my: 3,
                   p: 2,
                   borderRadius: "5px",
                   borderColor: "#1976d2",

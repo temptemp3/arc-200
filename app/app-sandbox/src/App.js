@@ -18,12 +18,20 @@ import { DaffiWalletConnect } from "@daffiwallet/connect";
 import { WalletConnectModalSign } from "@walletconnect/modal-sign-html";
 
 import Home from "./pages/Home";
+import DEX from "./pages/DEX";
+import NFTBridge from "./pages/NFTBridge";
+import NFTCollection from "./pages/NFTCollection/index.js";
+import NFTToken from "./pages/NFTToken/index.js";
+import NFTMarketpalce from "./pages/NFTMarketplace";
+import NFTPortfolio from "./pages/NFTPortfolio";
 import Subscription from "./pages/Subscription";
 import Mint from "./pages/Mint";
+import Wint from "./pages/Wint";
 import Token from "./pages/Token";
 import Config from "./pages/Config";
 import Swap from "./pages/Swap";
 import TokenAddress from "./pages/TokenAddress";
+import MainMenu from "./components/MainMenu";
 import AppBar from "./components/AppBar.tsx";
 import { MyCustomProvider } from "./wallet/CustomProvider";
 import { getCurrentNode, getGenesisHash } from "./utils/reach";
@@ -121,15 +129,38 @@ function App() {
   return (
     <WalletProvider value={providers}>
       <div className="App">
+        <MainMenu />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/account/:addr" element={<Home />} />
           <Route path="/:addr/:amt/:note" element={<Home />} />
+          <Route path="/dex/" element={<DEX />} />
           <Route path="/config" element={<Config />} />
           <Route path="/mint" element={<Mint />} />
           <Route path="/token/:id" element={<Token />} />
           <Route path="/token/:id/address/:addr" element={<TokenAddress />} />
+          <Route path="/wint/:id" element={<Wint />} />
           <Route path="/swap" element={<Swap />} />
           <Route path="/s" element={<Subscription />} />
+          <Route path="/nft/portfolio" element={<NFTPortfolio />} />
+          <Route path="/nft/marketplace" element={<NFTMarketpalce />} />
+          <Route path="/nft/bridge" element={<NFTBridge />} />
+          <Route path="/nft/collection/:id" element={<NFTCollection />} />
+          <Route
+            path="/nft/collection/:cid/token/:tid"
+            element={<NFTToken />}
+          />
+          <Route
+            path="/nft/collection"
+            element={
+              <div>
+                <iframe
+                  src="https://docs.google.com/spreadsheets/d/13TMV_jkzxPrJEC8LbtWZuG_7j0ypPVk2OGeKEtHqhI0/edit#gid=0"
+                  style={{ width: "100%", height: "100vh", border: "none" }}
+                ></iframe>
+              </div>
+            }
+          />
         </Routes>
       </div>
       <AppBar />
