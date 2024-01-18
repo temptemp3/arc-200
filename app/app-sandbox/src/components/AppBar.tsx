@@ -6,6 +6,7 @@ import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useWallet } from "@txnlab/use-wallet";
@@ -64,7 +65,12 @@ const stdlib = makeStdLib();
 
 const MyAppBar = () => {
   const navigate = useNavigate();
-  const { providers, activeAccount } = useWallet();
+  const {
+    providers,
+    activeAccount,
+    connectedActiveAccounts,
+    connectedAccounts,
+  } = useWallet();
   const [algorand, setAlgorand] = React.useState<any>(null);
   const { CopyToClipboard } = Copy;
   const notify = (msg: string) => toast(msg);
@@ -89,7 +95,7 @@ const MyAppBar = () => {
       setDisplayName(
         ((address) =>
           NFDService.getNFDByAddress(address)?.[address]?.name ||
-          address.slice(0, 8) + "...")(activeAccount.address)
+          address.slice(0, 4) + "...")(activeAccount.address)
       );
     })();
   }, [activeAccount]);
@@ -121,6 +127,40 @@ const MyAppBar = () => {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
+      {activeAccount && (
+        <MenuItem>
+          {activeAccount.address.slice(0, 4)}...
+          {activeAccount.address.slice(-4)}
+          &nbsp;
+          <ContentCopyIcon
+            onClick={() => {
+              notify(
+                `Copied address ${activeAccount.address.slice(
+                  0,
+                  4
+                )}...${activeAccount.address.slice(-4)} to clipboard!`
+              );
+            }}
+          />
+        </MenuItem>
+      )}
+      {connectedActiveAccounts.length > 1 && <Divider />}
+      {connectedActiveAccounts
+        .filter((account) => account.address !== activeAccount?.address)
+        .map((account) => (
+          <MenuItem
+            onClick={() => {
+              providers
+                .find((p) => p.isActive)
+                .setActiveAccount(account.address);
+              window.location.reload();  
+            }}
+          >
+            {account.address.slice(0, 4)}...
+            {account.address.slice(-4)}
+          </MenuItem>
+        ))}
+      <Divider />
       <MenuItem
         onClick={() => {
           activeAccount &&
@@ -132,7 +172,8 @@ const MyAppBar = () => {
                     p.metadata.id === activeAccount?.providerId) ||
                   p.metadata.id === "custom"
               )
-              .disconnect().then(() => {
+              .disconnect()
+              .then(() => {
                 handleMenuClose();
                 window.location.reload();
               });
@@ -202,7 +243,7 @@ const MyAppBar = () => {
               >
                 <img
                   style={{ height: "30px", filter: "grayscale(1)" }}
-                  src={provider.metadata.icon}
+                  src={provider.metadata.id === "defly" ? "/avatar.png" : provider.metadata.icon}
                 />
               </Button>
             </Box>
@@ -220,19 +261,42 @@ const MyAppBar = () => {
               }}
             >
               {displayName && <strong>{displayName}</strong>}
-              <CopyToClipboard
-                text={activeAccount.address}
-                onCopy={() => {
-                  notify(
-                    `Copied address ${activeAccount.address.slice(
-                      0,
-                      4
-                    )}...${activeAccount.address.slice(-4)} to clipboard!`
-                  );
-                }}
-              >
-                <ContentCopyIcon />
-              </CopyToClipboard>
+              {providers &&
+                activeAccount &&
+                providers
+                  .filter((p) => p.metadata.id !== activeAccount.providerId)
+                  .map((provider) => (
+                    <IconButton
+                      size="large"
+                      edge="end"
+                      aria-label="account of current user"
+                      aria-controls={menuId}
+                      aria-haspopup="true"
+                      onClick={() => {
+                        provider.setActiveProvider();
+                        window.location.reload();
+                      }}
+                      color="inherit"
+                    >
+                      {provider.metadata.id === "defly" ? (
+                        <img
+                          style={{
+                            height: "30px",
+                            filter: "grayscale(1)",
+                          }}
+                          src={"/avatar.png"}
+                        />
+                      ) : (
+                        <img
+                          style={{
+                            height: "30px",
+                            filter: "grayscale(1)",
+                          }}
+                          src={provider.metadata.icon}
+                        />
+                      )}
+                    </IconButton>
+                  ))}
               {providers &&
                 activeAccount &&
                 providers.map(
@@ -261,7 +325,11 @@ const MyAppBar = () => {
                                 ? ""
                                 : "grayscale(1)",
                           }}
-                          src={provider.metadata.icon}
+                          src={
+                            provider.metadata.id === "defly"
+                              ? "/avatar.png"
+                              : provider.metadata.icon
+                          }
                         />
                       </IconButton>
                     )

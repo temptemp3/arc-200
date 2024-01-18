@@ -244,13 +244,6 @@ function Page() {
     })();
   }, [token, roundTimes]);
   React.useEffect(() => {
-    if (!transactions) return;
-    const addresses = Array.from(
-      new Set(transactions.map(([, from, to]) => [from, to]).flat())
-    );
-    NFDService.getNFDByAddressBatch(addresses).then(setNfds);
-  }, [transactions]);
-  React.useEffect(() => {
     (async () => {
       const tokenMetadata = await ARC200Service.getTokenMetadata(appId);
       const nonCirculating = (
@@ -278,8 +271,6 @@ function Page() {
       address={address}
       token={token}
       balance={balance}
-      transactions={transactions}
-      walletTransactions={walletTransactions}
       nfds={nfds}
     />
   ) : (

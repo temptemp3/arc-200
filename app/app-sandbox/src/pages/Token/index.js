@@ -29,7 +29,7 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
-import { makeStdLib } from "../../utils/reach";
+import { getCurrentNode, makeStdLib } from "../../utils/reach";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getAlgorandClients, zeroAddress } from "../../utils/algorand";
 import { Chart } from "react-google-charts";
@@ -45,10 +45,11 @@ import { toast } from "react-toastify";
 
 import arc200 from "arc200js";
 
-import ScrollableTabsButtonAuto from "../../components/ScrollableTabsButtonAuto";
-
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ContentCopy from "@mui/icons-material/ContentCopy";
+import { formatWithDecimals } from "../../common/utils/bn";
+
+import algosdk from "algosdk";
+import { registeredToken, tokenURL } from "../../constants/json";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
@@ -357,185 +358,25 @@ const TokenApprovals = ({
   );
 };
 
-// Token Approval Sums
-const TokenApprovalSums = ({
-  chart,
-  addresses,
-  setAddresses,
-  token,
-  approvals,
-  nfds,
-}) => {
-  const { CopyToClipboard } = Copy;
-  const notify = (msg) => toast(msg);
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [showModal, setShowModal] = React.useState(false);
-  if (approvals?.length === 0) return null;
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - approvals?.length) : 0;
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-  return (
-    token && (
-      <>
-        <Box sx={{ textAlign: "left", margin: 1 }}>
-          <Stack
-            direction="row"
-            gap={1}
-            style={{ alignItems: "center", justifyContent: "flex-start" }}
-          >
-            <h2>
-              Approvals <small>for spending</small> [
-              {approvals?.length > 0 ? approvals?.length : "..."}]
-            </h2>
-            <PieChartIcon color="primary" onClick={() => setShowModal(true)} />
-          </Stack>
-          {approvals?.length > 0 ? (
-            <TableContainer component={Paper}>
-              <Table
-                sx={{ minWidth: 700 }}
-                aria-label="customized pagination table"
-              >
-                <TableHead>
-                  <TableRow>
-                    <StyledTableCell>Spender</StyledTableCell>
-                    <StyledTableCell align="right">Amount</StyledTableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {approvals?.length > 0 ? (
-                    (rowsPerPage > 0
-                      ? approvals?.slice(
-                          page * rowsPerPage,
-                          page * rowsPerPage + rowsPerPage
-                        )
-                      : approvals
-                    ).map((row) => (
-                      <StyledTableRow key={`approval-owner-${row[0]}`}>
-                        <StyledTableCell>
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <Link
-                              style={{
-                                fontWeight:
-                                  (addresses ?? []).includes(row[0]) && "bold",
-                              }}
-                              onClick={() => {
-                                setAddresses(
-                                  Array.from(
-                                    new Set([...(addresses ?? []), row[0]])
-                                  )
-                                );
-                              }}
-                            >
-                              {((address) =>
-                                nfds[address]?.name ||
-                                address.slice(0, 8) +
-                                  "..." +
-                                  address.slice(-8))(row[0])}
-                            </Link>
-                            &nbsp;
-                            {((address) =>
-                              nfds[address]?.name ? address.slice(0, 4) : "")(
-                              row[0]
-                            )}
-                            &nbsp;
-                            <CopyToClipboard
-                              text={row[0]}
-                              onCopy={() => {
-                                notify(
-                                  `Copied address ${row[0].slice(
-                                    0,
-                                    4
-                                  )}...${row[0].slice(-4)} to clipboard!`
-                                );
-                              }}
-                            >
-                              <ContentCopy fontSize="small" />
-                            </CopyToClipboard>
-                          </Box>
-                        </StyledTableCell>
-                        <StyledTableCell align="right">
-                          {(([a, b]) =>
-                            [Number(a).toLocaleString(), b].join("."))(
-                            Number(row[1]).toFixed(token.decimals).split(".")
-                          )}
-                        </StyledTableCell>
-                      </StyledTableRow>
-                    ))
-                  ) : (
-                    <StyledTableRow style={{ height: 184 }}>
-                      <StyledTableCell colSpan={3} align="center">
-                        Loading...
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  )}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TablePagination
-                      rowsPerPageOptions={[
-                        5,
-                        10,
-                        25,
-                        { label: "All", value: -1 },
-                      ]}
-                      colSpan={3}
-                      count={approvals?.length}
-                      rowsPerPage={rowsPerPage}
-                      page={page}
-                      SelectProps={{
-                        inputProps: {
-                          "aria-label": "rows per page",
-                        },
-                        native: true,
-                      }}
-                      onPageChange={handleChangePage}
-                      onRowsPerPageChange={handleChangeRowsPerPage}
-                      ActionsComponent={TablePaginationActions}
-                    />
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Paper sx={{ width: "100%", overflow: "hidden" }}>
-              <Skeleton variant="rounded" width="100%" height={278} />
-            </Paper>
-          )}
-        </Box>
-        <Modal
-          open={showModal}
-          onClose={() => setShowModal(false)}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box style={modalBoxStyle}>{chart}</Box>
-        </Modal>
-      </>
-    )
-  );
-};
-
 const TokenHolders = ({
   chart,
   addresses,
   setAddresses,
   token,
-  holders,
+  holders: tokenHolders,
   nfds,
 }) => {
+  const tokenAddr = algosdk.getApplicationAddress(token?.appId || 0);
+  const holders = React.useMemo(() => {
+    return tokenHolders.filter(([a, b]) => a != tokenAddr);
+  }, [token.appId]);
+
   const { CopyToClipboard } = Copy;
   const notify = (msg) => toast(msg);
   const [page, setPage] = React.useState(0);
   const [showModal, setShowModal] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+
   if (holders?.length === 0) return null;
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -890,6 +731,7 @@ const Token = ({
   nfds,
   approvals,
 }) => {
+  const [node] = getCurrentNode();
   const [value, setValue] = React.useState(2);
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -900,25 +742,6 @@ const Token = ({
       addresses ? holders.filter((h) => addresses.includes(h[0])) : holders,
     [addresses]
   );
-
-  // total amount approved for each spender
-  const approvalsSpender = new Map();
-  for (const [, spender, amount] of approvals) {
-    if (!approvalsSpender.has(spender)) approvalsSpender.set(spender, 0n);
-    approvalsSpender.set(
-      spender,
-      Number(approvalsSpender.get(spender)) + Number(amount)
-    );
-  }
-  // total amount approved fro each owner
-  const approvalsOwner = new Map();
-  for (const [owner, , amount] of approvals) {
-    if (!approvalsOwner.has(owner)) approvalsOwner.set(owner, 0n);
-    approvalsOwner.set(
-      owner,
-      Number(approvalsOwner.get(owner)) + Number(amount)
-    );
-  }
 
   const renderPieChart = (title, data) => {
     return (
@@ -941,73 +764,77 @@ const Token = ({
       .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
       .filter(([address, amount]) => amount > 0),
   ]);
-
-  const approvalsSpenderChart = renderPieChart(
-    "Approvals for spending (total)",
-    ((approvals) => [
-      ["Spender", "Amount"],
-      ...(addresses
-        ? approvals.filter((h) => addresses.includes(h[0]))
-        : approvals
-      )
-        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-        .filter(([address, amount]) => amount > 0),
-    ])(Array.from(approvalsSpender))
-  );
-
-  const approvalsOwnerChart = renderPieChart(
-    "Approvals by Owner (total)",
-    ((approvals) => [
-      ["Owner", "Amount"],
-      ...(addresses
-        ? approvals.filter((h) => addresses.includes(h[0]))
-        : approvals
-      )
-        .map(([address, amount]) => [address.slice(0, 4), Number(amount)])
-        .filter(([address, amount]) => amount > 0),
-    ])(Array.from(approvalsOwner))
-  );
-
   return (
     // Token Info
     <Stack sx={{ margin: 1 }}>
       {token && (
-        <Stack>
-          <Stack direction="row" style={{ alignItems: "baseline" }}>
-            <Typography variant="h1">{token.symbol}</Typography>
-          </Stack>
-          <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
-            <code style={{ display: "inline-block" }}>
-              {token.appId && <span>Id: {token.appId}</span>}
-              <br />
-              {token.name && `Name: ${token.name}`}
-              <br />
-              {token.symbol && `Symbol: ${token.symbol}`}
-              <br />
-              Decimals: {token.decimals.toString()}
-              <br />
-              Total Supply:{" "}
-              {Number(
-                fawd(token.totalSupply.toString(), token.decimals)
-              ).toLocaleString()}
-              <br />
-              Circulating Supply: {token.circulatingSupply}
-              <br />
-              Date of creation:{" "}
-              {transactions?.length > 0
-                ? moment.unix(transactions.slice(-1)[0][2]).format("LLL")
-                : "-"}
-              <br />
-              Created at round:{" "}
-              {transactions?.length > 0
-                ? Number(transactions.slice(-1)[0][1]).toLocaleString()
-                : "-"}
-            </code>
+        <Stack direction="row" style={{ alignItems: "start" }} gap={2}>
+          {registeredToken(node, token.appId) && (
+            <img src={tokenURL(node, token.appId)} width="200" height="200" />
+          )}
+          <Stack>
+            <Stack direction="row" style={{ alignItems: "baseline" }}>
+              <Typography variant="h1">{token.symbol}</Typography>
+            </Stack>
+            <Stack direction="column" gap="1em" style={{ textAlign: "left" }}>
+              <code style={{ display: "inline-block" }}>
+                {token.appId && <span>Id: {token.appId}</span>} <br />
+                {token.name && `Name: ${token.name}`}
+                <br />
+                {token.symbol && `Symbol: ${token.symbol}`}
+                <br />
+                Decimals: {token.decimals.toString()}
+                <br />
+                Total Supply:{" "}
+                {Number(
+                  fawd(token.totalSupply, token.decimals)
+                ).toLocaleString()}
+                <br />
+                Circulating Supply: {token.circulatingSupply.toString()}
+                <br />
+                Date of creation:{" "}
+                {transactions?.length > 0
+                  ? moment.unix(transactions.slice(-1)[0][2]).format("LLL")
+                  : "-"}
+                <br />
+                Created at round:{" "}
+                {transactions?.length > 0
+                  ? Number(transactions.slice(-1)[0][1]).toLocaleString()
+                  : "-"}
+              </code>
+            </Stack>
           </Stack>
         </Stack>
       )}
+      {((tok) =>
+        tok &&
+        tok.profile && (
+          <Box sx={{ mt: 3 }}>
+            <p style={{ textAlign: "left" }}>
+              {tok.profile}&nbsp;
+              {((tok) =>
+                tok &&
+                tok.url && (
+                  <>
+                    <br />
+                    <br />
+                    <span>
+                      More Information:&nbsp;
+                      <a
+                        target="_blank"
+                        href={tok.url}
+                        rel="noopener noreferrer nofollow"
+                      >
+                        {tok.url}
+                      </a>
+                    </span>
+                  </>
+                ))(registeredToken(node, token.appId))}
+            </p>
+          </Box>
+        ))(registeredToken(node, token.appId))}
       <Tabs
-        sx={{ m: 0 }}
+        sx={{ m: 0, backgroundColor: "aliceblue", mt: 3 }}
         value={value}
         onChange={handleChange}
         variant="scrollable"
@@ -1023,7 +850,7 @@ const Token = ({
         direction="row"
         gap="1em"
         style={{ textAlign: "left" }}
-        sx={{ mt: 5 }}
+        sx={{ mt: 2 }}
       >
         {/* deletable chips holding addresses without link style */}
         {addresses?.map((address, index) => (
@@ -1063,36 +890,6 @@ const Token = ({
         />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <TokenApprovalSums
-          chart={approvalsSpenderChart}
-          addresses={addresses}
-          setAddresses={setAddresses}
-          token={token}
-          approvals={((approvals) =>
-            addresses
-              ? approvals.filter((h) => addresses.includes(h[0]))
-              : approvals)(
-            Array.from(approvalsSpender)
-              .filter(([spender, amount]) => amount > 0n)
-              .sort((a, b) => b[1] - a[1])
-          )}
-          nfds={nfds}
-        />
-        <TokenApprovalSums
-          chart={approvalsOwnerChart}
-          addresses={addresses}
-          setAddresses={setAddresses}
-          token={token}
-          approvals={((approvals) =>
-            addresses
-              ? approvals.filter((h) => addresses.includes(h[0]))
-              : approvals)(
-            Array.from(approvalsOwner)
-              .filter(([spender, amount]) => amount > 0n)
-              .sort((a, b) => b[1] - a[1])
-          )}
-          nfds={nfds}
-        />
         <TokenApprovals
           addresses={addresses}
           setAddresses={setAddresses}
@@ -1104,8 +901,8 @@ const Token = ({
                 )
               : approvals)(
             approvals
-              .filter(([owner, spender, amount]) => amount > 0n)
-              .sort((a, b) => b[2] - a[2])
+            //.filter(([owner, spender, amount]) => amount > 0n)
+            //.sort((a, b) => b[2] - a[2])
           )}
           nfds={nfds}
         />
@@ -1175,27 +972,55 @@ function Page() {
       const transferEvent = events.find((el) => el.name === "arc200_Transfer");
       const approvalEvent = events.find((el) => el.name === "arc200_Approval");
 
+      /*
       let state;
       const stateR = await ci.state();
       if (stateR.success) {
         state = stateR.returnValue;
       }
-      let token;
-      const tokenR = await ci.getMetadata();
-      if (tokenR.success) {
-        token = tokenR.returnValue;
+      */
+
+      // --- get metadata
+      const nameR = await ci.arc200_name();
+      if (!nameR.success) return;
+      const assetName = nameR.returnValue;
+      const symbolR = await ci.arc200_symbol();
+      if (!symbolR.success) return;
+      const symbol = symbolR.returnValue;
+      let decimals;
+      if (symbol === "ARC200LT") decimals = 6n;
+      else {
+        const decimalsR = await ci.arc200_decimals().catch(() => {});
+        if (!decimalsR.success) return;
+        decimals = decimalsR.returnValue;
       }
+      const totalSupplyR = await ci.arc200_totalSupply();
+      if (!totalSupplyR.success) return;
+      const totalSupply = totalSupplyR.returnValue;
+      const tm = {
+        name: assetName,
+        tokenId: appIdN,
+        symbol,
+        decimals,
+        totalSupply,
+      };
+      // ---
+
+      /*
       const nonCirculating = (
         await Promise.all([
-          ci.arc200_balanceOf(state.zeroAddress),
+          ci.arc200_balanceOf(state.manager),
           ci.arc200_balanceOf(state.manager),
         ])
       ).reduce((acc, val) => acc + val.returnValue, 0n);
       const circulatingSupply = Number(
         fawd((token.totalSupply - nonCirculating).toString(), token.decimals)
       ).toLocaleString();
+      */
+      const circulatingSupply = 0;
+      const circulatingSupplyN = 0;
       const holders = {
-        [zeroAddress]: token.totalSupply,
+        [zeroAddress]: tm.totalSupply,
       };
       const ttxns = transferEvent.events;
       const addresses = new Set();
@@ -1208,27 +1033,30 @@ function Page() {
         else holders[to] = amount;
       }
       const balances = Object.entries(holders)
-        .filter((el) => el[0] !== token.zeroAddress)
-        .map(([address, amount]) => [address, fawd(amount, token.decimals)]);
+        .filter((el) => el[0] !== zeroAddress)
+        .map(([address, amount]) => [address, fawd(amount, tm.decimals)]);
       balances.sort(([a1, a2], [b1, b2]) => {
         if (a2 === b2) return a1.localeCompare(b1);
         return b2 - a2;
       });
       const atxns = approvalEvent.events;
-      const approvalsM = new Map();
-      for (const [, , , owner, spender, amount] of atxns) {
-        if (!approvalsM.has(owner)) approvalsM.set(owner, new Map());
-        approvalsM.get(owner).set(spender, amount);
-      }
-      // flatten map to array containing [owner, spender, amount]
-      const approvals = Array.from(approvalsM.entries()).flatMap(
-        ([owner, spenderMap]) =>
-          Array.from(spenderMap.entries()).map(([spender, amount]) => [
-            owner,
-            spender,
-            fawd(amount, token.decimals),
-          ])
-      );
+      atxns.sort((a, b) => b[1] - a[1]);
+      const approvalS = new Set();
+      const approvals = [];
+      atxns
+        .map(([, , , owner, spender, amount]) => [owner, spender, amount])
+        .forEach(([owner, spender, amount]) => {
+          const key = `${owner}-${spender}`;
+          if (!approvalS.has(key)) {
+            approvalS.add(key);
+            approvals.push([
+              owner,
+              spender,
+              formatWithDecimals(amount, tm.decimals),
+            ]);
+          }
+        });
+      approvals.sort((a, b) => b[2] - a[2]);
       const ctxns = [
         ...ttxns.map((data) => [...data, "Transfer"]),
         ...atxns.map((data) => [...data, "Approval"]),
@@ -1236,14 +1064,17 @@ function Page() {
       ctxns.sort((a, b) => b[1] - a[1]);
 
       await NFDService.getNFDByAddressBatch(Array.from(addresses));
+      const tokenAddr = algosdk.getApplicationAddress(appIdN);
       setToken({
-        ...token,
+        ...tm,
         appId: appIdN,
-        decimals: Number(token.decimals),
+        decimals: Number(tm.decimals),
         circulatingSupply,
       });
       setEvents(events);
-      setHolders(balances);
+      setHolders(
+        balances.filter(([a, b]) => ![zeroAddress, tokenAddr].includes(a))
+      );
       setTransactions(ctxns);
       setApprovals(approvals);
       setNfds(NFDService.getNFDs());
@@ -1257,7 +1088,7 @@ function Page() {
       transactions={transactions}
       holders={holders}
       nfds={nfds}
-      approvals={approvals}
+      approvals={approvals.filter(([owner, spender, amount]) => amount > 0)}
     />
   ) : (
     <LoadingIndicator message={loading.message} progress={loading.progress} />
