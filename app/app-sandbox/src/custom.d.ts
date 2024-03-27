@@ -13,3 +13,4 @@ declare module "nfdjs" {
 declare module "arccjs";
 declare module "swap200js";
 declare module "hsv2js";
+declare module "ulujs";

@@ -66,12 +66,14 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   },
 }));
 
+export const badPools = [29138188, 29138375, 29146294, 29137625, 29138141];
+
 function PoolListItem(props) {
   const [tm, setTm] = useState(null);
   const token = useMemo(() => {
     return props.tokens.find((t) => t.tokenId === props.poolId);
   }, [props.poolId, props.tokens]);
-  return (
+  return badPools.includes(props.poolId) ? null : (
     <TableRow key={props.poolId}>
       <StyledTableCell
         component="td"
@@ -131,6 +133,7 @@ function Pools(props) {
           <TableBody>
             {props?.pools
               ?.filter((p) => {
+                if (badPools.includes(p.poolId)) return false;
                 const token = dbTokens.find((t) => t.tokenId === p.poolId);
                 return token?.name
                   ?.toLowerCase()

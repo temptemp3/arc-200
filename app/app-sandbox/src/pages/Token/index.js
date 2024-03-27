@@ -4,12 +4,15 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   Chip,
+  Grid,
   Modal,
   Skeleton,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -50,6 +53,10 @@ import { formatWithDecimals } from "../../common/utils/bn";
 
 import algosdk from "algosdk";
 import { registeredToken, tokenURL } from "../../constants/json";
+
+import { CSVLink, CSVDownload } from "react-csv";
+
+import TypeFilter from "../../components/TypeFilter";
 
 const stdlib = makeStdLib();
 const bn = stdlib.bigNumberify;
@@ -532,8 +539,36 @@ const TokenTransactions = ({
 }) => {
   const { CopyToClipboard } = Copy;
   const notify = (msg) => toast(msg);
+  const [addrTo, setAddrTo] = React.useState("");
+  const [addrFrom, setAddrFrom] = React.useState("");
+  const [txnType, setTxnType] = React.useState("");
   const [pageTx, setTxPage] = React.useState(0);
   const [rowsTxPerPage, setTxRowsPerPage] = React.useState(10);
+  const filteredTransactions = React.useMemo(() => {
+    return transactions?.filter(
+      (tx) =>
+        (addrTo === "" || tx[4] === addrTo) &&
+        (addrFrom === "" || tx[3] === addrFrom) &&
+        (txnType === "" || tx[6] === txnType)
+    );
+  });
+  const csvData = React.useMemo(() => {
+    const csvData = [
+      ["txId", "block", "timestamp", "from", "to", "amount", "type"],
+      ...filteredTransactions.map(
+        ([txId, block, timestamp, from, to, amount, type]) => [
+          txId,
+          block,
+          moment.unix(timestamp).format(),
+          from,
+          to,
+          Number(amount) / 10 ** token.decimals,
+          type,
+        ]
+      ),
+    ];
+    return csvData;
+  }, [filteredTransactions]);
   if ((transactions?.length ?? 0) === 0) return null;
   const handleTxChangePage = (event, newPage) => {
     setTxPage(newPage);
@@ -547,9 +582,46 @@ const TokenTransactions = ({
       <Box sx={{ textAlign: "left", margin: 1 }}>
         <h2>
           Transactions [
-          {transactions?.length > 0 ? transactions?.length : "..."}]
+          {filteredTransactions?.length > 0
+            ? filteredTransactions?.length
+            : "..."}
+          ]
         </h2>
-        <TableContainer component={Paper}>
+        <h3>Filter by address</h3>
+        <Grid container>
+          <Grid item xs={6}>
+            <Stack direction="row" gap={1}>
+              <TextField
+                id="address-from"
+                label="Address From"
+                variant="outlined"
+                size="small"
+                onChange={(e) => setAddrFrom(e.target.value)}
+              />
+              <TextField
+                id="address-to"
+                label="Address To"
+                variant="outlined"
+                size="small"
+                onChange={(e) => setAddrTo(e.target.value)}
+              />
+              <TypeFilter onChange={(t) => setTxnType(t)} />
+            </Stack>
+          </Grid>
+          <Grid
+            sx={{ display: "flex", justifyContent: "flex-end" }}
+            item
+            xs={6}
+          >
+            <CSVLink
+              data={csvData}
+              filename={`${token.symbol}-${Date.now()}.csv`}
+            >
+              <Button>Export to CSV</Button>
+            </CSVLink>
+          </Grid>
+        </Grid>
+        <TableContainer sx={{ mt: 3 }} component={Paper}>
           <Table sx={{ minWidth: 700 }} aria-label="customized table">
             <TableHead>
               <TableRow>
@@ -563,13 +635,13 @@ const TokenTransactions = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {transactions?.length > 0 ? (
+              {filteredTransactions?.length > 0 ? (
                 (rowsTxPerPage > 0
-                  ? transactions?.slice(
+                  ? filteredTransactions?.slice(
                       pageTx * rowsTxPerPage,
                       pageTx * rowsTxPerPage + rowsTxPerPage
                     )
-                  : transactions
+                  : filteredTransactions
                 ).map((row) => (
                   <StyledTableRow key={row.name}>
                     <StyledTableCell component="th" scope="row">
@@ -695,7 +767,7 @@ const TokenTransactions = ({
                 <TablePagination
                   rowsPerPageOptions={[5, 10, 25, { label: "All", value: -1 }]}
                   colSpan={3}
-                  count={transactions?.length}
+                  count={filteredTransactions?.length}
                   rowsPerPage={rowsTxPerPage}
                   page={pageTx}
                   SelectProps={{
@@ -1081,15 +1153,17 @@ function Page() {
     })();
   }, []);
   return token && holders && transactions && nfds && approvals ? (
-    <Token
-      addresses={addresses}
-      setAddresses={setAddresses}
-      token={token}
-      transactions={transactions}
-      holders={holders}
-      nfds={nfds}
-      approvals={approvals.filter(([owner, spender, amount]) => amount > 0)}
-    />
+    <>
+      <Token
+        addresses={addresses}
+        setAddresses={setAddresses}
+        token={token}
+        transactions={transactions}
+        holders={holders}
+        nfds={nfds}
+        approvals={approvals.filter(([owner, spender, amount]) => amount > 0)}
+      />
+    </>
   ) : (
     <LoadingIndicator message={loading.message} progress={loading.progress} />
   );

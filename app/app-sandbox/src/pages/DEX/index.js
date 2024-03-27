@@ -20,9 +20,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { makeStdLib } from "../../utils/reach";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage";
 import { getAlgorandClients } from "../../utils/algorand";
+import CONTRACT from "arccjs";
 import arc200 from "arc200js";
 import triSchema from "../../abis/triumvirate.json";
-import CONTRACT from "arccjs";
 import { db } from "../../db";
 import { useLiveQuery } from "dexie-react-hooks";
 import LoadingIndicator from "../../components/LoadingIndicator";
@@ -64,97 +64,6 @@ function Balances(props) {
   return (
     <>
       <Container sx={{ mt: 3 }}>
-        {!isLoading && (
-          <>
-            {/*
-            <Button
-              variant="outlined"
-              sx={{ ml: 1 }}
-              onClick={async () => {
-                const tokenIdStr = window.prompt("Enter token id");
-                if (!tokenIdStr) return;
-                const tokenId = parseInt(tokenIdStr);
-
-                const { algodClient, indexerClient } = getAlgorandClients();
-                const ci = new arc200(tokenId, algodClient, indexerClient);
-                const tokenR = await ci.getMetadata();
-
-                if (tokenR.success) {
-                  const newTokenIds = Array.from(
-                    new Set([...tokenIds, tokenId])
-                  );
-                  setTokenIds(newTokenIds);
-                  const storedTokens = JSON.parse(
-                    localStorage.getItem("tokens") ||
-                      `${JSON.stringify(defaultTokens)}`
-                  );
-                  localStorage.setItem(
-                    "tokens",
-                    JSON.stringify({
-                      ...storedTokens,
-                      [node]: newTokenIds,
-                    })
-                  );
-                  return;
-                }
-                const asset = await indexerClient
-                  .lookupAssetByID(tokenId)
-                  .do()
-                  .catch(() => {});
-                if (asset) {
-                  const acc = await stdlib.connectAccount({
-                    addr: activeAccount.address,
-                  });
-                  await acc.tokenAccepted(tokenId);
-                  return;
-                }
-                return alert(`Token '${tokenId}' not found`);
-              }}
-            >
-              Add
-            </Button>
-            */}
-            {/*
-            <Button
-              variant="outlined"
-              sx={{ ml: 1 }}
-              onClick={() => {
-                try {
-                  const token = parseInt(window.prompt("Enter appId"));
-                  if (!token) return;
-                  const newTokens = Array.from(new Set([...tokenIds, token]));
-                  setTokenIds(newTokens);
-                  const storedTokens = JSON.parse(
-                    localStorage.getItem("tokens") ||
-                      `${JSON.stringify(defaultTokens)}`
-                  );
-                  localStorage.setItem(
-                    "tokens",
-                    JSON.stringify({
-                      ...storedTokens,
-                      [node]: newTokens,
-                    })
-                  );
-                } catch (e) {
-                  console.log(e);
-                }
-              }}
-            >
-              Add VRC200
-            </Button>
-            */}
-            {/*<Button
-              variant="outlined"
-              sx={{ margin: 1 }}
-              onClick={() => {
-                setManage(!manage);
-              }}
-            >
-              Manage
-            </Button>
-            */}
-          </>
-        )}
         <Box sx={{ ml: 1 }}>
           <AccountBalances
             {...props}
@@ -170,42 +79,6 @@ function Balances(props) {
   );
 }
 
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-  return value == index && children;
-}
-
-function LinkGrid(props) {
-  return (
-    <Grid container gap={2}>
-      {props.links?.map((el) => (
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            elevation={3}
-            sx={{
-              minHeight: 300,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography variant="h6">
-              <a
-                href={el.url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-              >
-                {el.name}
-              </a>
-              <br />
-              <small>{el.category}</small>
-            </Typography>
-          </Paper>
-        </Grid>
-      ))}
-    </Grid>
-  );
-}
 
 async function addRegisterEvent(evt) {
   try {
@@ -227,15 +100,7 @@ function Home() {
   const dbPools = useLiveQuery(() => db.registerEvents.toArray());
   const { activeAccount } = useWallet();
   const [pools, setPools] = useState(null);
-  const [tokens, setTokens] = useState(null);
-  const [value, setValue] = React.useState(1);
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
-  useEffect(() => {
-    if (!activeAccount) setValue(1);
-    else setValue(0);
-  }, [activeAccount]);
+  // EFFECT: get all pools from db
   useEffect(() => {
     if (!dbPools) return;
     const lastRound = dbPools?.reduce((acc, cur) => {
@@ -263,9 +128,6 @@ function Home() {
       setPools(newPools);
     });
   }, [dbPools]);
-  const userTokens = JSON.parse(
-    localStorage.getItem("tokens") || `${JSON.stringify(defaultTokens)}`
-  );
   return (
     <Container sx={{ mt: 5 }}>
       <Stack spacing={2}>

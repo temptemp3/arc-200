@@ -2,7 +2,7 @@ import { Stack, Typography } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
 import React, { useEffect, useState, useMemo } from "react";
 import AccountBalances from "../../components/AccountBalances";
-import Pools from "../../components/PoolList";
+import Pools, { badPools } from "../../components/PoolList";
 import TokenList from "../../components/TokenList";
 import Connect from "../../components/Connect";
 import Box from "@mui/material/Box";
@@ -26,12 +26,15 @@ import CONTRACT from "arccjs";
 import { db } from "../../db";
 import { useLiveQuery } from "dexie-react-hooks";
 import LoadingIndicator from "../../components/LoadingIndicator";
+import TokenDisplay from "../../components/TokenDisplay";
+import BuyModal from "../../components/BuyModal";
 
 const stdlib = makeStdLib();
 
 const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
 
 function Balances(props) {
+  const { activeAccount } = useWallet();
   const dbTokens = useLiveQuery(() => db.tokens.toArray());
   const navigate = useNavigate();
   const params = useParams();
@@ -39,7 +42,6 @@ function Balances(props) {
   const [tokens, setTokens] = React.useState(null);
   const [, setAppId] = React.useState(0);
   const [manage, setManage] = React.useState(false);
-  const { activeAccount } = useWallet();
   useEffect(() => {
     if (!dbTokens) return;
     const { algodClient, indexerClient } = getAlgorandClients();
@@ -156,14 +158,25 @@ function Balances(props) {
           </>
         )}
         <Box sx={{ ml: 1 }}>
-          <AccountBalances
-            {...props}
-            manage={manage}
-            tokenIds={tokenIds}
-            tokens={tokens}
-            setTokens={setTokens}
-            onSetAppId={setAppId}
-          />
+          <Grid container spacing={2}>
+            {/*(
+              <Grid item xs={12} sm={4} md={3}>
+                <Paper sx={{ p: 2, minHeight: "150px" }}>
+                  <TokenDisplay tokenName="VIASA" amount={"-"} />
+                </Paper>
+              </Grid>
+            )*/}
+            <Grid item xs={12} sm={12} md={12}>
+              <AccountBalances
+                {...props}
+                manage={manage}
+                tokenIds={tokenIds}
+                tokens={tokens}
+                setTokens={setTokens}
+                onSetAppId={setAppId}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </Container>
     </>
@@ -260,7 +273,7 @@ function Home() {
       }));
       rEvts.map(addRegisterEvent);
       const newPools = [...dbPools, ...rEvts];
-      setPools(newPools);
+      setPools(newPools.filter((p) => !badPools.includes(p.poolId)));
     });
   }, [dbPools]);
   const userTokens = JSON.parse(

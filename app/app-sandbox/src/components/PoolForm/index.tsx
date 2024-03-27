@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 
 import { useDebounce } from "usehooks-ts";
 
-import swap200 from "swap200js";
+//import swap200 from "swap200js";
 
 import arc200Schema from "../../abis/arc200.json";
 import { getCurrentNode, getGenesisHash, makeStdLib } from "../../utils/reach";
@@ -34,15 +34,28 @@ import BigNumber from "bignumber.js";
 
 import HelpIcon from "@mui/icons-material/Help";
 
+import { swap200 } from "ulujs";
+
 type bals = [bigint, bigint];
 
 const { indexerClient, algodClient } = getAlgorandClients();
 
 const stdlib: any = makeStdLib();
 
-// contractjs funcs
-
-// arc200
+/*
+ * prepareString
+ * - prepare string (strip trailing null bytes)
+ * @param str: string to prepare
+ * @returns: prepared string
+ */
+const prepareString = (str: string) => {
+  const index = str.indexOf("\x00");
+  if (index > 0) {
+    return str.slice(0, str.indexOf("\x00"));
+  } else {
+    return str;
+  }
+};
 
 const getMetadata = async (ctcInfo: number) => {
   const ci = new swap200(ctcInfo, algodClient, indexerClient);
@@ -78,7 +91,7 @@ const doTransfer = async (
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
     acc: { addr: addressFrom, sk: new Uint8Array(0) },
   });
-  const res = await ci.arc200_transfer(addrTo, amount, true, false);
+  const res = await ci.arc200_transfer(addrTo, amount, true, false); // ts-ignore
   if (!res.success) throw new Error("arc200_transfer failed");
   return res;
 };
@@ -217,11 +230,12 @@ interface Tokens {
 }
 
 const PoolForm: React.FC<PoolFormProps> = (props) => {
-  const { activeAccount } = useWallet();
+  const { activeAccount, signTransactions } = useWallet();
   const [tokens, setTokens] = React.useState<Tokens>({
     tokenA: "",
     tokenB: "",
   });
+  const [node] = getCurrentNode();
   const debouncedValue = useDebounce<Tokens>(tokens, 500);
   const [swapDirection, setSwapDirection] = React.useState<boolean>(true);
   const [balances, setBalances] = React.useState<any>({});
@@ -382,7 +396,12 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
       setTokenB(`${tokB}`);
       setMessage("Loading token metadata...");
       const tokATM = await getMetadata(Number(tokA));
-      const tokBTM = await getMetadata(Number(tokB));
+      const tokBTM = ((tm) => ({
+        ...tm,
+        name: prepareString(String(tm.name)),
+        symbol: prepareString(String(tm.symbol)),
+      }))(await getMetadata(Number(tokB)));
+
       setTokenList({
         [tokA as unknown as string]: {
           ...tokATM,
@@ -448,18 +467,14 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
     return () => clearTimeout(timeout);
   }, [activeAccount, version, balances, allowances, reserves]);
 
-  const signTransaction = useCallback(
+  const signTransaction = React.useCallback(
     async (txns: string[]) => {
       if (!activeAccount) return;
-      if (
-        activeAccount.providerId === PROVIDER_ID.CUSTOM &&
-        activeAccount.name === "kibisis"
-      ) {
+      if (activeAccount.providerId === PROVIDER_ID.CUSTOM) {
         const algorand = (window as any).algorand;
         if (!algorand) {
           throw new Error("no wallets are installed!");
         }
-        const [node] = getCurrentNode();
         const wallets = algorand.getWallets();
         const wallet = await algorand.enable({
           genesisHash: getGenesisHash(node),
@@ -479,17 +494,22 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         const res = await algodClient
           .sendRawTransaction(signedTransactionBytes)
           .do();
-        return res.txId;
+        await waitForConfirmation(algodClient, res.txId, 4);
+      } else if (
+        [PROVIDER_ID.KIBISIS, PROVIDER_ID.DEFLY, PROVIDER_ID.LUTE].includes(
+          activeAccount.providerId
+        )
+      ) {
+        const stxns = await signTransactions(
+          txns.map((el) => new Uint8Array(Buffer.from(el, "base64")))
+        );
+        const res = await algodClient.sendRawTransaction(stxns).do();
+        await waitForConfirmation(algodClient, res.txId, 4);
       } else {
-        const wtxns = txns.map((el) => {
-          return {
-            txn: el,
-          };
-        });
-        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
+        throw new Error("Unsupported wallet");
       }
     },
-    [activeAccount, allowance]
+    [activeAccount]
   );
 
   const handleApproveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -537,9 +557,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           ol
         );
         setMessage("Pending signature...");
-        const txId = await signTransaction(txns);
+        await signTransaction(txns);
         setMessage("Waiting for confirmation...");
-        await waitForTxn(txId);
         const msg = "";
         toast(
           <div>
@@ -549,7 +568,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           </div>
         );
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setLoading(false);
         setVersion(version + 1);
@@ -589,8 +608,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
             ctcAddr,
             allowance + outBi
           );
-          const txId = await signTransaction(txns);
-          await waitForTxn(txId);
+          await signTransaction(txns);
         }
         const { returnValue: outsl } = await withdraw(
           ctcInfo,
@@ -604,11 +622,10 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           outBi,
           outsl
         );
-        const txId = await signTransaction(txns);
-        await waitForTxn(txId);
+        await signTransaction(txns);
         toast(<div>Remove successful!</div>);
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setLoading(false);
         setVersion(version + 1);
@@ -640,9 +657,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
             BigInt(0)
           );
           setMessage("Signature pending (Transfer)...");
-          const txId = await signTransaction(txns);
+          await signTransaction(txns);
           setMessage("Waiting for confirmation...");
-          await waitForTxn(txId);
           setMessage("Signature pending (Deposit)...");
         }
         const allowance = await getAllowance(
@@ -658,9 +674,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
             ctcAddr,
             inputABi
           );
-          const txId = await signTransaction(txns);
+          await signTransaction(txns);
           setMessage("Waiting for confirmation...");
-          await waitForTxn(txId);
           setMessage("Signature pending (Deposit)...");
         }
         const { txns } = await depositReserve(
@@ -669,9 +684,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           inputABi,
           isA
         );
-        const txId = await signTransaction(txns);
+        await signTransaction(txns);
         setMessage("Waiting for confirmation...");
-        await waitForTxn(txId);
         const msg = "+" + input + " " + token.symbol;
         toast(
           <div>
@@ -682,7 +696,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         );
         setVersion(version + 1);
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setLoading(false);
       }
@@ -710,9 +724,8 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
           inputABi,
           isA
         );
-        const txId = await signTransaction(txns);
+        await signTransaction(txns);
         setMessage("Waiting for confirmation...");
-        await waitForTxn(txId);
         const msg = "-" + input + " " + token.symbol;
         toast(
           <div>
@@ -723,7 +736,7 @@ const PoolForm: React.FC<PoolFormProps> = (props) => {
         );
         setVersion(version + 1);
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setLoading(false);
       }

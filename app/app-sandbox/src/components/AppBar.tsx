@@ -9,8 +9,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useWallet } from "@txnlab/use-wallet";
-import { Button } from "@mui/material";
+import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
+import { Button, Typography } from "@mui/material";
 import { makeStdLib } from "../utils/reach.js";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import * as Copy from "react-copy-to-clipboard";
@@ -153,7 +153,7 @@ const MyAppBar = () => {
               providers
                 .find((p) => p.isActive)
                 .setActiveAccount(account.address);
-              window.location.reload();  
+              //window.location.reload();
             }}
           >
             {account.address.slice(0, 4)}...
@@ -168,9 +168,9 @@ const MyAppBar = () => {
             providers
               .find(
                 (p) =>
-                  (p.metadata.id !== "custom" &&
-                    p.metadata.id === activeAccount?.providerId) ||
-                  p.metadata.id === "custom"
+                  p.metadata.id !== "custom" &&
+                  p.metadata.id === activeAccount?.providerId
+                //|| p.metadata.id === "custom"
               )
               .disconnect()
               .then(() => {
@@ -185,16 +185,19 @@ const MyAppBar = () => {
   );
   return (
     <AppBar
-      position="fixed"
-      sx={{ top: "auto", bottom: 0, backgroundColor: "#000000" }}
+      //position="fixed"
+      sx={{ backgroundColor: "#000000" }}
     >
       <Toolbar>
+        <Typography variant="h6" noWrap component="div">
+          Shelly's Sandbox
+        </Typography>
         <IconButton
           size="large"
           edge="start"
           color="inherit"
           aria-label="home"
-          sx={{ mr: 2 }}
+          sx={{ mx: 2 }}
           onClick={() => navigate("/")}
         >
           <HomeIcon />
@@ -243,7 +246,11 @@ const MyAppBar = () => {
               >
                 <img
                   style={{ height: "30px", filter: "grayscale(1)" }}
-                  src={provider.metadata.id === "defly" ? "/avatar.png" : provider.metadata.icon}
+                  src={
+                    provider.metadata.id === "defly"
+                      ? "/avatar.png"
+                      : provider.metadata.icon
+                  }
                 />
               </Button>
             </Box>
@@ -301,11 +308,10 @@ const MyAppBar = () => {
                 activeAccount &&
                 providers.map(
                   (provider) =>
-                    ((provider.metadata.id !== "custom" &&
-                      provider.metadata.id === activeAccount.providerId) ||
-                      (provider.metadata.id === "custom" &&
-                        provider.metadata.name === activeAccount.name)) && (
-                      <IconButton
+                    provider.metadata.id !== PROVIDER_ID.CUSTOM &&
+                    provider.metadata.id === activeAccount.providerId && (
+                      /*|| (provider.metadata.id === "custom" &&
+                        provider.metadata.name === activeAccount.name)*/ <IconButton
                         size="large"
                         edge="end"
                         aria-label="account of current user"
@@ -318,11 +324,10 @@ const MyAppBar = () => {
                           style={{
                             height: "30px",
                             filter:
-                              (provider.metadata.id !== "custom" &&
-                                provider.metadata.id ===
-                                  activeAccount.providerId) ||
-                              provider.metadata.id === "custom"
-                                ? ""
+                              // provider.metadata.id !== PROVIDER_ID.CUSTOM &&
+                              provider.metadata.id === activeAccount.providerId
+                                ? //|| provider.metadata.id === "custom"
+                                  ""
                                 : "grayscale(1)",
                           }}
                           src={

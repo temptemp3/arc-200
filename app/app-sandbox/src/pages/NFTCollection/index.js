@@ -25,6 +25,7 @@ import algosdk from "algosdk";
 import CONTRACT from "arccjs";
 import { getAlgorandClients } from "../../utils/algorand";
 import { useParams } from "react-router-dom";
+import Leaderboard from "../../components/Leaderboard";
 
 const stdlib = makeStdLib();
 
@@ -191,21 +192,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-/*
- * prepareString
- * - prepare string (strip trailing null bytes)
- * @param str: string to prepare
- * @returns: prepared string
- */
-const prepareString = (str) => {
-  const index = str.indexOf("\x00");
-  if (index > 0) {
-    return str.slice(0, str.indexOf("\x00"));
-  } else {
-    return str;
-  }
-};
-
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return value == index && children;
@@ -228,8 +214,9 @@ function NFTGallery() {
   const [value, setValue] = React.useState(1);
   const [nfts, setNfts] = React.useState([]);
   const [owners, setOwners] = React.useState(null);
-  const [tokens, setTokens] = React.useState(null);
+  const [ownerOf, setOwnerOf] = React.useState({});
   const [ctcInfo, setCtcInfo] = React.useState(null);
+  const [ranks, setRanks] = React.useState(null);
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -239,52 +226,11 @@ function NFTGallery() {
     setCtcInfo(ctcInfo);
   }, []);
 
-  const signTransaction = React.useCallback(
-    async (txns) => {
-      if (!activeAccount) return;
-      if (
-        activeAccount.providerId === PROVIDER_ID.CUSTOM &&
-        activeAccount.name === "kibisis"
-      ) {
-        const algorand = window.algorand;
-        if (!algorand) {
-          throw new Error("no wallets are installed!");
-        }
-        const wallets = algorand.getWallets();
-        const wallet = await algorand.enable({
-          genesisHash: getGenesisHash(node),
-        });
-        const { algodClient, indexerClient } = getAlgorandClients();
-        const result = await window.algorand.signTxns({
-          txns: txns.map((el) => {
-            return {
-              txn: el,
-            };
-          }),
-        });
-        let signedTransactionBytes;
-        signedTransactionBytes = result.stxns.map(
-          (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
-        );
-        const res = await algodClient
-          .sendRawTransaction(signedTransactionBytes)
-          .do();
-        return res.txId;
-      } else {
-        const wtxns = txns.map((el) => {
-          return {
-            txn: el,
-          };
-        });
-        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
-      }
-    },
-    [activeAccount]
-  );
   useEffect(() => {
     if (!activeAccount || !ctcInfo) setValue(0);
     else setValue(0);
   }, [activeAccount]);
+
   useEffect(() => {
     if (!ctcInfo) return;
     (async () => {
@@ -325,9 +271,24 @@ function NFTGallery() {
       });
       setNfts(nfts);
       setOwners(owners);
+      const ownerOf = {};
+      const rank = {};
+      for (let [key, value] of owners) {
+        value.forEach((el) => {
+          ownerOf[el] = key;
+          if (!rank[key]) rank[key] = 1;
+          else rank[key]++;
+        });
+      }
+      setRanks(Object.entries(rank).sort((a, b) => b[1] - a[1]));
+      setOwnerOf(ownerOf);
     })();
   }, [ctcInfo]);
-  console.log({ ctcInfo, nfts, owners });
+  console.log({
+    ctcInfo,
+    nfts,
+    owners,
+  });
   return !ctcInfo ? (
     "Collection not found"
   ) : (
@@ -341,10 +302,9 @@ function NFTGallery() {
         allowScrollButtonsMobile
         aria-label="scrollable force tabs example"
       >
-        {/*
-        <Tab label="Pending" />
-        <Tab label="Complete" />
-  */}
+        <Tab label="Collection" />
+        <Tab label="Leaderboard" />
+        <Tab label="My Collection" />
       </Tabs>
       <h2 align="left" style={{ marginLeft: 10 }}>
         Collection AppId: {ctcInfo}
@@ -352,29 +312,82 @@ function NFTGallery() {
         Collection Address:{" "}
         {algosdk.getApplicationAddress(ctcInfo).slice(0, 10)}...
       </h2>
-      <h2 align="left" style={{ marginLeft: 10 }}>
-        Your Collection:
-      </h2>
-      {owners && owners.has(activeAccount?.address) && (
-        <Container sx={{ mt: 5 }} maxWidth="xl">
-          <Grid container spacing={2}>
-            {owners.get(activeAccount?.address).map((el) => (
-              <Grid item xs={6} sm={6} md={4} lg={3} key={`yours-${el}`}>
-                <Suspense fallback={<Skeleton />}>
-                  <LazyNFTImage
-                    collectionId={Number(ctcInfo)}
-                    tokenId={Number(el)}
-                  />
-                </Suspense>
-                <Typography sx={{ textAlign: "left" }}>
+
+      <TabPanel value={value} index={0}>
+        <h2 align="left" style={{ marginLeft: 10 }}>
+          Collection:
+        </h2>
+        {nfts.length > 0 ? (
+          <Container sx={{ mt: 5 }} maxWidth="xl">
+            <Grid container spacing={2}>
+              {nfts.map((el) => (
+                <Grid
+                  item
+                  xs={6}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  key={`col-${el}`}
+                  sx={{ textAlign: "left" }}
+                >
+                  <Suspense fallback={<Skeleton />}>
+                    <LazyNFTImage collectionId={ctcInfo} tokenId={el} />
+                  </Suspense>
+                  <br />
                   TokenId:{" "}
                   <a
                     href={`/#/nft/collection/${ctcInfo}/token/${el.toString()}`}
                   >
                     {el.toString()}
                   </a>
-                </Typography>
-                {/*<ButtonGroup fullWidth sx={{ borderRadius: 0 }}>
+                  <br />
+                  Holder:
+                  {((addr) => `${addr.slice(0, 4)}...${addr.slice(-4)}`)(
+                    ownerOf[el]
+                  )}
+                </Grid>
+              ))}
+            </Grid>
+          </Container>
+        ) : (
+          <Skeleton />
+        )}
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+        {ranks && (
+          <>
+            <h2 align="left" style={{ marginLeft: 10 }}>
+              Leaderboard:
+            </h2>
+            <Leaderboard collectionId={ctcInfo} data={owners} />
+          </>
+        )}
+      </TabPanel>
+
+      <TabPanel value={value} index={2}>
+        <h2 align="left" style={{ marginLeft: 10 }}>
+          Your Collection:
+        </h2>
+        {owners && owners.has(activeAccount?.address) && (
+          <Container sx={{ mt: 5 }} maxWidth="xl">
+            <Grid container spacing={2}>
+              {owners.get(activeAccount?.address).map((el) => (
+                <Grid item xs={6} sm={6} md={4} lg={3} key={`yours-${el}`}>
+                  <Suspense fallback={<Skeleton />}>
+                    <LazyNFTImage
+                      collectionId={Number(ctcInfo)}
+                      tokenId={Number(el)}
+                    />
+                  </Suspense>
+                  <Typography sx={{ textAlign: "left" }}>
+                    TokenId:{" "}
+                    <a
+                      href={`/#/nft/collection/${ctcInfo}/token/${el.toString()}`}
+                    >
+                      {el.toString()}
+                    </a>
+                  </Typography>
+                  {/*<ButtonGroup fullWidth sx={{ borderRadius: 0 }}>
                   <Button
                     variant="contained"
                     color="primary"
@@ -427,34 +440,12 @@ function NFTGallery() {
                     Transfer
                   </Button>
                   </ButtonGroup>*/}
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      )}
-      <h2 align="left" style={{ marginLeft: 10 }}>
-        Collection:
-      </h2>
-      {nfts.length > 0 ? (
-        <Container sx={{ mt: 5 }} maxWidth="xl">
-          <Grid container spacing={2}>
-            {nfts.map((el) => (
-              <Grid item xs={6} sm={6} md={4} lg={3} key={`col-${el}`}>
-                <Suspense fallback={<Skeleton />}>
-                  <LazyNFTImage collectionId={ctcInfo} tokenId={el} />
-                </Suspense>
-                <br />
-                TokenId:{" "}
-                <a href={`/#/nft/collection/${ctcInfo}/token/${el.toString()}`}>
-                  {el.toString()}
-                </a>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      ) : (
-        <Skeleton />
-      )}
+                </Grid>
+              ))}
+            </Grid>
+          </Container>
+        )}
+      </TabPanel>
     </>
   );
 }
