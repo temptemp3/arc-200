@@ -1,0 +1,234 @@
+import React, {
+  useEffect,
+  lazy,
+  Suspense,
+  useContext,
+  useCallback,
+} from "react";
+import { getCurrentNode } from "../../utils/reach";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Button, Grid, Container, Paper, Chip } from "@mui/material";
+import { getAlgorandClients } from "../../utils/algorand";
+import { useNavigate } from "react-router-dom";
+import { db } from "../../db";
+import { arc200 } from "ulujs";
+import { MarketplaceContext } from "../../store/MarketplaceContext";
+import moment from "moment";
+import { toast } from "react-toastify";
+import CONTRACT from "arccjs";
+import { mp202Schema } from "../../abis";
+import { useWallet } from "@txnlab/use-wallet";
+
+/*
+ * prepareString
+ * - prepare string (strip trailing null bytes)
+ * @param str: string to prepare
+ * @returns: prepared string
+ */
+const prepareString = (str) => {
+  const index = str.indexOf("\x00");
+  if (index > 0) {
+    return str.slice(0, str.indexOf("\x00"));
+  } else {
+    return str;
+  }
+};
+
+const { algodClient, indexerClient } = getAlgorandClients("voi-testnet");
+
+const LazyNFTImage = lazy(() => import("../../components/NFTImage"));
+
+// ListId, CollectionId, TokenId, ListAddr, ListPrice, FloorPrice, EndTime
+const NFTReverseAuctionCard = ({
+  mp,
+  txId,
+  round,
+  timestamp,
+  lId,
+  cId,
+  tId,
+  lAddr,
+  lPrc,
+  fPrc,
+  endTime,
+}) => {
+  const { activeAccount } = useWallet();
+  const [price, setPrice] = React.useState(null);
+  const updatePrice = useCallback(() => {
+    if (!activeAccount) return;
+    const ciMp = new CONTRACT(mp, algodClient, indexerClient, mp202Schema, {
+      addr: activeAccount.address,
+    });
+    const res = ciMp
+      .v_reverseBuySC(lId)
+      .then(
+        ({ returnValue: r }) =>
+          Number("0x" + Buffer.from(r[1].slice(8)).toString("hex")) / 10 ** 6
+      )
+      .then(setPrice)
+      .catch(() => {});
+  }, [activeAccount]);
+  useEffect(() => {
+    updatePrice();
+  }, [activeAccount]);
+  useEffect(() => {
+    if (!activeAccount) return;
+    const interval = setInterval(() => updatePrice(), 3_000);
+    return () => clearInterval(interval);
+  }, [activeAccount]);
+  return (
+    <Paper elevation={5} sx={{ borderRadius: "25px", overflow: "hidden" }}>
+      <Suspense fallback={<CircularProgress />}>
+        <LazyNFTImage collectionId={Number(cId)} tokenId={Number(tId)} />
+      </Suspense>
+      <div style={{ padding: "20px", background: "aliceblue" }}>
+        MarketplaceId: {mp}
+        <br />
+        ListId: {lId.toString()}
+        <br />
+        CollectionId:{" "}
+        <a href={`/#/nft/collection/${cId.toString()}`}>{cId.toString()}</a>
+        <br />
+        TokenId:{" "}
+        <a href={`/#/nft/collection/${cId.toString()}/token/${tId.toString()}`}>
+          {tId.toString()}
+        </a>
+        <br />
+        SellerAddr: {lAddr.slice(0, 4)}...{lAddr.slice(-4)}
+      </div>
+      <Button
+        sx={{ borderRadius: 0 }}
+        fullWidth
+        variant="contained"
+        onClick={() => {
+          toast.info("Coming soon");
+        }}
+      >
+        Buy Now
+        {price && (
+          <Chip
+            size="small"
+            sx={{ ml: 1 }}
+            color="secondary"
+            label={<span>{price ? `${price} VOI` : null}</span>}
+          />
+        )}
+      </Button>
+    </Paper>
+  );
+};
+
+function NFTSales() {
+  const {
+    isLoading,
+    tokens,
+    forSale,
+    nfts,
+    listings,
+    pools,
+    liveAuctions,
+    reverseAuctions,
+  } = useContext(MarketplaceContext);
+
+  const [node] = getCurrentNode();
+  const navigate = useNavigate();
+
+  // EFFECT: update missing tokens
+  useEffect(() => {
+    if (isLoading) return;
+    (async () => {
+      const ptoks = new Set();
+      reverseAuctions.forEach((listing) => {
+        const { lPrc } = listing;
+        const [pType, ...prc] = lPrc;
+        switch (pType) {
+          case "00": {
+            return;
+          }
+          case "01": {
+            const [tId] = prc;
+            const tid = Number("0x" + tId);
+            ptoks.add(tid);
+          }
+        }
+      });
+      for (const tok of Array.from(ptoks).filter(
+        (el) => !tokens.map((el) => el.tokenId).includes(el)
+      )) {
+        const ci = new arc200(tok, algodClient, indexerClient);
+        const res = await ci.getMetadata();
+        if (!res.success) continue;
+        const metadata = res.returnValue;
+        const pk = `${node}:${tok}`;
+        const tm = {
+          ...res.returnValue,
+          pk,
+          tokenId: tok,
+          network: node,
+          decimals: Number(metadata.decimals),
+          name: prepareString(metadata.name),
+          symbol: prepareString(metadata.symbol),
+        };
+        await db.tokens.put(tm);
+      }
+    })();
+  }, [isLoading, forSale, tokens]);
+
+  // get current block time
+  const [currentRound, setCurrentRound] = React.useState(0);
+  useEffect(() => {
+    algodClient
+      .status()
+      .do()
+      .then((s) => {
+        setCurrentRound(s["last-round"]);
+      });
+  }, []);
+
+  return !isLoading && currentRound ? (
+    <Container sx={{ mt: 5 }} maxWidth="xl">
+      <Grid container spacing={2}>
+        <Grid
+          sx={{
+            display: { xs: "none", md: "block" },
+          }}
+          item
+          xs={12}
+          sm={12}
+          md={2}
+          lg={2}
+        >
+          &nbsp;
+        </Grid>
+        <Grid item xs={12} sm={12} md={10} lg={10}>
+          {reverseAuctions.length > 0 ? (
+            <Grid container spacing={2}>
+              {reverseAuctions.slice(1).map((props) => {
+                console.log({ props });
+                return (
+                  <Grid
+                    item
+                    xs={6}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    sx={{ textAlign: "left" }}
+                    key={props.txId}
+                  >
+                    <NFTReverseAuctionCard {...props} />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          ) : (
+            <div style={{ marginTop: "100px" }}>No NFTs for sale</div>
+          )}
+        </Grid>
+      </Grid>
+    </Container>
+  ) : (
+    "Loading..."
+  );
+}
+
+export default NFTSales;

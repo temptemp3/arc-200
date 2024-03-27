@@ -3,10 +3,10 @@ import { Tabs, Tab, createTheme } from "@mui/material";
 import { makeStdLib } from "../../utils/reach";
 import { makeStyles } from "@mui/styles";
 import NFTPortfolio from "../NFTPortfolio";
-import NFTDiscover from "../NFTDiscover";
+import NFTFeed from "../NFTFeed";
+import NFTProjects from "../NFTProjects";
 import NFTSales from "../NFTSales";
-import NFTAuctions from "../NFTAuctions";
-import NFTReverseAuctions from "../NFTReverseAuctions";
+import NFTClaim from "../NFTClaim";
 
 const stdlib = makeStdLib();
 
@@ -54,20 +54,11 @@ function NFTMarketplace() {
         allowScrollButtonsMobile
         aria-label="scrollable force tabs example"
       >
-        <Tab label="Discover" />
-        <Tab label="Reverse Auctions" />
-        <Tab label="Auctions" />
-        <Tab label="Buy" />
-        <Tab label="Sell" />
+        <Tab label="Collections" />
+        <Tab label="NFTs" />
       </Tabs>
-      {[
-        <NFTDiscover />,
-        <NFTReverseAuctions />,
-        <NFTAuctions />,
-        <NFTSales />,
-        <NFTPortfolio />,
-      ].map((child, i) => (
-        <TabPanel key={i} value={value} index={i}>
+      {[<NFTProjects />, <NFTFeed />].map((child, i) => (
+        <TabPanel value={value} index={i}>
           {child}
         </TabPanel>
       ))}

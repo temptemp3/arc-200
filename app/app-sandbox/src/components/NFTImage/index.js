@@ -53,6 +53,7 @@ const ipfsToGateway = (url) => {
 const NFTImage = ({ collectionId, tokenId, image }) => {
   const [url, setUrl] = React.useState(null);
   const resolveUrl = useCallback(async () => {
+    if (image) return;
     try {
       if (url) return;
       if (!collectionId || !tokenId) return;
@@ -112,7 +113,7 @@ const NFTImage = ({ collectionId, tokenId, image }) => {
     <LazyLoadImage
       //alt={image.alt}
       //height={image.height}
-      src={url} // use normal <img> attributes as props
+      src={image || url} // use normal <img> attributes as props
       width={"100%"}
       effect="blur"
       delayTime={2000}

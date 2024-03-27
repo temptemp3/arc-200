@@ -25,12 +25,15 @@ import {
 import ConfirmationComponent from "../ConfirmationComponent.js";
 import { getAlgorandClients } from "../../utils/algorand.js";
 import arc200 from "arc200js";
-import algosdk, { encodeUnsignedTransaction } from "algosdk";
+import algosdk, {
+  encodeUnsignedTransaction,
+  waitForConfirmation,
+} from "algosdk";
 
 import { encode as encodeBase64 } from "@stablelib/base64";
 
 function SendDialog(props) {
-  const { providers, activeAccount } = useWallet();
+  const { providers, activeAccount, signTransactions, sendTransactions } = useWallet();
   const [token, setToken] = useState(props.token);
   const [tokenAmount, setTokenAmount] = useState("");
   const [accountAddress, setAccountAddress] = useState("");
@@ -104,6 +107,12 @@ function SendDialog(props) {
         switch (props.token.assetType) {
           case "network": {
             if (
+              [PROVIDER_ID.KIBISIS, PROVIDER_ID.DEFLY].includes(
+                activeAccount.providerId
+              )
+            ) {
+              throw new Error("not supported");
+            } else if (
               activeAccount.providerId === PROVIDER_ID.CUSTOM &&
               activeAccount.name === "kibisis"
             ) {
@@ -177,6 +186,26 @@ function SendDialog(props) {
               .toBigInt();
             let res2;
             if (
+              [
+                PROVIDER_ID.KIBISIS,
+                PROVIDER_ID.DEFLY,
+                PROVIDER_ID.LUTE,
+              ].includes(activeAccount.providerId)
+            ) {
+              const { algodClient, indexerClient } = getAlgorandClients();
+              const ci = new arc200(token.appId, algodClient, indexerClient, {
+                acc: { addr: activeAccount.address },
+                simulate: true,
+                formatBytes: true,
+              });
+              const res = await ci.arc200_transfer(accountAddress, amount);
+              if (!res.success) throw new Error("failed to approve");
+              const stxns = await signTransactions(
+                res.txns.map((el) => new Uint8Array(Buffer.from(el, "base64")))
+              ).then(sendTransactions)
+              //const { txId } = await algodClient.sendRawTransaction(stxns).do();
+              //await waitForConfirmation(algodClient, txId, 4);
+            } else if (
               activeAccount.providerId === PROVIDER_ID.CUSTOM &&
               activeAccount.name === "kibisis"
             ) {
@@ -221,9 +250,9 @@ function SendDialog(props) {
             }
             if (res2) {
               // TODO confirm transaction
-              setTimeout(() => {
-                props.reloadToken();
-              }, 5_000);
+              // setTimeout(() => {
+              //   props.reloadToken();
+              // }, 5_000);
               toast(
                 <div>
                   Transfer successful!

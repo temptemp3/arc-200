@@ -14,31 +14,19 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 
 import { toast } from "react-toastify";
-import { makeStdLib } from "../../utils/reach.js";
 import { getAlgorandClients } from "../../utils/algorand.js";
 
-import arc200 from "arc200js";
+import { arc200 } from "ulujs";
+import { waitForConfirmation } from "algosdk";
+import { bigNumberToBigInt, bigNumberify } from "../../common/utils/bn.ts";
 
-function SendDialog(props) {
-  const { providers, activeAccount } = useWallet();
+function ApproveDialog(props) {
+  const { providers, activeAccount, signTransactions } = useWallet();
   const [token, setToken] = useState(props.token);
   const [tokenAmount, setTokenAmount] = useState("");
   const [accountAddress, setAccountAddress] = useState("");
   const [doSubmit, setDoSubmit] = useState(false);
   const [pending, setPending] = useState(false);
-  const stdlib = makeStdLib();
-  const fawd = stdlib.formatWithDecimals;
-  useEffect(() => {
-    if (!activeAccount) return;
-    if (token.amount) return;
-    (async () => {
-      const amount = fawd(
-        await ARC200Service.balanceOf(token.appId, activeAccount.address),
-        token.decimals
-      );
-      setToken({ ...token, amount });
-    })();
-  }, [activeAccount, token, props.token]);
   const handleSubmit = async () => {
     if (!activeAccount) {
       providers
@@ -53,9 +41,11 @@ function SendDialog(props) {
     (async () => {
       try {
         setPending(true);
-        const amount = stdlib
-          .parseCurrency(tokenAmount, Number(token.decimals))
-          .toBigInt();
+        const amount = bigNumberToBigInt(
+          bigNumberify(
+            Math.floor(Number(tokenAmount) * 10 ** Number(token.decimals))
+          )
+        );
         let res;
         if (
           activeAccount.providerId === PROVIDER_ID.CUSTOM &&
@@ -82,16 +72,28 @@ function SendDialog(props) {
             (stxn) => new Uint8Array(Buffer.from(stxn, "base64"))
           );
           // send to the network
-          res = await algodClient
+          const res2 = await algodClient
             .sendRawTransaction(signedTransactionBytes)
             .do();
-        } else {
-          res = await ARC200Service.approve(
-            props.token,
-            activeAccount.address,
-            accountAddress,
-            tokenAmount
+        } else if (
+          [PROVIDER_ID.KIBISIS, PROVIDER_ID.DEFLY, PROVIDER_ID.LUTE].includes(
+            activeAccount.providerId
+          )
+        ) {
+          const { algodClient, indexerClient } = getAlgorandClients();
+          const ci = new arc200(token.appId, algodClient, indexerClient, {
+            acc: { addr: activeAccount.address },
+          });
+
+          res = await ci.arc200_approve(accountAddress, amount);
+          if (!res.success) return; // TODO: handle error
+          const stxns = await signTransactions(
+            res.txns.map((el) => new Uint8Array(Buffer.from(el, "base64")))
           );
+          const res2 = await algodClient.sendRawTransaction(stxns).do();
+          await waitForConfirmation(algodClient, res2.txId, 4);
+        } else {
+          throw new Error("Wallet not supported");
         }
         if (res) {
           props.reloadToken();
@@ -106,13 +108,12 @@ function SendDialog(props) {
           );
           setToken({ ...token, amount: undefined });
           props.setOpen(false);
-          props.setTokens(null);
         } else {
-          alert("Transfer failed");
+          throw new Error("Approval failed");
         }
         // TODO catch others
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setPending(false);
         setDoSubmit(false);
@@ -173,4 +174,4 @@ function SendDialog(props) {
   );
 }
 
-export default SendDialog;
+export default ApproveDialog;

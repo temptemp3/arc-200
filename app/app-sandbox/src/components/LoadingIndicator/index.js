@@ -11,7 +11,7 @@ const LoadingIndicator = ({ message }) => {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        height: "100vh", // Adjust the height based on your layout
+        height: "90vh", // Adjust the height based on your layout
       }}
     >
       <CircularProgress size={144} />

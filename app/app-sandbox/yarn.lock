@@ -2800,10 +2800,10 @@
   resolved "https://registry.npmjs.org/@tsconfig/node16/-/node16-1.0.4.tgz"
   integrity sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==
 
-"@txnlab/use-wallet@^2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@txnlab/use-wallet/-/use-wallet-2.3.0.tgz#d118f85ff60565cfc079ce795836da696e924b2c"
-  integrity sha512-nOY8tMnOsXjBqMOUeJdub/l+7Eu9GyURnsR99wVYyEOVP6OjpLyFLGGluITTCjPme6t+h/G58m1KkUz1qNHErQ==
+"@txnlab/use-wallet@^2.7.0":
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/@txnlab/use-wallet/-/use-wallet-2.7.0.tgz#03aad228f9fd72893ca811850892dd811c8e26fa"
+  integrity sha512-Nj0V9lqLAkPKdM1GO6qUJocnvf+WNWdL7N8NOBg+KdxZcpJLrABqf8OIR4C4OzL/tB2GqXUPTgq0cbv4fZB0Ow==
   dependencies:
     immer "^9.0.15"
     zustand "^4.3.8"
@@ -3972,10 +3972,19 @@ arccjs@^2.3.3:
     buffer "^6.0.3"
     sha512 "^0.0.1"
 
-arccjs@^2.4.9:
-  version "2.4.9"
-  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.4.9.tgz#70fb4f2d6f1d8b89e6b79925707fddaa23aee8c5"
-  integrity sha512-118gHWJPl7iecmLrxzveyxbWPm0jXythgSmNJuZ3K4GpKPXUs3mGA+amR2xqxGxNhUc7mwtiYDVKQl0Q0EBlRQ==
+arccjs@^2.5.4:
+  version "2.5.4"
+  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.5.4.tgz#3704c98c8c3bd83affb5ebe5e49719f4dcaee8c1"
+  integrity sha512-rbZWJbwxYxnQLiE72Ualx+w4in9lxfi8yT75VDl7LG57ifo/JFbrKtyQl/rMiA9R4uU/Kf/ob56pNhM8stGncA==
+  dependencies:
+    algosdk "^2.7.0"
+    buffer "^6.0.3"
+    sha512 "^0.0.1"
+
+arccjs@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/arccjs/-/arccjs-2.7.0.tgz#ef13b771ec34ad3576c9f6fc7e276f90ad8c937a"
+  integrity sha512-7F7xgUXd7Afn8eyZkhp9XrcnpPCjFrEuJT15PlFicNcGz0nJWiNLSic6MpUcFvo82CovKDXhzsig+lzC8m2drg==
   dependencies:
     algosdk "^2.7.0"
     buffer "^6.0.3"
@@ -4155,21 +4164,21 @@ axe-core@^4.6.2:
   resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.7.0.tgz"
   integrity sha512-M0JtH+hlOL5pLQwHOLNYZaXuhqmvS8oExsqB1SBYgA4Dk7u/xx+YdGHXaK5pyUfed5mYXdlYiphWq3G8cRi5JQ==
 
-axios@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.4.0.tgz"
-  integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
-  dependencies:
-    follow-redirects "^1.15.0"
-    form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
-
 axios@^1.6.2:
   version "1.6.2"
   resolved "https://registry.npmjs.org/axios/-/axios-1.6.2.tgz"
   integrity sha512-7i24Ri4pmDRfJTR7LDBhsOTtcm+9kjX5WiY1X3wIisx6G9So3pfMkEiU7emUBe46oceVImccTEM3k6C5dbVW8A==
   dependencies:
     follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.6.7:
+  version "1.6.7"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.6.7.tgz#7b48c2e27c96f9c68a2f8f31e2ab19f59b06b0a7"
+  integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
+  dependencies:
+    follow-redirects "^1.15.4"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -6315,6 +6324,11 @@ follow-redirects@^1.0.0, follow-redirects@^1.15.0:
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.2.tgz"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
 
+follow-redirects@^1.15.4:
+  version "1.15.5"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.5.tgz#54d4d6d062c0fa7d9d17feb008461550e3ba8020"
+  integrity sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==
+
 for-each@^0.3.3:
   version "0.3.3"
   resolved "https://registry.npmjs.org/for-each/-/for-each-0.3.3.tgz"
@@ -6932,6 +6946,13 @@ import-local@^3.0.2:
   dependencies:
     pkg-dir "^4.2.0"
     resolve-cwd "^3.0.0"
+
+import@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/import/-/import-0.0.6.tgz#d0eb79df86aa2677c6db61578a5212b3031e6042"
+  integrity sha512-QPhTdjy9J4wUzmWSG7APkSgMFuPGPw+iJTYUblcfc2AfpqaatbwgCldK1HoLYx+v/+lWvab63GWZtNkcnj9JcQ==
+  dependencies:
+    optimist "0.3.x"
 
 imurmurhash@^0.1.4:
   version "0.1.4"
@@ -8283,6 +8304,11 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
+lute-connect@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/lute-connect/-/lute-connect-1.1.0.tgz#71b127bb7dfe85546fd9dce7d63b00f7a5e03095"
+  integrity sha512-j2Axs+Kk9LxG27VBXhTGXW0+TkJNbZ7GEU9RjUc42V0+M7A4RIq57AH8TvgW46Xq5+s0d/AYNvPDg952+R/Ylw==
+
 lz-string@^1.4.4:
   version "1.5.0"
   resolved "https://registry.npmjs.org/lz-string/-/lz-string-1.5.0.tgz"
@@ -8724,6 +8750,13 @@ open@^8.0.9, open@^8.4.0:
     define-lazy-prop "^2.0.0"
     is-docker "^2.1.1"
     is-wsl "^2.2.0"
+
+optimist@0.3.x:
+  version "0.3.7"
+  resolved "https://registry.yarnpkg.com/optimist/-/optimist-0.3.7.tgz#c90941ad59e4273328923074d2cf2e7cbc6ec0d9"
+  integrity sha512-TCx0dXQzVtSCg2OgY/bO9hjM9cV4XYx09TVK+s3+FhkjT6LovsLe+pPMzpWf+6yXK/hUizs2gUoTw3jHM0VaTQ==
+  dependencies:
+    wordwrap "~0.0.2"
 
 optionator@^0.8.1:
   version "0.8.3"
@@ -9780,6 +9813,13 @@ react-app-polyfill@^3.0.0:
     regenerator-runtime "^0.13.9"
     whatwg-fetch "^3.6.2"
 
+react-confetti@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/react-confetti/-/react-confetti-6.1.0.tgz#03dc4340d955acd10b174dbf301f374a06e29ce6"
+  integrity sha512-7Ypx4vz0+g8ECVxr88W9zhcQpbeujJAVqL14ZnXJ3I23mOI9/oBVTQ3dkJhUmB0D6XOtCZEM6N0Gm9PMngkORw==
+  dependencies:
+    tween-functions "^1.2.0"
+
 react-copy-to-clipboard@^5.1.0:
   version "5.1.0"
   resolved "https://registry.npmjs.org/react-copy-to-clipboard/-/react-copy-to-clipboard-5.1.0.tgz"
@@ -9790,7 +9830,7 @@ react-copy-to-clipboard@^5.1.0:
 
 react-csv@^2.2.2:
   version "2.2.2"
-  resolved "https://registry.npmjs.org/react-csv/-/react-csv-2.2.2.tgz"
+  resolved "https://registry.yarnpkg.com/react-csv/-/react-csv-2.2.2.tgz#5bbf0d72a846412221a14880f294da9d6def9bfb"
   integrity sha512-RG5hOcZKZFigIGE8LxIEV/OgS1vigFQT4EkaHeKgyuCbUAu9Nbd/1RYq++bJcJJ9VOqO/n9TZRADsXNDR4VEpw==
 
 react-dev-utils@^12.0.1:
@@ -9835,6 +9875,11 @@ react-error-overlay@^6.0.11:
   version "6.0.11"
   resolved "https://registry.npmjs.org/react-error-overlay/-/react-error-overlay-6.0.11.tgz"
   integrity sha512-/6UZ2qgEyH2aqzYZgQPxEnz33NJ2gNsnHA2o5+o4wW9bLM/JYQitNP9xPhsXwC08hMMovfGe/8retsdDsczPRg==
+
+react-fast-marquee@^1.6.3:
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/react-fast-marquee/-/react-fast-marquee-1.6.3.tgz#a1f3a0ce3b298c395766d19051aa8fa3af9f1a1c"
+  integrity sha512-oEISmNElv6lua/4i4uPYIteUKDxU0hAKKjH/tY2icje4GCns1rX6pIrkwVhjX0FMCIepUVqeyCchvqkiO/s2vw==
 
 react-google-charts@^4.0.1:
   version "4.0.1"
@@ -11191,6 +11236,11 @@ tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
+tween-functions@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/tween-functions/-/tween-functions-1.2.0.tgz#1ae3a50e7c60bb3def774eac707acbca73bbc3ff"
+  integrity sha512-PZBtLYcCLtEcjL14Fzb1gSxPBeL7nWvGhO5ZFPGqziCcr8uvHp0NDmdjBchp6KHL+tExcg0m3NISmKxhU394dA==
+
 tweetnacl@^1.0.3:
   version "1.0.3"
   resolved "https://registry.npmjs.org/tweetnacl/-/tweetnacl-1.0.3.tgz"
@@ -11265,6 +11315,13 @@ uint8arrays@^3.0.0, uint8arrays@^3.1.0:
   integrity sha512-+QJa8QRnbdXVpHYjLoTpJIdCTiw9Ir62nocClWuXIq2JIh4Uta0cQsTSpFL678p2CN8B+XSApwcU+pQEqVpKWg==
   dependencies:
     multiformats "^9.4.2"
+
+ulujs@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/ulujs/-/ulujs-0.2.6.tgz#7de76c447435d1e2dd4dfe952da275da98a1233e"
+  integrity sha512-cbqFL+XgwhOBJtNvMmyDTS6IdsIjqXztzu69g/KfaLwjTz+LgtB2w5X6GxN4FM8fzBBAYVz7mgHVxk2fYZsf/A==
+  dependencies:
+    arccjs "^2.7.0"
 
 unbox-primitive@^1.0.2:
   version "1.0.2"
@@ -11738,6 +11795,11 @@ word-wrap@^1.2.3, word-wrap@~1.2.3:
   version "1.2.3"
   resolved "https://registry.npmjs.org/word-wrap/-/word-wrap-1.2.3.tgz"
   integrity sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==
+
+wordwrap@~0.0.2:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/wordwrap/-/wordwrap-0.0.3.tgz#a3d5da6cd5c0bc0008d37234bbaf1bed63059107"
+  integrity sha512-1tMA907+V4QmxV7dbRvb4/8MaRALK6q9Abid3ndMYnbyo8piisCmeONVqVSXqQA3KaP4SLt5b7ud6E2sqP8TFw==
 
 workbox-background-sync@6.5.4:
   version "6.5.4"

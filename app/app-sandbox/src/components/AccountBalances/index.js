@@ -8,21 +8,16 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  Skeleton,
   Chip,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import { getCurrentNode, getGenesisHash } from "../../utils/reach";
-import ARC200Service from "../../services/ARC200Service.ts";
 import { makeStdLib } from "../../utils/reach";
-import BoltIcon from "@mui/icons-material/Bolt";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
-import {
-  displayToken,
-  getAlgorandClients,
-  zeroAddress,
-} from "../../utils/algorand.js";
+import { displayToken, getAlgorandClients } from "../../utils/algorand.js";
 import SendDialog from "../SendDialog/index.js";
 import ApproveDialog from "../ApproveDialog/index.js";
 import SpendDialog from "../SpendDialog/index.js";
@@ -33,24 +28,28 @@ import { styled } from "@mui/material/styles";
 import { Link } from "react-router-dom";
 import defaultTokens from "../../config/defaultTokens.js";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import FireplaceIcon from "@mui/icons-material/Fireplace";
 import { DEFAULT_NODE } from "../../config/defaultLocalStorage.js";
-import arc200 from "arc200js";
 import LoadingIndicator from "../LoadingIndicator/index.js";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import * as wntBackend from "../../backend/wnt200/index.wNT200.mjs";
-import CONTRACT from "arccjs";
 import { db } from "../../db";
 import { useLiveQuery } from "dexie-react-hooks";
 import algosdk, { waitForConfirmation } from "algosdk";
 import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress";
+import { nt200, arc200 } from "ulujs";
+import { bigNumberToBigInt, bigNumberify } from "../../common/utils/bn.ts";
+import TokenDisplay from "../TokenDisplay/index.js";
 
 const stdlib = makeStdLib();
 const fawd = stdlib.formatWithDecimals;
 
 const [node] = (localStorage.getItem("node") || DEFAULT_NODE).split(":");
+
+const prepareStr = (b64Str) =>
+  Buffer.from(b64Str, "base64")
+    //.reduce((acc, val) => (val > 0 ? [...acc, val] : acc), [])
+    .toString("utf8");
 
 // wVOI ------------------------------------------
 
@@ -112,7 +111,7 @@ const abi = {
   events: [],
 };
 
-const ctcInfo = 24590664;
+const WVOI = 24590664;
 const { algodClient, indexerClient } = getAlgorandClients();
 
 const waitForTxn = async (txId, rounds = 4) =>
@@ -156,7 +155,7 @@ const networkToken = (accInfo) => ({
 
 function AccountBalance(props) {
   const [node] = getCurrentNode();
-  const { activeAccount } = useWallet();
+  const { activeAccount, signTransactions } = useWallet();
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [spendDialogOpen, setSpendDialogOpen] = useState(false);
@@ -179,7 +178,7 @@ function AccountBalance(props) {
         const wallet = await algorand.enable({
           genesisHash: getGenesisHash(node),
         });
-        const { algodClient, indexerClient } = getAlgorandClients();
+
         const result = await window.algorand.signTxns({
           txns: txns.map((el) => {
             return {
@@ -194,27 +193,36 @@ function AccountBalance(props) {
         const res = await algodClient
           .sendRawTransaction(signedTransactionBytes)
           .do();
-        return res.txId;
+        await waitForConfirmation(algodClient, res.txId, 4);
+      } else if (
+        [PROVIDER_ID.KIBISIS, PROVIDER_ID.DEFLY, PROVIDER_ID.LUTE].includes(
+          activeAccount.providerId
+        )
+      ) {
+        const stxns = await signTransactions(
+          txns.map((el) => new Uint8Array(Buffer.from(el, "base64")))
+        );
+        const res = await algodClient.sendRawTransaction(stxns).do();
+        await waitForConfirmation(algodClient, res.txId, 4);
       } else {
-        const wtxns = txns.map((el) => {
-          return {
-            txn: el,
-          };
-        });
-        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
+        throw new Error("Unsupported wallet");
       }
     },
     [activeAccount]
   );
-
   const reloadToken = useCallback(async () => {
     if (!activeAccount) return;
     if (props.token.assetType === "rc200") {
       const { algodClient, indexerClient } = getAlgorandClients();
       const ci = new arc200(token.appId, algodClient, indexerClient);
-      const decimalsR = await ci.arc200_decimals();
-      if (!decimalsR.success) return; /// TODO handle error
-      const decimals = decimalsR.returnValue;
+
+      let decimals = token.decimals;
+      if (!decimals) {
+        const decimalsR = await ci.arc200_decimals();
+        if (!decimalsR.success) return;
+        decimals = decimalsR.returnValue;
+      }
+
       const balanceR = await ci.arc200_balanceOf(activeAccount.address);
       if (!balanceR.success) return; /// TODO handle error
       const amount = fawd(balanceR.returnValue, Number(decimals));
@@ -249,16 +257,11 @@ function AccountBalance(props) {
       });
     }
   }, [activeAccount, token]);
-  useEffect(() => {
-    if (!activeAccount) return;
-    // realtime rc200 only
-    //ARC200Service.nextTransferEvent(token.appId)
-    //  .then(reloadToken())
-    //  .catch(console.error);
-    // every interval
-    const interval = setInterval(reloadToken, 60_000);
-    return () => clearInterval(interval);
-  }, [activeAccount, token]);
+  // useEffect(() => {
+  //   if (!activeAccount) return;
+  //   const interval = setInterval(reloadToken, 60_000);
+  //   return () => clearInterval(interval);
+  // }, [activeAccount, token]);
   return (
     activeAccount &&
     token && (
@@ -282,7 +285,6 @@ function AccountBalance(props) {
           reloadToken={reloadToken}
         />
         <TableRow key={token?.appId || token?.assetId}>
-          {/*<TableCell>{token.tokenId}</TableCell>*/}
           <TableCell>
             {token.name}
             {token.assetType !== "network" && (
@@ -291,11 +293,20 @@ function AccountBalance(props) {
                 sx={{ ml: 1 }}
                 label={`${(
                   (token?.network ?? "")[0] + (token?.assetType ?? "")
-                ).toUpperCase()}:${token.appId}`}
+                ).toUpperCase()}:${token.appId || token.tokenId}`}
               />
             )}
             <br />
-            <Link to={`/token/${token.appId}`}>Token Info</Link>
+            <Link
+              target={token.assetType === "rc200" ? "_self" : "_blank"}
+              to={
+                token.assetType === "rc200"
+                  ? `/token/${token.appId}`
+                  : `https://voi.observer/explorer/asset/${token.tokenId}/transactions`
+              }
+            >
+              Token Info
+            </Link>
             <br />
             <Link to={`/token/${token.appId}?address=${activeAccount.address}`}>
               Transactions for {activeAccount.address.slice(0, 4)}...
@@ -308,15 +319,17 @@ function AccountBalance(props) {
           <TableCell>
             <ButtonGroup variant="text">
               {[
-                {
-                  label: "S",
-                  description: "Send",
-                  icon: <SendIcon />,
-                  onClick: () => {
-                    setToken(token);
-                    setSendDialogOpen(true);
-                  },
-                },
+                token.assetType !== "sa"
+                  ? {
+                      label: "S",
+                      description: "Send",
+                      icon: <SendIcon />,
+                      onClick: () => {
+                        setToken(token);
+                        setSendDialogOpen(true);
+                      },
+                    }
+                  : null,
                 token.assetType === "rc200"
                   ? {
                       label: "A",
@@ -363,28 +376,36 @@ function AccountBalance(props) {
                     onClick: async () => {
                       try {
                         if (!activeAccount) return;
-                        if (activeAccount.providerId != "custom") return;
+                        const ci = new nt200(WVOI, algodClient, indexerClient, {
+                          acc: {
+                            addr: activeAccount.address,
+                          },
+                        });
+                        const arc200_balanceOfR = await ci.arc200_balanceOf(
+                          activeAccount.address
+                        );
+                        if (!arc200_balanceOfR.success)
+                          throw new Error("Failed to get balance");
+                        const balance = arc200_balanceOfR.returnValue;
+                        if (balance === 0n) {
+                          const createBalanceBoxR = await ci.createBalanceBox(
+                            activeAccount.address
+                          );
+                          if (createBalanceBoxR.success) {
+                            await signTransaction(createBalanceBoxR.txns);
+                          }
+                        }
                         const inputStr = window.prompt("Enter amount to mint");
                         if (!inputStr) return;
                         setDoingMint(true);
                         const num = Number(inputStr);
                         if (isNaN(num)) return;
                         const amt = num * 10 ** 6;
-                        const ci = new CONTRACT(
-                          ctcInfo,
-                          algodClient,
-                          indexerClient,
-                          abi,
-                          {
-                            addr: activeAccount.address,
-                          }
+                        const res = await ci.deposit(
+                          bigNumberToBigInt(bigNumberify(amt))
                         );
-                        ci.setFee(2000);
-                        ci.setPaymentAmount(amt);
-                        const res = await ci.deposit(amt);
+                        console.log({ res });
                         const txId = await signTransaction(res.txns);
-
-                        await waitForTxn(txId);
                         setToken({
                           ...token,
                           amount: fawd(res.returnValue, Number(token.decimals)),
@@ -414,13 +435,7 @@ function AccountBalance(props) {
                     onClick: async () => {
                       try {
                         if (!activeAccount) return;
-                        if (activeAccount.providerId != "custom") return;
-                        const inputStr = window.prompt("Enter amount to burn");
-                        if (!inputStr) return;
-                        const num = Number(inputStr);
-                        if (isNaN(num)) return;
-                        setDoingBurn(true);
-                        const amt = num * 10 ** 6;
+
                         const ciArc200 = new arc200(
                           token.appId,
                           algodClient,
@@ -429,40 +444,49 @@ function AccountBalance(props) {
                             acc: { addr: activeAccount.address },
                           }
                         );
+                        const totalSupplyR =
+                          await ciArc200.arc200_totalSupply();
+                        if (!totalSupplyR.success)
+                          throw new Error("Failed to get total supply");
+                        const totalSupply = totalSupplyR.returnValue;
                         const approvalR = await ciArc200.arc200_allowance(
                           activeAccount.address,
-                          algosdk.getApplicationAddress(ctcInfo)
+                          algosdk.getApplicationAddress(WVOI)
                         );
-                        console.log({ approvalR });
-                        if (!approvalR.success) return;
+                        if (!approvalR.success)
+                          throw new Error("Failed to get allowance");
+
+                        const inputStr = window.prompt("Enter amount to burn");
+                        if (!inputStr) return;
+                        const num = Number(inputStr);
+                        if (isNaN(num)) return;
+                        setDoingBurn(true);
+                        const amt = num * 10 ** 6;
+                        const amtBi = bigNumberToBigInt(bigNumberify(amt));
+
                         const approval = approvalR.returnValue;
-                        if (approval < amt) {
+                        if (approval < amtBi) {
                           const res1 = await ciArc200.arc200_approve(
-                            algosdk.getApplicationAddress(ctcInfo),
-                            token.totalSupply
+                            algosdk.getApplicationAddress(WVOI),
+                            totalSupply
                           );
-                          if (!res1.success) return;
-                          const txId = await signTransaction(res1.txns);
-                          await waitForTxn(txId);
+                          if (!res1.success)
+                            throw new Error("Failed to approve");
+                          await signTransaction(res1.txns);
                         }
-                        const ci = new CONTRACT(
-                          ctcInfo,
-                          algodClient,
-                          indexerClient,
-                          abi,
-                          {
+                        const ci = new nt200(WVOI, algodClient, indexerClient, {
+                          acc: {
                             addr: activeAccount.address,
-                          }
-                        );
-                        ci.setFee(2000);
-                        const res2 = await ci.withdraw(amt);
-                        if (!res2.success) return;
-                        const txId = await signTransaction(res2.txns);
-                        await waitForTxn(txId);
+                          },
+                        });
+                        const withdrawR = await ci.withdraw(amt);
+                        if (!withdrawR.success)
+                          throw new Error("Failed to withdraw");
+                        await signTransaction(withdrawR.txns);
                         setToken({
                           ...token,
                           amount: fawd(
-                            res2.returnValue,
+                            withdrawR.returnValue,
                             Number(token.decimals)
                           ),
                         });
@@ -506,6 +530,12 @@ function AccountBalance(props) {
                     setToken(null);
                   },
                 },
+                token.assetType === "sa" && {
+                  label: "V",
+                  description: "VIA/VIASA Exchange",
+                  icon: <CurrencyExchangeIcon />,
+                  onClick: () => props?.setShowTokenDisplay(true),
+                },
               ]
                 .filter((el) => !!el)
                 .map((el) => (
@@ -535,6 +565,7 @@ function AccountBalances(props) {
   const [nativeTokens, setNativeTokens] = useState(null);
   const [arc200Tokens, setArc200Tokens] = useState(null);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [showTokenDisplay, setShowTokenDisplay] = useState(false);
   const loading = useMemo(() => !props.tokens, [props.tokens]);
   // EFFECT: lookup account info and set network tokens
   useEffect(() => {
@@ -551,7 +582,6 @@ function AccountBalances(props) {
   useEffect(() => {
     if (!activeAccount || nativeTokens) return;
     setNativeTokens([]);
-    /*
     if (!activeAccount || nativeTokens) return;
     (async () => {
       const { indexer } = await stdlib.getProvider();
@@ -564,8 +594,10 @@ function AccountBalances(props) {
           .lookupAssetByID(asset["asset-id"])
           .do();
         const decimals = assetDetails?.asset?.params?.decimals ?? 0;
-        const name = assetDetails?.asset?.params?.name ?? "Unknown";
-        const symbol = assetDetails?.asset?.params?.["unit-name"] ?? "Unknown";
+        const name = prepareStr(assetDetails?.asset?.params?.["name-b64"]);
+        const symbol = prepareStr(
+          assetDetails?.asset?.params?.["unit-name-b64"]
+        );
         const amountAu = asset?.amount ?? 0;
         const amount = stdlib.formatWithDecimals(
           stdlib.bigNumberify(amountAu),
@@ -580,16 +612,14 @@ function AccountBalances(props) {
           decimals,
         });
       }
-      setNativeTokens(assetList);
+      setNativeTokens(assetList.filter((el) => el["asset-id"] === 27704545)); // only VIASA
     })();
-    */
   }, [activeAccount]);
   // EFFECT: lookup account assets and set arc200 tokens
   useEffect(() => {
     if (!activeAccount || !networkToken || !nativeTokens || !arc200Tokens)
       return;
     const tokens = [];
-    /*
     if (nativeTokens)
       nativeTokens.forEach((token) => {
         tokens.push({
@@ -599,7 +629,6 @@ function AccountBalances(props) {
           network: nodeNetwork(node),
         });
       });
-    */
     if (arc200Tokens)
       arc200Tokens.forEach((token) => {
         tokens.push({
@@ -671,13 +700,14 @@ function AccountBalances(props) {
           totalSupply,
         };
       }
+      console.log({ tm });
       // ---
 
       // poolId, first poolId found
       const poolId =
         tm.symbol === "ARC200LT"
           ? 0
-          : props.pools.find((el) => el.tokA == appId || el.tokB == appId)
+          : props?.pools?.find((el) => el.tokA == appId || el.tokB == appId)
               ?.poolId || 0;
 
       const balanceR = await ci.arc200_balanceOf(activeAccount.address);
@@ -697,8 +727,9 @@ function AccountBalances(props) {
   // effect: reload tokens on account change
   // -------------------------------------------
   useEffect(() => {
-    if (arc200Tokens) return;
-    reloadTokens();
+    if (!activeAccount || arc200Tokens) return;
+    const timeout = setTimeout(() => reloadTokens(), 1000);
+    return () => clearTimeout(timeout);
   }, [props, activeAccount, arc200Tokens]);
   // -------------------------------------------
   return loading ? (
@@ -727,11 +758,25 @@ function AccountBalances(props) {
                 key={token.appId}
                 token={token}
                 manage={props.manage}
+                setShowTokenDisplay={setShowTokenDisplay}
               />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <Dialog
+        open={showTokenDisplay}
+        onClose={() => setShowTokenDisplay(false)}
+      >
+        <DialogContent
+          sx={{
+            minWidth: 300,
+            minHeight: 150,
+          }}
+        >
+          <TokenDisplay />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

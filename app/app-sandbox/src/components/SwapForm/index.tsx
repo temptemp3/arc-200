@@ -17,15 +17,16 @@ import {
   InputLabel,
 } from "@mui/material";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
-import CONTRACT from "arccjs";
+// //import CONTRACT from "arccjs";
 import { getAlgorandClients } from "../../utils/algorand";
 import { PROVIDER_ID, useWallet } from "@txnlab/use-wallet";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import algosdk from "algosdk";
 
 import { useDebounce } from "usehooks-ts";
 
-import swap200 from "swap200js";
+//import swap200 from "swap200js";
 
 import arc200Schema from "../../abis/arc200.json";
 import swap200Schema from "../../abis/swap200.json";
@@ -39,10 +40,27 @@ import {
   formatWithDecimals,
 } from "../../common/utils/bn";
 
+import { CONTRACT, swap200, arc200 } from "ulujs";
+
 import convertToAtomicUnit from "../../common/utils/convertToAtomicUnit";
 import convertToStandardUnit from "../../common/utils/convertToStandardUnit";
 
 import BigNumber from "bignumber.js";
+
+/*
+ * prepareString
+ * - prepare string (strip trailing null bytes)
+ * @param str: string to prepare
+ * @returns: prepared string
+ */
+const prepareString = (str: string) => {
+  const index = str.indexOf("\x00");
+  if (index > 0) {
+    return str.slice(0, str.indexOf("\x00"));
+  } else {
+    return str;
+  }
+};
 
 const { indexerClient, algodClient } = getAlgorandClients();
 
@@ -61,10 +79,17 @@ const getEvents = async (ctcInfo: number) => {
 //  arc200
 
 const getMetadata = async (ctcInfo: number) => {
-  const ci = new swap200(ctcInfo, algodClient, indexerClient);
+  const ci = new arc200(ctcInfo, algodClient, indexerClient);
   const res = await ci.getMetadata();
   if (!res.success) throw new Error("getMetadata failed");
-  return res.returnValue;
+  const tm = res.returnValue;
+  const tmf = {
+    ...tm,
+    name: prepareString(String(tm.name)),
+    symbol: prepareString(String(tm.symbol)),
+  };
+  console.log({ tmf });
+  return tmf;
 };
 
 const getBalance = async (ctcInfo: number, address: string) => {
@@ -132,6 +157,158 @@ const swap = async (
   amount: bigint,
   swapAForB = true
 ) => {
+  const abi: any = {
+    name: "",
+    desc: "",
+    methods: [
+      {
+        name: "custom",
+        args: [],
+        returns: {
+          type: "void",
+        },
+      },
+      // Trader_swapAForB(byte,uint256,uint256)(uint256,uint256)
+      {
+        name: "Trader_swapAForB",
+        args: [{ type: "byte" }, { type: "uint256" }, { type: "uint256" }],
+        returns: {
+          type: "(uint256,uint256)",
+        },
+      },
+      // Trader_swapBForA(byte,uint256,uint256)(uint256,uint256)
+      {
+        name: "Trader_swapBForA",
+        args: [{ type: "byte" }, { type: "uint256" }, { type: "uint256" }],
+        returns: {
+          type: "(uint256,uint256)",
+        },
+      },
+      {
+        name: "Provider_withdrawA",
+        args: [{ type: "uint256" }],
+        returns: { type: "uint256" },
+      },
+      {
+        name: "Provider_withdrawB",
+        args: [{ type: "uint256" }],
+        returns: { type: "uint256" },
+      },
+      {
+        name: "createBalanceBoxes",
+        desc: "Creates a balance box",
+        args: [
+          {
+            type: "address",
+          },
+        ],
+        returns: {
+          type: "void",
+        },
+      },
+    ],
+    events: [],
+  };
+  // const ci = new CONTRACT(ctcInfo, algodClient, indexerClient, abi, {
+  //   addr: address,
+  //   sk: new Uint8Array(0),
+  // });
+  // console.log(ci);
+  // const ci2 = new CONTRACT(
+  //   24590664,
+  //   //ctcInfo,
+  //   algodClient,
+  //   indexerClient,
+  //   abi,
+  //   {
+  //     addr: address,
+  //     sk: new Uint8Array(0),
+  //   }
+  // );
+  // const builder = {
+  //   wnt200: new CONTRACT(
+  //     24590664,
+  //     algodClient,
+  //     indexerClient,
+  //     {
+  //       name: "",
+  //       desc: "",
+  //       methods: [
+  //         {
+  //           name: "deposit",
+  //           args: [
+  //             {
+  //               name: "amount",
+  //               type: "uint64",
+  //               desc: "Amount to deposit",
+  //             },
+  //           ],
+  //           returns: {
+  //             type: "uint256",
+  //             desc: "Amount deposited",
+  //           },
+  //         },
+  //         {
+  //           name: "createBalanceBox",
+  //           args: [
+  //             {
+  //               type: "address",
+  //               name: "Address to create balance box for",
+  //             },
+  //           ],
+  //           returns: {
+  //             type: "byte",
+  //             desc: "Success",
+  //           },
+  //         },
+  //       ],
+  //       events: [],
+  //     },
+  //     { addr: address, sk: new Uint8Array(0) },
+  //     true,
+  //     false,
+  //     true
+  //   ),
+  //   swap200: new CONTRACT(
+  //     ctcInfo,
+  //     algodClient,
+  //     indexerClient,
+  //     abi,
+  //     { addr: address, sk: new Uint8Array(0) },
+  //     true,
+  //     false,
+  //     true
+  //   ),
+  // };
+  // const buildP = [];
+  // ci.setFee(3000);
+  // let r;
+  // if (swapAForB) {
+  //   r = await ci.Trader_swapAForB(1, Number(amount), 0);
+  //   ci2.setPaymentAmount(Number(amount));
+  //   buildP.push(builder.wnt200.deposit(Number(amount)));
+  //   buildP.push(builder.swap200.Trader_swapAForB(0, Number(amount), 0));
+  //   buildP.push(builder.swap200.Provider_withdrawB(r.returnValue[1]));
+  // } else {
+  //   r = await ci.Trader_swapBForA(1, Number(amount), 0);
+  //   ci2.setPaymentAmount(1);
+  //   buildP.push(builder.swap200.Trader_swapBForA(0, Number(amount), 0));
+  //   buildP.push(builder.swap200.Provider_withdrawA(r.returnValue[0]));
+  // }
+  // const extraTxns = (await Promise.all(buildP)).map((el) => el.obj);
+  // console.log({ r, extraTxns });
+  // ci2.setFee(3000);
+  // ci2.setEnableGroupResourceSharing(true);
+  // //ci2.setPaymetns([[1, algosdk.getApplicationAddress(ctcInfo)]]);
+  // ci2.setExtraTxns(extraTxns);
+  // ci2.setAccounts([algosdk.getApplicationAddress(ctcInfo)]);
+  // const customR = await ci2.custom();
+  // console.log({ customR });
+  // return {
+  //   ...customR,
+  //   returnValue: r.returnValue,
+  // };
+
   const ci = new swap200(ctcInfo, algodClient, indexerClient, {
     acc: { addr: address, sk: new Uint8Array(0) },
   });
@@ -179,44 +356,6 @@ const doSwap = async (
   return res;
 };
 
-// ---
-
-// end contractjs funcs
-
-// algsdk funcs
-
-const waitForTxn = async (txId: string, rounds = 4) =>
-  await waitForConfirmation(algodClient, txId, rounds);
-
-// end algsdk funcs
-
-const poolList: any = { "23215100": { tokA: 6779767, tokB: 6778021 } };
-/*
-const tokenList: any = {
-  "6778021": {
-    name: "VRC200",
-    symbol: "VRC200",
-    decimals: 8,
-    totalSupply: 1000000000000000,
-  },
-  "6779767": {
-    name: "Voi Incentive Asset",
-    symbol: "VIA",
-    decimals: 6,
-    totalSupply: 10000000000000000,
-  },
-  "23215100": {
-    name: "ARC200 LP - VIA/VRC200",
-    symbol: "ARC200LT",
-    decimals: 6,
-    totalSupply: 115792089237316195423570985008687907853269984665640564039457584007913129639935,
-    isPool: true,
-  },
-};
-const tokenA = "6779767";
-const tokenB = "6778021";
-*/
-
 interface SwapFormProps {
   ctcInfo: string;
   direction: boolean;
@@ -231,11 +370,12 @@ interface Tokens {
 }
 
 const SwapForm: React.FC<SwapFormProps> = (props) => {
-  const { activeAccount } = useWallet();
+  const { activeAccount, signTransactions } = useWallet();
   const [tokens, setTokens] = React.useState<Tokens>({
     tokenA: "",
     tokenB: "",
   });
+  const [node] = getCurrentNode();
   const [pools, setPools] = React.useState<any[]>([]);
   const debouncedValue = useDebounce<Tokens>(tokens, 500);
   const [swapDirection, setSwapDirection] = React.useState<boolean>(true);
@@ -448,18 +588,14 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
     return `${feeBnStr} ${token.symbol}`;
   }, [protoInfo, swapDirection, tokens, token]);
 
-  const signTransaction = useCallback(
+  const signTransaction = React.useCallback(
     async (txns: string[]) => {
       if (!activeAccount) return;
-      if (
-        activeAccount.providerId === PROVIDER_ID.CUSTOM &&
-        activeAccount.name === "kibisis"
-      ) {
+      if (activeAccount.providerId === PROVIDER_ID.CUSTOM) {
         const algorand = (window as any).algorand;
         if (!algorand) {
           throw new Error("no wallets are installed!");
         }
-        const [node] = getCurrentNode();
         const wallets = algorand.getWallets();
         const wallet = await algorand.enable({
           genesisHash: getGenesisHash(node),
@@ -479,17 +615,22 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         const res = await algodClient
           .sendRawTransaction(signedTransactionBytes)
           .do();
-        return res.txId;
+        await waitForConfirmation(algodClient, res.txId, 4);
+      } else if (
+        [PROVIDER_ID.KIBISIS, PROVIDER_ID.DEFLY, PROVIDER_ID.LUTE].includes(
+          activeAccount.providerId
+        )
+      ) {
+        const stxns = await signTransactions(
+          txns.map((el) => new Uint8Array(Buffer.from(el, "base64")))
+        );
+        const res = await algodClient.sendRawTransaction(stxns).do();
+        await waitForConfirmation(algodClient, res.txId, 4);
       } else {
-        const wtxns = txns.map((el) => {
-          return {
-            txn: el,
-          };
-        });
-        await stdlib.signSendAndConfirm({ addr: activeAccount.address }, wtxns);
+        throw new Error("Unsupported wallet");
       }
     },
-    [activeAccount, allowance]
+    [activeAccount]
   );
 
   const handleApproveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -553,9 +694,8 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         )
         */
       );
-      const txId = await signTransaction(txns);
+      await signTransaction(txns);
       setMessage("Waiting for confirmation...");
-      await waitForTxn(txId);
       const msg = "+" + approval + " " + token.symbol;
       toast(
         <div>
@@ -567,7 +707,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       setVersion(version + 1);
       setTokens({ tokenA: "", tokenB: "" });
     } catch (e) {
-      console.log(e);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -608,7 +748,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
             const res = await ci.createBalanceBox(activeAccount.address);
             const txId = await signTransaction(res.txns);
             setMessage("Waiting for confirmation (1 of 2)...");
-            await waitForTxn(txId);
           } else {
             const res = await transfer(
               token.id,
@@ -618,7 +757,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
             );
             const txId = await signTransaction(res.txns);
             setMessage("Waiting for confirmation (1 of 2)...");
-            await waitForTxn(txId);
           }
           setMessage("Signature pending (2 of 2)...");
         }
@@ -636,7 +774,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         } else {
           setMessage("Waiting for confirmation...");
         }
-        await waitForTxn(txId);
         setVersion(version + 1);
         toast(
           <div>
@@ -649,7 +786,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
           </div>
         );
       } catch (e) {
-        console.log(e);
+        toast.error(e.message);
       } finally {
         setLoading(false);
       }
@@ -706,7 +843,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
           tokenList[tokenB].symbol;
         const txId = await signTransaction(txns);
         setMessage("Waiting for confirmation...");
-        await waitForTxn(txId);
         setVersion(version + 1); // refresh
       } else {
         // Swap from tokenB to tokenA
@@ -737,7 +873,6 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
           " " +
           tokenList[tokenA].symbol;
         setMessage("Waiting for confirmation...");
-        await waitForTxn(txId);
         setVersion(version + 1); // refresh
       }
       toast(
@@ -748,7 +883,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
         </div>
       );
     } catch (e) {
-      console.log(e);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -793,7 +928,7 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
       const w = String(token.id);
       const balanceBn = bigNumberify(balances[w]);
       const allowanceBn = bigNumberify(allowance);
-      if (v.gt(allowanceBn))
+      if (true || v.gt(allowanceBn))
         return (
           <div style={{ height: "1em" }}>
             <Typography variant="caption">Insufficient allowance</Typography>
@@ -1033,6 +1168,17 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
                   error={error}
                   helperText={helperText}
                 />
+                <div style={{ height: "1em" }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => {
+                      setStep(1);
+                    }}
+                  >
+                    <small>Update Allowance</small>
+                  </Button>
+                </div>
 
                 <Button
                   variant="text"
@@ -1119,9 +1265,9 @@ const SwapForm: React.FC<SwapFormProps> = (props) => {
                 </List>
               </Box>
               <Button
-                disabled={
-                  tokens[swapDirection ? "tokenA" : "tokenB"] === "" || error
-                }
+                //disabled={
+                //  tokens[swapDirection ? "tokenA" : "tokenB"] === "" || error
+                //</Stack>}
                 size="large"
                 fullWidth
                 variant="contained"
